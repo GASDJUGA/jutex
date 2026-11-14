@@ -5,7 +5,7 @@ import { mockProjects } from "../mocks/projects";
 import { MockFiles } from "./mockFiles";
 import { createMockBackup } from "./mockBackup";
 import { repoKey, repoNameOf, validRemoteUrl } from "./remote";
-import type { GithubRepo } from "../store/types";
+import type { GithubRepo, SpellLang } from "../store/types";
 
 /** Repositories of the GitHub account of the browser preview. */
 const mockGithubRepos: Omit<GithubRepo, "projectId">[] = [
@@ -47,6 +47,7 @@ import type {
   Version,
 } from "../store/types";
 import { replaceText, searchFiles } from "./projectSearch";
+import { resolveLocale, type Locale } from "./languages";
 import { DEFAULT_SETTINGS, validSetting } from "./settings";
 import type { Backend, ClipboardImage, FilesChangedEvent } from "./tauri";
 import type {
@@ -98,7 +99,16 @@ async function samplePdf(): Promise<Uint8Array> {
   }
 }
 
-export function createMockBackend(seed: ProjectSummary[] = mockProjects): MockBackend {
+export type MockBackendOptions = {
+  /** The system's language (default: the browser's, as in the preview). */
+  systemLocale?: Locale;
+};
+
+export function createMockBackend(
+  seed: ProjectSummary[] = mockProjects,
+  options: MockBackendOptions = {},
+): MockBackend {
+  const systemLocale = options.systemLocale ?? resolveLocale(navigator.languages);
   let projects = seed.map((p) => ({ ...p }));
   let trashed: (TrashedProject & { project: ProjectSummary })[] = [];
   /** The personal dictionary of the spell checker. */
@@ -121,8 +131,15 @@ export function createMockBackend(seed: ProjectSummary[] = mockProjects): MockBa
     histories.set(id, [{ version, contents }, ...list]);
     return version;
   };
+  const effectiveLocale = (): Locale =>
+    settings.locale === "system" ? systemLocale : settings.locale;
+  const effectiveDocumentLanguage = (): Locale =>
+    settings.documentLanguage === "interface" ? effectiveLocale() : settings.documentLanguage;
   const settingsInfo = (): SettingsInfo => ({
     settings: { ...settings },
+    systemLocale,
+    effectiveLocale: effectiveLocale(),
+    effectiveDocumentLanguage: effectiveDocumentLanguage(),
     projectsDir: settings.projectsDir ?? "~/JuTeX",
     appDirs: {
       config: "~/.config/jutex",
@@ -274,7 +291,9 @@ export function createMockBackend(seed: ProjectSummary[] = mockProjects): MockBa
         make(name, {
           compiler: info?.compiler ?? settings.defaultCompiler,
           mainFile: info?.mainFile ?? "main.tex",
-          spellLang: settings.defaultSpellLang,
+          spellLang: settings.newProjectSpellcheck
+            ? (effectiveDocumentLanguage() as SpellLang)
+            : "off",
         }),
       );
     },

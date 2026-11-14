@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { useI18n } from "../i18n";
+import { useI18n, type Locale } from "../i18n";
 import { notifyError } from "../lib/errors";
 import { DEFAULT_SETTINGS, editableSettings } from "../lib/settings";
 import { LEGACY_STORAGE_KEY } from "../lib/storageMigration";
@@ -20,6 +20,10 @@ type SettingsState = EditableSettings & {
   projectsDir: string;
   /** JuTeX's own folders (null until read). */
   appDirs: AppDirs | null;
+  /** The system's interface language (for «Igual que el sistema»). */
+  systemLocale: Locale;
+  /** The language of new documents, resolved. */
+  effectiveDocumentLanguage: Locale;
   /** The settings were read from settings.json. */
   loaded: boolean;
 
@@ -63,15 +67,24 @@ export const initialSettingsState = {
   ...editableOf(DEFAULT_SETTINGS),
   projectsDir: "~/JuTeX",
   appDirs: null as AppDirs | null,
+  systemLocale: "en" as Locale,
+  effectiveDocumentLanguage: "en" as Locale,
   loaded: false,
 };
 
 export const useSettings = create<SettingsState>()((set, get) => {
   const apply = (info: SettingsInfo) => {
     const editable = editableOf(info.settings);
-    set({ ...editable, projectsDir: info.projectsDir, appDirs: info.appDirs, loaded: true });
-    if (useI18n.getState().locale !== editable.locale)
-      useI18n.getState().setLocale(editable.locale);
+    set({
+      ...editable,
+      projectsDir: info.projectsDir,
+      appDirs: info.appDirs,
+      systemLocale: info.systemLocale,
+      effectiveDocumentLanguage: info.effectiveDocumentLanguage,
+      loaded: true,
+    });
+    if (useI18n.getState().locale !== info.effectiveLocale)
+      useI18n.getState().setLocale(info.effectiveLocale);
   };
 
   return {
@@ -88,7 +101,10 @@ export const useSettings = create<SettingsState>()((set, get) => {
 
     update: async (changes) => {
       set(changes);
-      if (changes.locale) useI18n.getState().setLocale(changes.locale);
+      if (changes.locale)
+        useI18n
+          .getState()
+          .setLocale(changes.locale === "system" ? get().systemLocale : changes.locale);
       try {
         apply(await getBackend().updateSettings(changes));
       } catch (error) {

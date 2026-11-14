@@ -10,7 +10,7 @@ import {
   X,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { translate, useI18n, useT } from "../../i18n";
+import { translate, useI18n, useT, type Locale } from "../../i18n";
 import { notifyError, notifyInfo } from "../../lib/errors";
 import { useBuffers } from "../../store/buffers";
 import { useHistory, type HistoryEntry } from "../../store/history";
@@ -30,7 +30,7 @@ const CHANGE_STYLE: Record<FileChange["kind"], string> = {
 
 const TEXT_FILE = /\.(tex|ltx|sty|cls|bib|bbx|cbx|txt|md|cfg|def|dtx|ins)$/i;
 
-function versionTitle(version: HistoryEntry, locale: "es" | "en") {
+function versionTitle(version: HistoryEntry, locale: Locale) {
   if (version.kind === "manual") return version.name;
   return translate(locale, version.kind === "compile" ? "history.afterCompile" : "history.auto");
 }

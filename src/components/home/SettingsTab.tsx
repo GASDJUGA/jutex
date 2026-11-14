@@ -1,12 +1,13 @@
 import { X } from "lucide-react";
 import { Fragment, useEffect, useState, type ReactNode } from "react";
-import { useT, type Locale } from "../../i18n";
+import { useT } from "../../i18n";
+import { LANGUAGES, languageName } from "../../lib/languages";
 import { notifyError } from "../../lib/errors";
 import { keyLabel } from "../../lib/platform";
 import { MAX_FONT_SIZE, MIN_FONT_SIZE, UI_THEMES } from "../../lib/settings";
 import { getBackend } from "../../lib/tauri";
 import { useSettings, type IndentMode } from "../../store/settings";
-import type { Compiler, EditorTheme, Keymap, SpellLang, UiTheme } from "../../store/types";
+import type { Compiler, EditorTheme, Keymap, Settings, UiTheme } from "../../store/types";
 import { DistributionPicker } from "../packages/DistributionPicker";
 import { useSpell } from "../../store/spell";
 import { useTex } from "../../store/tex";
@@ -114,10 +115,32 @@ export function SettingsTab() {
               <select
                 className={control}
                 value={settings.locale}
-                onChange={(e) => void update({ locale: e.target.value as Locale })}
+                onChange={(e) => void update({ locale: e.target.value as Settings["locale"] })}
               >
-                <option value="es">Español</option>
-                <option value="en">English</option>
+                <option value="system">
+                  {t("settings.localeSystem", { name: languageName(settings.systemLocale) })}
+                </option>
+                {LANGUAGES.map((l) => (
+                  <option key={l.code} value={l.code}>
+                    {l.name}
+                  </option>
+                ))}
+              </select>
+            </Field>
+            <Field label={t("settings.documentLanguage")} hint={t("settings.documentLanguageHint")}>
+              <select
+                className={control}
+                value={settings.documentLanguage}
+                onChange={(e) =>
+                  void update({ documentLanguage: e.target.value as Settings["documentLanguage"] })
+                }
+              >
+                <option value="interface">{t("settings.documentLanguageInterface")}</option>
+                {LANGUAGES.map((l) => (
+                  <option key={l.code} value={l.code}>
+                    {l.name}
+                  </option>
+                ))}
               </select>
             </Field>
             <ThemePicker
@@ -205,17 +228,12 @@ export function SettingsTab() {
           </Section>
 
           <Section title={t("settings.spelling")}>
-            <Field label={t("settings.defaultSpellLang")} hint={t("settings.defaultSpellLangHint")}>
-              <select
-                className={control}
-                value={settings.defaultSpellLang}
-                onChange={(e) => void update({ defaultSpellLang: e.target.value as SpellLang })}
-              >
-                <option value="es">{t("spell.es")}</option>
-                <option value="en">{t("spell.en")}</option>
-                <option value="off">{t("spell.off")}</option>
-              </select>
-            </Field>
+            <Check
+              label={t("settings.newProjectSpellcheck")}
+              hint={t("settings.newProjectSpellcheckHint")}
+              checked={settings.newProjectSpellcheck}
+              onChange={(newProjectSpellcheck) => void update({ newProjectSpellcheck })}
+            />
             <DictionarySection />
           </Section>
 
@@ -309,12 +327,13 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
 
 function Check(props: {
   label: string;
+  hint?: string;
   checked: boolean;
   disabled?: boolean;
   onChange: (checked: boolean) => void;
 }) {
   return (
-    <Field label={props.label}>
+    <Field label={props.label} hint={props.hint}>
       <input
         type="checkbox"
         checked={props.checked}

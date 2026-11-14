@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { dictionaries, translate, type TranslationKey } from ".";
+import { dictionaries, locales, translate, type TranslationKey } from ".";
 
 function leafPaths(node: unknown, prefix = ""): string[] {
   if (typeof node === "string") return [prefix];
@@ -14,27 +14,29 @@ function placeholders(text: string): string[] {
 
 describe("diccionarios", () => {
   const es = leafPaths(dictionaries.es).sort();
-  const en = leafPaths(dictionaries.en).sort();
+  const get = (d: unknown, path: string) =>
+    path.split(".").reduce<unknown>((n, p) => (n as Record<string, unknown>)[p], d);
 
-  it("es y en tienen exactamente las mismas claves", () => {
-    expect(en).toEqual(es);
+  it("hay un diccionario por cada idioma de la tabla", () => {
+    expect(locales).toEqual(["es", "en", "pt", "fr", "de", "it"]);
+    for (const locale of locales) expect(dictionaries[locale], locale).toBeDefined();
   });
 
-  it("cada traducción usa los mismos marcadores {…}", () => {
+  it.each(locales)("%s tiene exactamente las mismas claves que es", (locale) => {
+    expect(leafPaths(dictionaries[locale]).sort()).toEqual(es);
+  });
+
+  it.each(locales)("%s usa los mismos marcadores {…}", (locale) => {
     for (const path of es) {
-      const key = path as TranslationKey;
-      const get = (d: unknown) =>
-        path.split(".").reduce((n, p) => (n as Record<string, unknown>)[p], d) as string;
-      expect(placeholders(get(dictionaries.en)), key).toEqual(placeholders(get(dictionaries.es)));
+      expect(placeholders(String(get(dictionaries[locale], path))), `${locale}: ${path}`).toEqual(
+        placeholders(String(get(dictionaries.es, path))),
+      );
     }
   });
 
-  it("no hay textos vacíos", () => {
+  it.each(locales)("%s no tiene textos vacíos", (locale) => {
     for (const path of es) {
-      const value = path
-        .split(".")
-        .reduce<unknown>((n, p) => (n as Record<string, unknown>)[p], dictionaries.en);
-      expect(String(value).trim(), path).not.toBe("");
+      expect(String(get(dictionaries[locale], path)).trim(), `${locale}: ${path}`).not.toBe("");
     }
   });
 });
@@ -58,6 +60,17 @@ describe("translate", () => {
     expect(translate("es", "projects.count", { count: 1 })).toBe("1 proyecto");
     expect(translate("es", "projects.count", { count: 0 })).toBe("0 proyectos");
     expect(translate("en", "projects.count", { count: 2 })).toBe("2 projects");
+  });
+
+  it("lo que falta en un idioma sale en inglés", () => {
+    const fr = dictionaries.fr as unknown as { menu: Record<string, string> };
+    const saved = fr.menu.file;
+    delete fr.menu.file;
+    try {
+      expect(translate("fr", "menu.file")).toBe("File");
+    } finally {
+      fr.menu.file = saved;
+    }
   });
 
   it("devuelve la clave si no existe", () => {

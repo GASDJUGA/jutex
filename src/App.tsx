@@ -79,10 +79,11 @@ function App() {
     if (ready) return playOnFirstFrame(viewRef.current);
   }, [viewKey, leaving, ready]);
 
-  // Detect the TeX tools once at startup (cached by the backend), and read the settings.
+  // Detect the TeX tools once at startup (cached by the backend), and read the settings if
+  // main.tsx could not before drawing.
   useEffect(() => {
     useTex.getState().load().catch(notifyError);
-    useSettings.getState().load().catch(notifyError);
+    if (!useSettings.getState().loaded) useSettings.getState().load().catch(notifyError);
   }, []);
 
   // Several windows: this one's project, its tabs reported to the backend, tabs dropped from

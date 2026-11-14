@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useI18n, useT } from "../../i18n";
 import { errorText } from "../../lib/errors";
 import { useProjects } from "../../store/projects";
-import type { OpenFolderResult, ProjectSummary } from "../../store/types";
+import { localized, type OpenFolderResult, type ProjectSummary } from "../../store/types";
 import { Dialog, inputClass } from "../common/Dialog";
 
 /** Runs an async action, exposing `pending` and a translated `error` for the dialog. */
@@ -68,14 +68,16 @@ export function NewProjectDialog({
           <option value="">{t("projects.newDialog.blank")}</option>
           {templates.map((tpl) => (
             <option key={tpl.id} value={tpl.id}>
-              {tpl.name[locale]}
+              {localized(tpl.name, locale)}
             </option>
           ))}
         </select>
       </label>
       <p className="text-xs text-fg-muted">
         {template
-          ? templates.find((tpl) => tpl.id === template)?.description[locale]
+          ? templates
+              .filter((tpl) => tpl.id === template)
+              .map((tpl) => localized(tpl.description, locale))[0]
           : "main.tex · XeLaTeX"}
       </p>
     </Dialog>

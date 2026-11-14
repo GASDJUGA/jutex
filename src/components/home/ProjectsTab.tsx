@@ -17,7 +17,7 @@ import { filterAndSortProjects, type ProjectSort } from "../../lib/projects/filt
 import { compilerLabels } from "../../mocks/projects";
 import { useWorkspaces } from "../../store/workspaces";
 import { useProjects } from "../../store/projects";
-import type { OpenFolderResult, ProjectSummary } from "../../store/types";
+import { localized, type OpenFolderResult, type ProjectSummary } from "../../store/types";
 import { Menu, type MenuEntry } from "../common/Menu";
 import { CloneDialog } from "./CloneDialog";
 import { MainFileDialog, NewProjectDialog, RenameDialog, TrashDialog } from "./ProjectDialogs";
@@ -78,7 +78,7 @@ export function ProjectsTab() {
     { kind: "separator" },
     { kind: "label", label: t("projects.fromTemplate") },
     ...templates.map((template): MenuEntry => ({
-      label: template.name[locale],
+      label: localized(template.name, locale),
       hint: template.default ? t("projects.default") : undefined,
       onSelect: () => setDialog({ kind: "new", template: template.id }),
     })),

@@ -31,6 +31,10 @@ const es: Record<string, string> = {
   "$ unchanged lines": "$ líneas sin cambios",
 };
 
+/** CodeMirror's texts by language (English is CodeMirror's own). */
+const PHRASES: Partial<Record<Locale, Record<string, string>>> = { es };
+
 export function editorPhrases(locale: Locale) {
-  return locale === "es" ? EditorState.phrases.of(es) : [];
+  const phrases = PHRASES[locale];
+  return phrases ? EditorState.phrases.of(phrases) : [];
 }
