@@ -105,6 +105,105 @@ fn read_head(path: &Path) -> Option<String> {
     Some(String::from_utf8_lossy(head).into_owned())
 }
 
+/// The main language of a document, from its preamble.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum DetectedLanguage {
+    /// One of JuTeX's languages (its code).
+    Supported(&'static str),
+    /// A language JuTeX has no dictionary for (`russian`).
+    Unsupported,
+    /// No language declared (no babel or polyglossia language).
+    Unknown,
+}
+
+/// Options of babel that are not languages.
+const BABEL_FLAGS: [&str; 12] = [
+    "activeacute",
+    "activegrave",
+    "base",
+    "keepshorthands",
+    "math",
+    "nocase",
+    "noconfigs",
+    "safe",
+    "showlanguages",
+    "silent",
+    "strings",
+    "hyphenmap",
+];
+
+fn options(list: &str) -> impl Iterator<Item = &str> {
+    list.split(',').map(str::trim).filter(|o| !o.is_empty())
+}
+
+fn regex(pattern: &str) -> regex::Regex {
+    regex::Regex::new(pattern).expect("valid regex")
+}
+
+/// The main language of the document whose main file is `source`: polyglossia's
+/// `\setdefaultlanguage`/`\setmainlanguage`, a `\babelprovide[main]`, or the last language
+/// of babel's options (or `main=`), also those of `\documentclass` (babel takes them as
+/// global). Only the preamble, without comments.
+pub fn detect_language(source: &str) -> DetectedLanguage {
+    let preamble: String = source
+        .lines()
+        .map(strip_comment)
+        .take_while(|line| !line.contains("\\begin{document}"))
+        .collect::<Vec<_>>()
+        .join("\n");
+    let named = |name: &str| match crate::lang::from_tex_name(name) {
+        Some(code) => DetectedLanguage::Supported(code),
+        None => DetectedLanguage::Unsupported,
+    };
+
+    let polyglossia = regex(r"\\set(?:default|main)language\s*(?:\[[^\]]*\])?\s*\{([^}]*)\}");
+    if let Some(c) = polyglossia.captures_iter(&preamble).last() {
+        return named(&c[1]);
+    }
+    let provide = regex(r"\\babelprovide\s*\[([^\]]*)\]\s*\{([^}]*)\}");
+    if let Some(c) = provide
+        .captures_iter(&preamble)
+        .filter(|c| options(&c[1]).any(|o| o == "main"))
+        .last()
+    {
+        return named(&c[2]);
+    }
+
+    let usepackage = regex(r"\\usepackage\s*(?:\[([^\]]*)\])?\s*\{([^}]*)\}");
+    let mut babel = false;
+    let mut languages: Vec<&str> = Vec::new();
+    for c in usepackage.captures_iter(&preamble) {
+        if !options(&c[2]).any(|p| p == "babel") {
+            continue;
+        }
+        babel = true;
+        let Some(list) = c.get(1) else { continue };
+        for option in options(list.as_str()) {
+            if let Some(main) = option.strip_prefix("main=") {
+                return named(main.trim());
+            }
+            let word = option.chars().all(|ch| ch.is_ascii_alphabetic());
+            if word && !BABEL_FLAGS.contains(&option.to_ascii_lowercase().as_str()) {
+                languages.push(option);
+            }
+        }
+    }
+    if let Some(last) = languages.last() {
+        return named(last);
+    }
+    if babel {
+        // babel without languages takes those of the class (only known names count: the
+        // class has options of its own, like `twocolumn`).
+        let class = regex(r"\\documentclass\s*\[([^\]]*)\]");
+        if let Some(c) = class.captures(&preamble)
+            && let Some(code) = options(&c[1]).filter_map(crate::lang::from_tex_name).last()
+        {
+            return DetectedLanguage::Supported(code);
+        }
+    }
+    DetectedLanguage::Unknown
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -184,6 +283,56 @@ mod tests {
         assert_eq!(
             detect_compiler("% \\usepackage{fontspec}\n"),
             Compiler::Pdflatex
+        );
+    }
+    #[test]
+    fn idioma_del_preambulo() {
+        use super::DetectedLanguage::*;
+        assert_eq!(
+            detect_language("\\usepackage[english,spanish]{babel}"),
+            Supported("es")
+        );
+        assert_eq!(
+            detect_language("\\usepackage[main=english,spanish]{babel}"),
+            Supported("en")
+        );
+        assert_eq!(
+            detect_language("%\\usepackage[french]{babel}\n\\usepackage[ngerman]{babel}"),
+            Supported("de")
+        );
+        assert_eq!(
+            detect_language(
+                "\\usepackage{polyglossia}\n\\setdefaultlanguage[variant=brazilian]{portuguese}"
+            ),
+            Supported("pt")
+        );
+        assert_eq!(
+            detect_language("\\setmainlanguage{italian}"),
+            Supported("it")
+        );
+        assert_eq!(
+            detect_language("\\babelprovide[main,import]{french}"),
+            Supported("fr")
+        );
+        assert_eq!(detect_language("\\usepackage[russian]{babel}"), Unsupported);
+        assert_eq!(
+            detect_language("\\usepackage[T1]{fontenc}\n\\usepackage{babel}"),
+            Unknown
+        );
+        assert_eq!(
+            detect_language("\\documentclass[french,a4paper]{article}\n\\usepackage{babel}"),
+            Supported("fr")
+        );
+        assert_eq!(detect_language("\\documentclass{article}"), Unknown);
+        // Only the preamble: a babel after \begin{document} is not the document's.
+        assert_eq!(
+            detect_language("\\begin{document}\n\\usepackage[french]{babel}"),
+            Unknown
+        );
+        // Options with spaces and line breaks.
+        assert_eq!(
+            detect_language("\\usepackage[\n  spanish,\n  es-tabla\n]{babel}"),
+            Supported("es")
         );
     }
 }

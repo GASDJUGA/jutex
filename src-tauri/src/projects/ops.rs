@@ -2,7 +2,9 @@
 //! (`Ctx`) so it can be tested against temporary folders.
 
 use crate::error::{AppError, AppResult};
-use crate::projects::detect::{detect_compiler, main_file_candidates};
+use crate::projects::detect::{
+    DetectedLanguage, detect_compiler, detect_language, main_file_candidates,
+};
 use crate::projects::meta::{META_DIR, ProjectMeta, read_meta, write_meta};
 use crate::projects::registry::{Entry, Registry, now_ms};
 use crate::projects::trash::{LogEntry, TrashBin, read_log, write_log};
@@ -297,9 +299,16 @@ impl Ctx {
                 .cloned()
                 .unwrap_or_else(|| "main.tex".to_owned());
             let source = fs::read_to_string(folder.join(&main_file)).unwrap_or_default();
+            // Spelling in the document's language (none if JuTeX has no dictionary for it).
+            let spell_lang = match detect_language(&source) {
+                DetectedLanguage::Supported(code) => code.to_owned(),
+                DetectedLanguage::Unsupported => "off".to_owned(),
+                DetectedLanguage::Unknown => self.new_project.spell_lang.clone(),
+            };
             let meta = ProjectMeta {
                 main_file,
                 compiler: detect_compiler(&source),
+                spell_lang,
                 ..Default::default()
             };
             write_meta(&folder, &meta)?;
@@ -1220,5 +1229,48 @@ mod tests {
         }
         assert!(failed.is_empty(), "{}", failed.join("\n\n"));
         assert!(projects.len() >= 10, "{}", projects.len());
+    }
+    #[test]
+    fn abrir_una_carpeta_toma_el_idioma_del_documento() {
+        let f = fixture();
+        for (babel, expected) in [("french", "fr"), ("russian", "off"), ("", "es")] {
+            let dir = f.tmp.path().join(format!("doc-{expected}"));
+            fs::create_dir_all(&dir).unwrap();
+            let option = if babel.is_empty() {
+                String::new()
+            } else {
+                format!("[{babel}]")
+            };
+            fs::write(
+                dir.join("main.tex"),
+                format!("\\documentclass{{article}}\n\\usepackage{option}{{babel}}\n\\begin{{document}}\nx\n\\end{{document}}\n"),
+            )
+            .unwrap();
+            let opened = f.ctx.open_folder(&dir).unwrap();
+            assert_eq!(opened.project.spell_lang, expected, "{babel}");
+        }
+    }
+
+    #[test]
+    fn un_proyecto_con_project_json_no_cambia_de_idioma() {
+        let f = fixture();
+        let dir = f.tmp.path().join("tesis");
+        fs::create_dir_all(&dir).unwrap();
+        fs::write(
+            dir.join("main.tex"),
+            "\\documentclass{article}\n\\usepackage[english]{babel}\n\\begin{document}x\\end{document}\n",
+        )
+        .unwrap();
+        write_meta(
+            &dir,
+            &ProjectMeta {
+                spell_lang: "es".into(),
+                ..Default::default()
+            },
+        )
+        .unwrap();
+        assert_eq!(f.ctx.open_folder(&dir).unwrap().project.spell_lang, "es");
+        // Opened again, still the same.
+        assert_eq!(f.ctx.open_folder(&dir).unwrap().project.spell_lang, "es");
     }
 }
