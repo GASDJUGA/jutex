@@ -1,17 +1,13 @@
 /**
- * Spell checkers by language, each in its own web worker with the bundled Hunspell
- * dictionary (never downloaded: «local primero»). Answers are cached per word.
+ * Spell checkers by language. The Hunspell dictionaries live in Rust (crate `spellbook`,
+ * bundled with the app: «local primero»); here, what was already asked is cached per word
+ * and the suggestions are ordered by typing distance.
  */
-import esAff from "@dictionaries/es.aff?url";
-import esDic from "@dictionaries/es.dic?url";
-import enAff from "@dictionaries/en.aff?url";
-import enDic from "@dictionaries/en.dic?url";
-import type { Speller } from "./speller";
-import type { WorkerRequest, WorkerResponse } from "./spell.worker";
+import type { Locale } from "../languages";
+import { getBackend } from "../tauri";
+import { rankSuggestions } from "./speller";
 
-export type SpellLang = "es" | "en";
-
-/** What the editor needs: asynchronous, so the dictionary can live in a worker. */
+/** What the editor needs: asynchronous, the dictionary is in the backend. */
 export type SpellChecker = {
   /** The words of `words` that are not correct. */
   wrong(words: string[]): Promise<string[]>;
@@ -21,11 +17,6 @@ export type SpellChecker = {
   /** Known answer for `word`, if it was already checked (`true` = correct). */
   known(word: string): boolean | undefined;
   dispose(): void;
-};
-
-const DICTIONARIES: Record<SpellLang, { aff: string; dic: string }> = {
-  es: { aff: esAff, dic: esDic },
-  en: { aff: enAff, dic: enDic },
 };
 
 type Backend = {
@@ -65,57 +56,22 @@ export function makeChecker(backend: Backend): SpellChecker {
   };
 }
 
-/** A checker for `lang` in a new web worker. */
-export function workerChecker(lang: SpellLang): SpellChecker {
-  const worker = new Worker(new URL("./spell.worker.ts", import.meta.url), { type: "module" });
-  let next = 0;
-  const pending = new Map<number, { resolve: (r: string[]) => void; reject: (e: Error) => void }>();
-  worker.onmessage = (event: MessageEvent<WorkerResponse>) => {
-    const response = event.data;
-    const waiting = pending.get(response.id);
-    if (!waiting) return;
-    pending.delete(response.id);
-    if (response.ok) waiting.resolve(response.result);
-    else waiting.reject(new Error(response.error));
-  };
-  const send = (request: WorkerRequest) =>
-    new Promise<string[]>((resolve, reject) => {
-      pending.set(request.id, { resolve, reject });
-      worker.postMessage(request);
-    });
-  const absolute = (url: string) => new URL(url, document.baseURI).href;
-  const { aff, dic } = DICTIONARIES[lang];
-  const ready = send({ id: next++, type: "init", aff: absolute(aff), dic: absolute(dic) });
-  return makeChecker({
-    async request(type, payload) {
-      await ready;
-      const id = next++;
-      return type === "suggest"
-        ? send({ id, type, word: payload as string })
-        : send({ id, type, words: payload as string[] });
-    },
-    dispose: () => {
-      worker.terminate();
-      for (const { reject } of pending.values()) reject(new Error("cancelado"));
-      pending.clear();
-    },
-  });
-}
-
-/** A checker running nspell in this thread (tests). */
-export function directChecker(speller: Speller): SpellChecker {
+/**
+ * A checker for `lang` asking the backend (Rust keeps the personal dictionary itself, so
+ * changes to it only clear the answers kept here).
+ */
+export function backendChecker(lang: Locale): SpellChecker {
   return makeChecker({
     async request(type, payload) {
       switch (type) {
         case "wrong":
-          return speller.wrong(payload as string[]);
+          return getBackend().spellWrong(lang, payload as string[]);
         case "suggest":
-          return speller.suggest(payload as string);
-        case "add":
-          speller.add(payload as string[]);
-          return [];
-        case "remove":
-          speller.remove(payload as string[]);
+          return rankSuggestions(
+            payload as string,
+            await getBackend().spellSuggest(lang, payload as string),
+          );
+        default:
           return [];
       }
     },

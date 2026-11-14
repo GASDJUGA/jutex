@@ -5,7 +5,7 @@ import { mockProjects } from "../mocks/projects";
 import { MockFiles } from "./mockFiles";
 import { createMockBackup } from "./mockBackup";
 import { repoKey, repoNameOf, validRemoteUrl } from "./remote";
-import type { GithubRepo, SpellLang } from "../store/types";
+import type { GithubRepo } from "../store/types";
 
 /** Repositories of the GitHub account of the browser preview. */
 const mockGithubRepos: Omit<GithubRepo, "projectId">[] = [
@@ -291,9 +291,7 @@ export function createMockBackend(
         make(name, {
           compiler: info?.compiler ?? settings.defaultCompiler,
           mainFile: info?.mainFile ?? "main.tex",
-          spellLang: settings.newProjectSpellcheck
-            ? (effectiveDocumentLanguage() as SpellLang)
-            : "off",
+          spellLang: settings.newProjectSpellcheck ? effectiveDocumentLanguage() : "off",
         }),
       );
     },
@@ -440,6 +438,9 @@ export function createMockBackend(
       return { ...settingsInfo(), projectsDir: "~/Documentos/Proyectos LaTeX" };
     },
     monospaceFonts: async () => ["DejaVu Sans Mono", "Fira Code", "JetBrains Mono"],
+    // No dictionaries in the browser preview: every word is correct.
+    spellWrong: async () => [],
+    spellSuggest: async () => [],
     personalDictionary: async () => [...dictionary],
     addToDictionary: async (word) => {
       if (!/^[\p{L}\p{N}'’.-]{1,64}$/u.test(word) || !/\p{L}/u.test(word)) {

@@ -1,50 +1,49 @@
-import { readFileSync } from "node:fs";
-import { describe, expect, it } from "vitest";
-import { directChecker } from "./checker";
-import { createSpeller, rankSuggestions, typingDistance } from "./speller";
-
-const dictionary = (lang: string) =>
-  createSpeller(
-    readFileSync(`node_modules/dictionary-${lang}/index.aff`, "utf8"),
-    readFileSync(`node_modules/dictionary-${lang}/index.dic`, "utf8"),
-  );
-
-const es = dictionary("es");
-const en = dictionary("en");
+import { beforeEach, describe, expect, it } from "vitest";
+import { createMockBackend } from "../mockBackend";
+import { setBackend } from "../tauri";
+import { backendChecker, makeChecker } from "./checker";
+import { rankSuggestions, typingDistance } from "./speller";
 
 describe("verificador ortográfico", () => {
-  it("español: acepta palabras y formas comunes, marca errores y sugiere", async () => {
-    const checker = directChecker(es);
-    expect(
-      await checker.wrong([
-        "El",
-        "campo",
-        "eléctrico",
-        "ecuacion",
-        "Calculamos",
-        "partículas",
-        "vectoress",
-      ]),
-    ).toEqual(["ecuacion", "vectoress"]);
-    expect((await checker.suggest("ecuacion"))[0]).toBe("ecuación");
-    // Answers are kept.
-    expect(checker.known("campo")).toBe(true);
-    expect(checker.known("ecuacion")).toBe(false);
+  let asked: { lang: string; words: string[] }[];
+
+  beforeEach(() => {
+    asked = [];
+    const backend = createMockBackend();
+    backend.spellWrong = async (lang, words) => {
+      asked.push({ lang, words });
+      return words.filter((w) => w.endsWith("nn"));
+    };
+    backend.spellSuggest = async (_lang, word) =>
+      word === "teh" ? ["ten", "eh", "tea", "the"] : [];
+    setBackend(backend);
   });
 
-  it("inglés", async () => {
-    const checker = directChecker(en);
-    expect(await checker.wrong(["The", "electric", "field", "teh"])).toEqual(["teh"]);
-    expect((await checker.suggest("teh"))[0]).toBe("the");
+  it("pregunta al backend en su idioma y recuerda las respuestas", async () => {
+    const checker = backendChecker("fr");
+    expect(await checker.wrong(["maison", "maisonn"])).toEqual(["maisonn"]);
+    expect(asked).toEqual([{ lang: "fr", words: ["maison", "maisonn"] }]);
+    expect(checker.known("maison")).toBe(true);
+    expect(checker.known("maisonn")).toBe(false);
+    // Already known: not asked again.
+    expect(await checker.wrong(["maison"])).toEqual([]);
+    expect(asked).toHaveLength(1);
   });
 
-  it("el diccionario personal también vale (y se puede quitar)", async () => {
-    const checker = directChecker(dictionary("es"));
-    expect(await checker.wrong(["autovalores", "Kirchhoff"])).toEqual(["autovalores", "Kirchhoff"]);
-    checker.setPersonal(["autovalores", "Kirchhoff"]);
-    expect(await checker.wrong(["autovalores", "Kirchhoff"])).toEqual([]);
-    checker.setPersonal(["Kirchhoff"]);
-    expect(await checker.wrong(["autovalores", "Kirchhoff"])).toEqual(["autovalores"]);
+  it("las sugerencias llegan ordenadas por parecido", async () => {
+    expect((await backendChecker("en").suggest("teh"))[0]).toBe("the");
+  });
+
+  it("un cambio del diccionario personal hace volver a preguntar", async () => {
+    const checker = backendChecker("es");
+    await checker.wrong(["Kirchhoffnn"]);
+    checker.setPersonal(["Kirchhoffnn"]);
+    expect(checker.known("Kirchhoffnn")).toBeUndefined();
+  });
+
+  it("makeChecker con un backend propio", async () => {
+    const checker = makeChecker({ request: async () => ["x"], dispose() {} });
+    expect(await checker.wrong(["x", "y"])).toEqual(["x"]);
   });
 });
 

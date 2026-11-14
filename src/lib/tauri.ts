@@ -1,4 +1,5 @@
 import { convertFileSrc, invoke, isTauri } from "@tauri-apps/api/core";
+import type { Locale } from "./languages";
 import { listen } from "@tauri-apps/api/event";
 import { getCurrentWebview } from "@tauri-apps/api/webview";
 import type {
@@ -151,6 +152,10 @@ export type Backend = {
   /** Installed monospace font families. */
   monospaceFonts(): Promise<string[]>;
   /** Words of the personal dictionary (`~/.config/jutex/dictionary.txt`). */
+  /** The words of `words` that are not correct in `lang` (personal dictionary included). */
+  spellWrong(lang: Locale, words: string[]): Promise<string[]>;
+  /** Corrections for `word` in `lang`, unordered. */
+  spellSuggest(lang: Locale, word: string): Promise<string[]>;
   personalDictionary(): Promise<string[]>;
   /** Adds a word; returns the dictionary. */
   addToDictionary(word: string): Promise<string[]>;
@@ -345,6 +350,8 @@ export const tauriBackend: Backend = {
   updateSettings: (changes) => invoke("update_settings", { changes }),
   chooseProjectsDir: (title) => invoke("choose_projects_dir", { title }),
   monospaceFonts: () => invoke("monospace_fonts"),
+  spellWrong: (lang, words) => invoke("spell_wrong", { lang, words }),
+  spellSuggest: (lang, word) => invoke("spell_suggest", { lang, word }),
   personalDictionary: () => invoke("personal_dictionary"),
   addToDictionary: (word) => invoke("add_to_dictionary", { word }),
   removeFromDictionary: (word) => invoke("remove_from_dictionary", { word }),

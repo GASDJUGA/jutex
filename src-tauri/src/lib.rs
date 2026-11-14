@@ -10,6 +10,7 @@ pub mod platform;
 pub mod projects;
 pub mod settings;
 pub mod spell;
+pub mod spellcheck;
 pub mod state;
 pub mod tex;
 pub mod util;
@@ -150,6 +151,8 @@ pub fn run() {
             commands::spell::personal_dictionary,
             commands::spell::add_to_dictionary,
             commands::spell::remove_from_dictionary,
+            commands::spell::spell_wrong,
+            commands::spell::spell_suggest,
             commands::files::search_project,
             commands::files::replace_in_project,
             commands::tex::tex_status,

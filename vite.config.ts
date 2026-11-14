@@ -2,7 +2,6 @@ import { defineConfig } from "vitest/config";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import process from "node:process";
-import { fileURLToPath } from "node:url";
 import { readFileSync } from "node:fs";
 import { pdfjsAssets } from "./vite/pdfjsAssets.ts";
 
@@ -22,16 +21,7 @@ export default defineConfig(() => ({
   define: { __APP_VERSION__: JSON.stringify(version) },
 
   resolve: {
-    alias: [
-      // The Hunspell dictionaries, bundled with the app (their packages only export a
-      // Node.js loader): `@dictionaries/es.aff?url` → node_modules/dictionary-es/index.aff.
-      {
-        find: /^@dictionaries\/(es|en)\.(aff|dic)/,
-        replacement: fileURLToPath(
-          new URL("./node_modules/dictionary-$1/index.$2", import.meta.url),
-        ),
-      },
-    ],
+    alias: [],
   },
 
   optimizeDeps: {

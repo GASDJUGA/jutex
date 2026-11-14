@@ -3,7 +3,7 @@ import type { Locale } from "../lib/languages";
 export type Compiler = "pdflatex" | "xelatex" | "lualatex";
 
 /** Mirrors `ProjectSummary` in src-tauri/src/projects/ops.rs. */
-export type SpellLang = "es" | "en" | "off";
+export type SpellLang = Locale | "off";
 
 export type EditorTheme = "light" | "dark";
 /** Interface colors (Ajustes → Interfaz); «indigo» is the default. */

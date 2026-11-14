@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { notifyError } from "../lib/errors";
-import { workerChecker, type SpellChecker } from "../lib/spell/checker";
+import type { Locale } from "../lib/languages";
+import { backendChecker, type SpellChecker } from "../lib/spell/checker";
 import { getBackend } from "../lib/tauri";
 import { useProjects } from "./projects";
 import type { SpellLang } from "./types";
@@ -18,12 +19,12 @@ type SpellState = {
   setLanguage: (lang: SpellLang) => Promise<void>;
 };
 
-/** One checker per language, created the first time it is needed (its own worker). */
-const checkers = new Map<Exclude<SpellLang, "off">, SpellChecker>();
-let createChecker = workerChecker;
+/** One checker per language, created the first time it is needed. */
+const checkers = new Map<Locale, SpellChecker>();
+let createChecker = backendChecker;
 
-/** For tests: checkers without workers. */
-export function setCheckerFactory(factory: typeof workerChecker) {
+/** For tests: checkers with their own words. */
+export function setCheckerFactory(factory: typeof backendChecker) {
   for (const checker of checkers.values()) checker.dispose();
   checkers.clear();
   createChecker = factory;

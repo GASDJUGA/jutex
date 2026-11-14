@@ -183,7 +183,10 @@ impl Ctx {
             opened_at: entry.opened_at,
             compiler: meta.compiler,
             main_file: meta.main_file,
-            spell_lang: crate::projects::meta::spell_lang_or_default(&meta.spell_lang),
+            spell_lang: crate::projects::meta::spell_lang_or_default(
+                &meta.spell_lang,
+                &self.new_project.language,
+            ),
             trusted: entry.trusted,
             figures_dir: meta.figures_dir,
             missing,
@@ -338,7 +341,7 @@ impl Ctx {
     /// deliberately not settable from here (it needs an explicit warning in the UI).
     pub fn update_meta(&self, id: &str, changes: MetaChanges) -> AppResult<ProjectSummary> {
         if let Some(lang) = &changes.spell_lang
-            && !crate::projects::meta::SPELL_LANGS.contains(&lang.as_str())
+            && !crate::projects::meta::is_spell_lang(lang)
         {
             return Err(AppError::Forbidden(format!(
                 "idioma de ortografía «{lang}»"
@@ -1068,6 +1071,11 @@ mod tests {
             (p.spell_lang.as_str(), p.compiler),
             ("en", Compiler::Xelatex)
         );
+        let german = MetaChanges {
+            spell_lang: Some("de".into()),
+            ..Default::default()
+        };
+        assert_eq!(f.ctx.update_meta(&p.id, german).unwrap().spell_lang, "de");
         let unknown = MetaChanges {
             spell_lang: Some("klingon".into()),
             ..Default::default()
@@ -1079,8 +1087,9 @@ mod tests {
         // A value written by hand that JuTeX does not know reads as the default.
         let path = f.ctx.path_of(&p.id).unwrap();
         let mut meta = read_meta(&path).unwrap().unwrap();
-        meta.spell_lang = "fr".into();
+        meta.spell_lang = "klingon".into();
         write_meta(&path, &meta).unwrap();
+        // The language of new documents (here the fixture's, «es»).
         assert_eq!(f.ctx.open(&p.id).unwrap().spell_lang, "es");
     }
 

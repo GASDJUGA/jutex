@@ -12,6 +12,10 @@ use std::sync::{Arc, Mutex};
 use tauri::{AppHandle, Manager};
 
 pub struct AppState {
+    /// The spelling dictionaries, loaded the first time each language is checked.
+    pub spell_checkers: Arc<crate::spellcheck::Checkers>,
+    /// The personal dictionary's words (read on the first check, kept in step when it changes).
+    pub personal_words: Arc<Mutex<Option<Arc<std::collections::HashSet<String>>>>>,
     /// The system's interface language (one of JuTeX's), read once at start.
     pub system_locale: &'static str,
     /// Paths and defaults for project operations; replaced when the settings change.
@@ -89,13 +93,17 @@ impl AppState {
             .clone()
             .or_else(|| home.as_deref().map(default_projects_dir))
             .ok_or_else(|| AppError::Other("no se encontró la carpeta personal".into()))?;
-        let templates_dir = app
+        let resource_dir = app
             .path()
             .resource_dir()
-            .map_err(|e| AppError::Other(e.to_string()))?
-            .join("templates");
+            .map_err(|e| AppError::Other(e.to_string()))?;
+        let templates_dir = resource_dir.join("templates");
 
         Ok(Self {
+            spell_checkers: Arc::new(crate::spellcheck::Checkers::new(
+                resource_dir.join("dictionaries"),
+            )),
+            personal_words: Arc::new(Mutex::new(None)),
             system_locale,
             ctx: std::sync::RwLock::new(Ctx {
                 registry_file,
