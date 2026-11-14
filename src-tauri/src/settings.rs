@@ -4,7 +4,8 @@
 
 use crate::backup::Identity;
 use crate::error::{AppError, AppResult};
-use crate::projects::meta::{Compiler, SPELL_LANGS};
+use crate::lang;
+use crate::projects::meta::Compiler;
 use crate::tex::backends::TexChoice;
 use crate::util::fs::{read_json, write_json};
 use serde::{Deserialize, Serialize};
@@ -53,11 +54,17 @@ pub enum IndentMode {
     None,
 }
 
+/// `locale` that follows the system's language.
+pub const SYSTEM: &str = "system";
+/// `documentLanguage` that follows the interface's language.
+pub const INTERFACE: &str = "interface";
+
 /// Every setting, with its default.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Settings {
-    /// Interface language (`es`, `en`).
+    /// Interface language: `system` (the system's, English if JuTeX does not have it) or a
+    /// code of [`crate::lang`].
     pub locale: String,
     /// Editor font family; empty = the default monospace fonts.
     pub editor_font_family: String,
@@ -72,8 +79,11 @@ pub struct Settings {
     pub pdf_dark_mode: bool,
     /// Compiler of new blank projects.
     pub default_compiler: Compiler,
-    /// Spelling language of new projects (`es`, `en`, `off`).
-    pub default_spell_lang: String,
+    /// Language of new documents: `interface` (the interface's) or a code of
+    /// [`crate::lang`]. Their spelling is checked in it.
+    pub document_language: String,
+    /// New projects start with spelling checked (in their language) or off.
+    pub new_project_spellcheck: bool,
     /// Minutes between automatic versions of the history (0: only manual and after compiling).
     pub history_minutes: u32,
     /// Author of the Git backups when `git config` has none (asked once; empty = not set).
@@ -87,7 +97,7 @@ pub struct Settings {
 impl Default for Settings {
     fn default() -> Self {
         Self {
-            locale: "es".into(),
+            locale: SYSTEM.into(),
             editor_font_family: String::new(),
             editor_font_size: 14,
             ui_theme: UiTheme::default(),
@@ -99,7 +109,8 @@ impl Default for Settings {
             math_preview_hover: false,
             pdf_dark_mode: false,
             default_compiler: Compiler::default(),
-            default_spell_lang: "es".into(),
+            document_language: INTERFACE.into(),
+            new_project_spellcheck: true,
             history_minutes: 10,
             git_name: String::new(),
             git_email: String::new(),
@@ -111,7 +122,7 @@ impl Default for Settings {
 
 /// Keys the webview may change with `update`; the others have their own commands
 /// (the projects folder is chosen in a native dialog, the TeX with `set_tex_distribution`).
-const EDITABLE: [&str; 16] = [
+const EDITABLE: [&str; 17] = [
     "locale",
     "editorFontFamily",
     "editorFontSize",
@@ -124,7 +135,8 @@ const EDITABLE: [&str; 16] = [
     "mathPreviewHover",
     "pdfDarkMode",
     "defaultCompiler",
-    "defaultSpellLang",
+    "documentLanguage",
+    "newProjectSpellcheck",
     "historyMinutes",
     "gitName",
     "gitEmail",
@@ -132,7 +144,11 @@ const EDITABLE: [&str; 16] = [
 
 fn valid(key: &str, settings: &Settings) -> bool {
     match key {
-        "locale" => matches!(settings.locale.as_str(), "es" | "en"),
+        "locale" => settings.locale == SYSTEM || lang::get(&settings.locale).is_some(),
+        "documentLanguage" => {
+            settings.document_language == INTERFACE
+                || lang::get(&settings.document_language).is_some()
+        }
         "editorFontFamily" => {
             settings.editor_font_family.chars().count() <= 100
                 && !settings
@@ -141,7 +157,6 @@ fn valid(key: &str, settings: &Settings) -> bool {
                     .any(|c| c.is_control() || matches!(c, ';' | '{' | '}' | '"' | '\\'))
         }
         "editorFontSize" => (MIN_FONT_SIZE..=MAX_FONT_SIZE).contains(&settings.editor_font_size),
-        "defaultSpellLang" => SPELL_LANGS.contains(&settings.default_spell_lang.as_str()),
         "historyMinutes" => settings.history_minutes <= MAX_HISTORY_MINUTES,
         // Empty (not set) or what `Identity::clean` accepts, as typed.
         "gitName" | "gitEmail" => {
@@ -173,6 +188,25 @@ fn valid(key: &str, settings: &Settings) -> bool {
 }
 
 impl Settings {
+    /// The interface language, with `system` resolved to `system` (the system's language,
+    /// already one of JuTeX's).
+    pub fn effective_locale(&self, system: &str) -> String {
+        if self.locale == SYSTEM {
+            system.to_owned()
+        } else {
+            self.locale.clone()
+        }
+    }
+
+    /// The language of new documents, with `interface` resolved.
+    pub fn effective_document_language(&self, system: &str) -> String {
+        if self.document_language == INTERFACE {
+            self.effective_locale(system)
+        } else {
+            self.document_language.clone()
+        }
+    }
+
     /// The backup author JuTeX asked for, if set.
     pub fn git_identity(&self) -> Option<Identity> {
         (!self.git_name.is_empty() && !self.git_email.is_empty()).then(|| Identity {
@@ -241,6 +275,34 @@ pub fn update(path: &Path, changes: &Map<String, Value>) -> AppResult<Settings> 
     Ok(settings)
 }
 
+/// On each start, before reading the settings: if no language was ever stored, stores one.
+/// A JuTeX that was already in use (there is a `settings.json` or a `projects.json`) showed
+/// Spanish until 2.1.0, so it stays in Spanish, and its old `defaultSpellLang` becomes the
+/// language of new documents; a new installation follows the system (`system`). Writing it
+/// the first time keeps a new installation from looking like an old one on its next start.
+pub fn settle_first_run(settings_file: &Path, projects_file: &Path) -> AppResult<()> {
+    let mut map = read_map(settings_file)?;
+    if map.contains_key("locale") {
+        return Ok(());
+    }
+    let previous = settings_file.exists() || projects_file.exists();
+    if previous {
+        map.insert("locale".into(), Value::from("es"));
+        match map.get("defaultSpellLang").and_then(Value::as_str) {
+            Some("off") => {
+                map.insert("newProjectSpellcheck".into(), Value::from(false));
+            }
+            Some(code) if lang::get(code).is_some() => {
+                map.insert("documentLanguage".into(), Value::from(code));
+            }
+            _ => {}
+        }
+    } else {
+        map.insert("locale".into(), Value::from(SYSTEM));
+    }
+    write_json(settings_file, &map)
+}
+
 /// Sets one key that has its own command (`texDistribution`, `projectsDir`), keeping the
 /// rest.
 pub fn set(path: &Path, key: &str, value: Value) -> AppResult<Settings> {
@@ -258,6 +320,125 @@ mod tests {
 
     fn changes(value: Value) -> Map<String, Value> {
         value.as_object().unwrap().clone()
+    }
+
+    /// A config folder with `settings.json` (as `stored`, or none) and maybe `projects.json`.
+    fn config(stored: Option<Value>, projects: bool) -> (TempDir, PathBuf, PathBuf) {
+        let dir = TempDir::new().unwrap();
+        let settings = dir.path().join("settings.json");
+        let registry = dir.path().join("projects.json");
+        if let Some(value) = stored {
+            std::fs::write(&settings, value.to_string()).unwrap();
+        }
+        if projects {
+            std::fs::write(&registry, "[]").unwrap();
+        }
+        (dir, settings, registry)
+    }
+
+    #[test]
+    fn instalacion_nueva_sigue_al_sistema_tambien_al_segundo_arranque() {
+        let (_dir, settings, registry) = config(None, false);
+        settle_first_run(&settings, &registry).unwrap();
+        assert_eq!(load(&settings).unwrap().locale, "system");
+        // Next start: both files exist now, and nobody chose a language.
+        std::fs::write(&registry, "[]").unwrap();
+        settle_first_run(&settings, &registry).unwrap();
+        let s = load(&settings).unwrap();
+        assert_eq!(s.locale, "system");
+        assert_eq!(s.effective_locale("fr"), "fr");
+        assert_eq!(s.effective_document_language("fr"), "fr");
+    }
+
+    #[test]
+    fn usuario_actual_sin_locale_queda_en_espanol() {
+        // The user's real settings.json: neither locale nor defaultSpellLang.
+        let stored =
+            json!({"editorFontFamily": "", "keymap": "default", "texDistribution": "system"});
+        let (_dir, settings, registry) = config(Some(stored), false);
+        settle_first_run(&settings, &registry).unwrap();
+        let s = load(&settings).unwrap();
+        assert_eq!(s.locale, "es");
+        assert_eq!(s.effective_locale("en"), "es");
+        assert_eq!(s.effective_document_language("en"), "es");
+        assert!(s.new_project_spellcheck);
+        // What was there is kept.
+        assert_eq!(s.tex_distribution, TexChoice::System);
+    }
+
+    #[test]
+    fn solo_projects_json_tambien_es_instalacion_anterior() {
+        let (_dir, settings, registry) = config(None, true);
+        settle_first_run(&settings, &registry).unwrap();
+        assert_eq!(load(&settings).unwrap().locale, "es");
+    }
+
+    #[test]
+    fn default_spell_lang_viejo_pasa_a_idioma_de_documentos() {
+        let (_dir, settings, registry) = config(Some(json!({"defaultSpellLang": "en"})), false);
+        settle_first_run(&settings, &registry).unwrap();
+        let s = load(&settings).unwrap();
+        assert_eq!(
+            (s.locale.as_str(), s.document_language.as_str()),
+            ("es", "en")
+        );
+        assert_eq!(s.effective_document_language("de"), "en");
+
+        let (_dir, settings, registry) = config(Some(json!({"defaultSpellLang": "off"})), false);
+        settle_first_run(&settings, &registry).unwrap();
+        let s = load(&settings).unwrap();
+        assert!(!s.new_project_spellcheck);
+        assert_eq!(s.effective_document_language("de"), "es");
+    }
+
+    #[test]
+    fn un_locale_guardado_no_se_toca() {
+        let (_dir, settings, registry) = config(
+            Some(json!({"locale": "de", "defaultSpellLang": "en"})),
+            true,
+        );
+        settle_first_run(&settings, &registry).unwrap();
+        let s = load(&settings).unwrap();
+        assert_eq!(
+            (s.locale.as_str(), s.document_language.as_str()),
+            ("de", "interface")
+        );
+    }
+
+    #[test]
+    fn valores_de_idioma_validos() {
+        let (_dir, settings, _registry) = config(None, false);
+        for good in [
+            json!({ "locale": "system" }),
+            json!({ "locale": "pt" }),
+            json!({ "documentLanguage": "interface" }),
+            json!({ "documentLanguage": "it" }),
+            json!({ "newProjectSpellcheck": false }),
+        ] {
+            update(&settings, &changes(good.clone())).unwrap_or_else(|e| panic!("{good}: {e}"));
+        }
+        let s = load(&settings).unwrap();
+        assert_eq!(
+            (s.locale.as_str(), s.document_language.as_str()),
+            ("pt", "it")
+        );
+    }
+
+    #[test]
+    fn idiomas_efectivos() {
+        let s = Settings {
+            locale: "system".into(),
+            ..Settings::default()
+        };
+        assert_eq!(s.effective_locale("fr"), "fr");
+        assert_eq!(s.effective_document_language("fr"), "fr");
+        let s = Settings {
+            locale: "de".into(),
+            document_language: "it".into(),
+            ..Settings::default()
+        };
+        assert_eq!(s.effective_locale("fr"), "de");
+        assert_eq!(s.effective_document_language("fr"), "it");
     }
 
     #[test]
@@ -346,8 +527,9 @@ mod tests {
         for bad in [
             json!({ "editorFontSize": 2 }),
             json!({ "keymap": "nano" }),
-            json!({ "locale": "fr" }),
-            json!({ "defaultSpellLang": "de" }),
+            json!({ "locale": "klingon" }),
+            json!({ "documentLanguage": "xx" }),
+            json!({ "defaultSpellLang": "en" }),
             json!({ "editorFontFamily": "x; background: red" }),
             json!({ "projectsDir": "/tmp" }),
             json!({ "texDistribution": "system" }),

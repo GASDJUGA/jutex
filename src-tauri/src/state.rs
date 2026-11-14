@@ -12,6 +12,8 @@ use std::sync::{Arc, Mutex};
 use tauri::{AppHandle, Manager};
 
 pub struct AppState {
+    /// The system's interface language (one of JuTeX's), read once at start.
+    pub system_locale: &'static str,
     /// Paths and defaults for project operations; replaced when the settings change.
     ctx: std::sync::RwLock<Ctx>,
     /// Serializes operations that read-modify-write `projects.json`.
@@ -74,7 +76,14 @@ impl AppState {
         let home = BaseDirs::new().map(|b| b.home_dir().to_owned());
         let config_dir = dirs.config_dir().to_owned();
         let settings_file = config_dir.join("settings.json");
+        let registry_file = config_dir.join("projects.json");
+        // A language stored before anything reads it (a user of an older JuTeX stays in
+        // Spanish); if it cannot be written, the defaults still apply.
+        if let Err(e) = crate::settings::settle_first_run(&settings_file, &registry_file) {
+            eprintln!("{e}");
+        }
         let settings = crate::settings::load(&settings_file)?;
+        let system_locale = crate::platform::locale::system_locale();
         let projects_dir = settings
             .projects_dir
             .clone()
@@ -87,14 +96,15 @@ impl AppState {
             .join("templates");
 
         Ok(Self {
+            system_locale,
             ctx: std::sync::RwLock::new(Ctx {
-                registry_file: config_dir.join("projects.json"),
+                registry_file,
                 projects_dir,
                 templates_dir,
                 home_dir: home,
                 trash_log_file: dirs.data_dir().join("trashed.json"),
                 trash: Arc::new(SystemTrash::new(dirs.data_dir())),
-                new_project: new_project_defaults(&settings),
+                new_project: new_project_defaults(&settings, system_locale),
             }),
             settings_lock: Arc::new(Mutex::new(())),
             history_lock: Arc::new(Mutex::new(())),
@@ -139,10 +149,16 @@ pub fn default_projects_dir(home: &std::path::Path) -> std::path::PathBuf {
     }
 }
 
-fn new_project_defaults(settings: &Settings) -> NewProjectDefaults {
+fn new_project_defaults(settings: &Settings, system_locale: &str) -> NewProjectDefaults {
+    let language = settings.effective_document_language(system_locale);
     NewProjectDefaults {
         compiler: settings.default_compiler,
-        spell_lang: settings.default_spell_lang.clone(),
+        spell_lang: if settings.new_project_spellcheck {
+            language.clone()
+        } else {
+            "off".to_owned()
+        },
+        language,
     }
 }
 
@@ -203,7 +219,7 @@ impl AppState {
         if let Some(dir) = &settings.projects_dir {
             ctx.projects_dir = dir.clone();
         }
-        ctx.new_project = new_project_defaults(settings);
+        ctx.new_project = new_project_defaults(settings, self.system_locale);
     }
 }
 

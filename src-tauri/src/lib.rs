@@ -47,8 +47,8 @@ pub fn run() {
             #[cfg(target_os = "macos")]
             {
                 let locale = settings::load(&state.settings_file)
-                    .map(|s| s.locale)
-                    .unwrap_or_default();
+                    .map(|s| s.effective_locale(state.system_locale))
+                    .unwrap_or_else(|_| state.system_locale.to_owned());
                 app.set_menu(platform::menu::build(app.handle(), &locale)?)?;
                 app.on_menu_event(|app, event| {
                     platform::menu::on_menu_event(app, event.id().as_ref())

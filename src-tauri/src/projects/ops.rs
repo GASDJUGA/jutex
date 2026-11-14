@@ -75,12 +75,15 @@ pub struct Ctx {
     pub new_project: NewProjectDefaults,
 }
 
-/// What new projects start with (`defaultCompiler`, `defaultSpellLang` in the settings).
+/// What new projects start with (`defaultCompiler`, `documentLanguage` and
+/// `newProjectSpellcheck` in the settings).
 #[derive(Debug, Clone)]
 pub struct NewProjectDefaults {
     /// Compiler of blank projects (templates bring their own).
     pub compiler: crate::projects::meta::Compiler,
     pub spell_lang: String,
+    /// Language of new documents (a code of `crate::lang`).
+    pub language: String,
 }
 
 impl Default for NewProjectDefaults {
@@ -88,6 +91,7 @@ impl Default for NewProjectDefaults {
         let meta = ProjectMeta::default();
         Self {
             compiler: meta.compiler,
+            language: meta.spell_lang.clone(),
             spell_lang: meta.spell_lang,
         }
     }
@@ -1086,6 +1090,7 @@ mod tests {
         f.ctx.new_project = NewProjectDefaults {
             compiler: Compiler::Lualatex,
             spell_lang: "en".into(),
+            language: "en".into(),
         };
         let blank = f.ctx.create("Vacio", None).unwrap();
         assert_eq!(
