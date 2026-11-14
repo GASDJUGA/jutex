@@ -1,0 +1,53 @@
+\documentclass[aspectratio=169]{beamer}
+
+% Langue et polices (compiler avec XeLaTeX)
+\usepackage{fontspec}
+\usepackage[french]{babel}
+\usepackage{amsmath}
+
+\usetheme{default}
+\setbeamertemplate{navigation symbols}{}
+\setbeamertemplate{footline}[frame number]
+\definecolor{accent}{HTML}{6B5CE7}
+\setbeamercolor{structure}{fg=accent}
+
+\title{Titre de la présentation}
+\subtitle{Sous-titre}
+\author{Prénom Nom}
+\institute{Institution}
+\date{\today}
+
+\begin{document}
+
+\begin{frame}
+  \titlepage
+\end{frame}
+
+\begin{frame}{Plan}
+  \tableofcontents
+\end{frame}
+
+\section{Motivation}
+
+\begin{frame}{Motivation}
+  \begin{itemize}
+    \item<1-> Premier point.
+    \item<2-> Deuxième point, qui apparaît ensuite.
+  \end{itemize}
+\end{frame}
+
+\section{Résultats}
+
+\begin{frame}{Un résultat}
+  \begin{block}{Équation des ondes}
+    \[
+      \frac{\partial^2 u}{\partial t^2} = c^2 \nabla^2 u
+    \]
+  \end{block}
+\end{frame}
+
+\begin{frame}
+  \centering\Large Merci !
+\end{frame}
+
+\end{document}

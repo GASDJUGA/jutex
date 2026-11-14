@@ -161,8 +161,9 @@ mod tests {
                     l.code
                 );
             }
-            assert!(t.languages.iter().any(|l| l == "es"), "{}", t.id);
-            assert!(t.languages.iter().any(|l| l == "en"), "{}", t.id);
+            // Every template comes in every language.
+            let all: Vec<_> = crate::lang::all().iter().map(|l| l.code.clone()).collect();
+            assert_eq!(t.languages, all, "{}", t.id);
         }
     }
 

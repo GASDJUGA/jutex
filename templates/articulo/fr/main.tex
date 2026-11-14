@@ -1,0 +1,55 @@
+\documentclass[11pt,a4paper]{article}
+
+% Langue et polices (compiler avec XeLaTeX)
+\usepackage{fontspec}
+\usepackage[french]{babel}
+
+% Mathématiques, figures et liens
+\usepackage{amsmath, amssymb}
+\usepackage{graphicx}
+\usepackage[hidelinks]{hyperref}
+
+\title{Titre de l’article}
+\author{Prénom Nom}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+  Bref résumé du travail : le problème, l’approche et les principaux résultats.
+\end{abstract}
+
+\section{Introduction}
+\label{sec:introduction}
+
+Ceci est un article d’exemple. Les accents, la cédille et les ligatures (é, è, ç, œ)
+fonctionnent directement grâce à XeLaTeX. Pour plus de détails, voir la
+section~\ref{sec:developpement} et la référence~\cite{knuth1984}.
+
+\section{Développement}
+\label{sec:developpement}
+
+Une équation numérotée :
+\begin{equation}
+  \label{eq:euler}
+  e^{i\pi} + 1 = 0
+\end{equation}
+
+et un système aligné :
+\begin{align}
+  \nabla \cdot \vec{E} &= \frac{\rho}{\varepsilon_0}, \\
+  \nabla \cdot \vec{B} &= 0.
+\end{align}
+
+L’équation~\eqref{eq:euler} relie cinq constantes fondamentales.
+
+\section{Conclusions}
+
+Résumez ici les principales conclusions.
+
+\bibliographystyle{plain}
+\bibliography{references}
+
+\end{document}

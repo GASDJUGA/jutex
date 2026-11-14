@@ -1,0 +1,37 @@
+\documentclass[11pt,a4paper]{report}
+
+% Sprache und Schriften (mit XeLaTeX kompilieren)
+\usepackage{fontspec}
+\usepackage[ngerman]{babel}
+
+\usepackage{amsmath, amssymb, amsthm}
+\usepackage{graphicx}
+\usepackage[hidelinks]{hyperref}
+
+% Satzumgebungen
+\theoremstyle{plain}
+\newtheorem{satz}{Satz}[chapter]
+\newtheorem{proposition}[satz]{Proposition}
+\theoremstyle{definition}
+\newtheorem{definition}[satz]{Definition}
+\newtheorem{beispiel}[satz]{Beispiel}
+\theoremstyle{remark}
+\newtheorem*{bemerkung}{Bemerkung}
+
+% Einheitsvektoren
+\newcommand{\ihat}{\boldsymbol{\hat{\textbf{\i}}}}
+\newcommand{\jhat}{\boldsymbol{\hat{\textbf{\j}}}}
+\newcommand{\khat}{\boldsymbol{\hat{\textbf{k}}}}
+
+\title{Mitschrift zu \emph{Name der Vorlesung}}
+\author{Vorname Nachname}
+\date{Semester 2026}
+
+\begin{document}
+
+\maketitle
+\tableofcontents
+
+\input{kapitel/01-einleitung}
+
+\end{document}

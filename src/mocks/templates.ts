@@ -23,7 +23,7 @@ export const mockTemplates: TemplateInfo[] = [
     mainFile: "main.tex",
     compiler: "xelatex",
     default: true,
-    languages: ["es", "en"],
+    languages: ["es", "en", "pt", "fr", "de", "it"],
   },
   {
     id: "apuntes",
@@ -46,7 +46,7 @@ export const mockTemplates: TemplateInfo[] = [
     mainFile: "main.tex",
     compiler: "xelatex",
     default: false,
-    languages: ["es", "en"],
+    languages: ["es", "en", "pt", "fr", "de", "it"],
   },
   {
     id: "tarea",
@@ -69,7 +69,7 @@ export const mockTemplates: TemplateInfo[] = [
     mainFile: "main.tex",
     compiler: "xelatex",
     default: false,
-    languages: ["es", "en"],
+    languages: ["es", "en", "pt", "fr", "de", "it"],
   },
   {
     id: "beamer",
@@ -92,6 +92,6 @@ export const mockTemplates: TemplateInfo[] = [
     mainFile: "main.tex",
     compiler: "xelatex",
     default: false,
-    languages: ["es", "en"],
+    languages: ["es", "en", "pt", "fr", "de", "it"],
   },
 ];

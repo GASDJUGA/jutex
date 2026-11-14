@@ -1,0 +1,55 @@
+\documentclass[11pt,a4paper]{article}
+
+% Lingua e caratteri (compilare con XeLaTeX)
+\usepackage{fontspec}
+\usepackage[italian]{babel}
+
+% Matematica, figure e collegamenti
+\usepackage{amsmath, amssymb}
+\usepackage{graphicx}
+\usepackage[hidelinks]{hyperref}
+
+\title{Titolo dell’articolo}
+\author{Nome Cognome}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+  Breve riassunto del lavoro: il problema, l’approccio e i risultati principali.
+\end{abstract}
+
+\section{Introduzione}
+\label{sec:introduzione}
+
+Questo è un articolo di esempio. Le lettere accentate (à, è, é, ì, ò, ù) funzionano
+direttamente grazie a XeLaTeX. Per maggiori dettagli, si veda la
+sezione~\ref{sec:sviluppo} e il riferimento~\cite{knuth1984}.
+
+\section{Sviluppo}
+\label{sec:sviluppo}
+
+Un’equazione numerata:
+\begin{equation}
+  \label{eq:euler}
+  e^{i\pi} + 1 = 0
+\end{equation}
+
+e un sistema allineato:
+\begin{align}
+  \nabla \cdot \vec{E} &= \frac{\rho}{\varepsilon_0}, \\
+  \nabla \cdot \vec{B} &= 0.
+\end{align}
+
+L’equazione~\eqref{eq:euler} lega cinque costanti fondamentali.
+
+\section{Conclusioni}
+
+Riassumi qui le conclusioni principali.
+
+\bibliographystyle{plain}
+\bibliography{bibliografia}
+
+\end{document}
