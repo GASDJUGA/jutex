@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import babelMissingLanguage from "../../../tests/fixtures/logs/babel-missing-language.log?raw";
 import errorBraces from "../../../tests/fixtures/logs/error-braces.log?raw";
 import errorUndefined from "../../../tests/fixtures/logs/error-undefined.log?raw";
 import miktexMissingSty from "../../../tests/fixtures/logs/miktex-missing-sty.log?raw";
@@ -46,6 +47,11 @@ describe("parseLatexLog (logs reales)", () => {
       missingFile: "paquetequenoexiste.sty",
       file: "main.tex",
     });
+  });
+
+  it("idioma de babel que falta: missingFile con su .ldf", () => {
+    const { errors } = parseLatexLog(babelMissingLanguage);
+    expect(errors[0]).toMatchObject({ kind: "missingFile", missingFile: "french.ldf" });
   });
 
   it("varios archivos: el error del capítulo apunta a su archivo", () => {
