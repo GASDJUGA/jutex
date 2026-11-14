@@ -77,10 +77,11 @@ pub async fn history_restore_file(
     id: String,
     version: String,
     path: String,
+    before: String,
 ) -> AppResult<()> {
     let trash = state.ctx().trash.clone();
     with_history(&state, &id, move |root| {
-        history::restore_file(root, &version, &path, trash.as_ref())
+        history::restore_file(root, &version, &path, &before, trash.as_ref())
     })
     .await
 }
@@ -91,10 +92,11 @@ pub async fn history_restore(
     state: State<'_, AppState>,
     id: String,
     version: String,
+    before: String,
 ) -> AppResult<Vec<String>> {
     let trash = state.ctx().trash.clone();
     with_history(&state, &id, move |root| {
-        history::restore_project(root, &version, trash.as_ref())
+        history::restore_project(root, &version, &before, trash.as_ref())
     })
     .await
 }

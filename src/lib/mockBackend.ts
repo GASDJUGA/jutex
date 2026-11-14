@@ -398,19 +398,19 @@ export function createMockBackend(
       const content = (JSON.parse(entry!.contents) as Record<string, string>)[path];
       return { content: content ?? null, binary: false };
     },
-    historyRestoreFile: async (id, version, path) => {
+    historyRestoreFile: async (id, version, path, before) => {
       const entry = (histories.get(id) ?? []).find((h) => h.version.id === version);
       if (!entry) fail("notFound", version);
       const content = (JSON.parse(entry!.contents) as Record<string, string>)[path];
-      recordVersion(id, "manual", `Antes de restaurar «${path}»`);
+      recordVersion(id, "manual", before);
       if (content === undefined) files(id).delete(path);
       else files(id).write(path, content);
     },
-    historyRestore: async (id, version) => {
+    historyRestore: async (id, version, before) => {
       const entry = (histories.get(id) ?? []).find((h) => h.version.id === version);
       if (!entry) fail("notFound", version);
       const target = JSON.parse(entry!.contents) as Record<string, string>;
-      recordVersion(id, "manual", "Antes de restaurar el proyecto");
+      recordVersion(id, "manual", before);
       const now = Object.fromEntries(files(id).textFiles());
       const changed = [...new Set([...Object.keys(now), ...Object.keys(target)])]
         .filter((path) => now[path] !== target[path])

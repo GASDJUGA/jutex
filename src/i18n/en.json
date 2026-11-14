@@ -111,6 +111,8 @@
     "toEmptyWindow": "Move to the other window (on Home)"
   },
   "history": {
+    "beforeRestoreFile": "Before restoring “{path}”",
+    "beforeRestoreProject": "Before restoring the project",
     "saveVersion": "Save version…",
     "saveTitle": "Save version",
     "save": "Save",

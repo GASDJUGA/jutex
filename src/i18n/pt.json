@@ -111,6 +111,8 @@
     "toEmptyWindow": "Mover para a outra janela (no Início)"
   },
   "history": {
+    "beforeRestoreFile": "Antes de restaurar “{path}”",
+    "beforeRestoreProject": "Antes de restaurar o projeto",
     "saveVersion": "Salvar versão…",
     "saveTitle": "Salvar versão",
     "save": "Salvar",

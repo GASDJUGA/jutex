@@ -97,9 +97,10 @@ export type Backend = {
   historyChanges(id: string, version: string): Promise<FileChange[]>;
   historyFile(id: string, version: string, path: string): Promise<VersionFile>;
   /** Brings back a file as it was (what is there now is kept as a version first). */
-  historyRestoreFile(id: string, version: string, path: string): Promise<void>;
+  /** `before`: name of the version that keeps what is there now (already translated). */
+  historyRestoreFile(id: string, version: string, path: string, before: string): Promise<void>;
   /** Brings the project back to a version; returns the paths that changed. */
-  historyRestore(id: string, version: string): Promise<string[]>;
+  historyRestore(id: string, version: string, before: string): Promise<string[]>;
   /** Where the project's backup with Git stands (no network). */
   backupStatus(id: string): Promise<BackupStatus>;
   /** Turns the backup on; `author` only when `git config` has none (kept for next time). */
@@ -113,9 +114,9 @@ export type Backend = {
   backupChanges(id: string, version: string): Promise<FileChange[]>;
   backupFile(id: string, version: string, path: string): Promise<VersionFile>;
   /** Brings back a file from a backup (what is there now is backed up first). */
-  backupRestoreFile(id: string, version: string, path: string): Promise<void>;
+  backupRestoreFile(id: string, version: string, path: string, before: string): Promise<void>;
   /** Brings the project back to a backup; returns the paths that changed. */
-  backupRestore(id: string, version: string): Promise<string[]>;
+  backupRestore(id: string, version: string, before: string): Promise<string[]>;
   /** Opens a fixed help page (`latex`: the LaTeX manual) in the system browser. */
   openHelpLink(topic: "latex", locale: string): Promise<void>;
   /** The machine's memory in bytes (null if unknown). */
@@ -309,8 +310,9 @@ export const tauriBackend: Backend = {
   historyList: (id) => invoke("history_list", { id }),
   historyChanges: (id, version) => invoke("history_changes", { id, version }),
   historyFile: (id, version, path) => invoke("history_file", { id, version, path }),
-  historyRestoreFile: (id, version, path) => invoke("history_restore_file", { id, version, path }),
-  historyRestore: (id, version) => invoke("history_restore", { id, version }),
+  historyRestoreFile: (id, version, path, before) =>
+    invoke("history_restore_file", { id, version, path, before }),
+  historyRestore: (id, version, before) => invoke("history_restore", { id, version, before }),
   backupStatus: (id) => invoke("backup_status", { id }),
   backupEnable: (id, author) => invoke("backup_enable", { id, author: author ?? null }),
   githubIdentity: () => invoke("github_identity"),
@@ -319,8 +321,9 @@ export const tauriBackend: Backend = {
   backupList: (id) => invoke("backup_list", { id }),
   backupChanges: (id, version) => invoke("backup_changes", { id, version }),
   backupFile: (id, version, path) => invoke("backup_file", { id, version, path }),
-  backupRestoreFile: (id, version, path) => invoke("backup_restore_file", { id, version, path }),
-  backupRestore: (id, version) => invoke("backup_restore", { id, version }),
+  backupRestoreFile: (id, version, path, before) =>
+    invoke("backup_restore_file", { id, version, path, before }),
+  backupRestore: (id, version, before) => invoke("backup_restore", { id, version, before }),
   openHelpLink: (topic, locale) => invoke("open_help_link", { topic, locale }),
   totalMemory: () => invoke("total_memory"),
   backupTools: () => invoke("backup_tools"),

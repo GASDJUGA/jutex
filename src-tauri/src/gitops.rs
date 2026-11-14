@@ -40,6 +40,23 @@ pub const LATEX_OUTPUTS: [&str; 22] = [
     "*~",
 ];
 
+/// The name of a version or backup that JuTeX writes before restoring, as the interface
+/// sent it translated: on one line (the version's kind travels on a line of its own after
+/// it), without control characters and at most 200 characters.
+pub fn version_label(text: &str) -> AppResult<String> {
+    let line: String = text
+        .chars()
+        .map(|c| if c.is_control() { ' ' } else { c })
+        .collect::<String>()
+        .split_whitespace()
+        .collect::<Vec<_>>()
+        .join(" ");
+    if line.is_empty() {
+        return Err(AppError::Forbidden("nombre de versión vacío".into()));
+    }
+    Ok(line.chars().take(200).collect())
+}
+
 pub fn git_error(e: git2::Error) -> AppError {
     AppError::Other(format!("git: {}", e.message()))
 }
@@ -265,4 +282,22 @@ pub fn changed_between(repo: &Repository, from: Option<Oid>, to: Oid) -> AppResu
     paths.sort();
     paths.dedup();
     Ok(paths)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn nombre_de_version_de_una_linea() {
+        assert_eq!(
+            version_label("Before restoring «main.tex»\nJuTeX-Kind: auto").unwrap(),
+            "Before restoring «main.tex» JuTeX-Kind: auto"
+        );
+        assert_eq!(
+            version_label(&"x".repeat(300)).unwrap().chars().count(),
+            200
+        );
+        assert!(version_label(" \n\t ").is_err());
+    }
 }

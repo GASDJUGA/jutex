@@ -111,6 +111,8 @@
     "toEmptyWindow": "Déplacer vers l’autre fenêtre (sur l’Accueil)"
   },
   "history": {
+    "beforeRestoreFile": "Avant de restaurer « {path} »",
+    "beforeRestoreProject": "Avant de restaurer le projet",
     "saveVersion": "Enregistrer une version…",
     "saveTitle": "Enregistrer une version",
     "save": "Enregistrer",

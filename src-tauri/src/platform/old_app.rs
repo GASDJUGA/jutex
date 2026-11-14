@@ -5,7 +5,6 @@
 //! JuTeX asks to close LibreTeX, or does not open (it tries again next time).
 
 use windows_sys::Win32::Foundation::{CloseHandle, INVALID_HANDLE_VALUE};
-use windows_sys::Win32::Globalization::GetUserDefaultUILanguage;
 use windows_sys::Win32::System::Diagnostics::ToolHelp::{
     CreateToolhelp32Snapshot, PROCESSENTRY32W, Process32FirstW, Process32NextW, TH32CS_SNAPPROCESS,
 };
@@ -19,12 +18,6 @@ const OLD_EXE: &str = "libretex.exe";
 /// Whether `name` (a process's image name) is `exe`, ignoring case as Windows does.
 pub fn same_exe(name: &str, exe: &str) -> bool {
     name.eq_ignore_ascii_case(exe)
-}
-
-/// Whether the user's interface is in Spanish (primary language of a `LANGID`).
-pub fn is_spanish(langid: u16) -> bool {
-    const LANG_SPANISH: u16 = 0x0a;
-    langid & 0x3ff == LANG_SPANISH
 }
 
 /// Whether a process with this image name is running.
@@ -56,16 +49,8 @@ fn is_running(exe: &str) -> bool {
 
 /// Asks to close LibreTeX; whether the user chose to try again.
 fn ask_to_close() -> bool {
-    // SAFETY: reads the user's language.
-    let spanish = is_spanish(unsafe { GetUserDefaultUILanguage() });
-    let text = if spanish {
-        "LibreTeX está abierto.\n\nCiérralo para que JuTeX traiga tus proyectos, ajustes y \
-         pestañas, y pulsa Reintentar.\n\nSi cancelas, JuTeX no se abre ahora; lo hará la \
-         próxima vez."
-    } else {
-        "LibreTeX is open.\n\nClose it so JuTeX can bring over your projects, settings and \
-         tabs, then click Retry.\n\nIf you cancel, JuTeX does not open now; it will next time."
-    };
+    // In the language of Windows' interface (JuTeX's settings may not exist yet).
+    let text = super::texts::close_libretex(super::locale::system_locale());
     let wide = |s: &str| s.encode_utf16().chain(Some(0)).collect::<Vec<u16>>();
     let (text, title) = (wide(text), wide("JuTeX"));
     // SAFETY: both strings end in 0 and outlive the call; no owner window yet.
@@ -100,14 +85,6 @@ mod tests {
         assert!(same_exe("libretex.exe", OLD_EXE));
         assert!(!same_exe("jutex.exe", OLD_EXE));
         assert!(!same_exe("libretex.exe.bak", OLD_EXE));
-    }
-
-    #[test]
-    fn idioma_de_la_interfaz() {
-        assert!(is_spanish(0x080a)); // es-MX
-        assert!(is_spanish(0x2c0a)); // es-AR
-        assert!(!is_spanish(0x0409)); // en-US
-        assert!(!is_spanish(0x0416)); // pt-BR
     }
 
     #[test]

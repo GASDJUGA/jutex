@@ -4,12 +4,12 @@
 use crate::error::{AppError, AppResult};
 use tauri::AppHandle;
 
-/// The LaTeX manual for `locale` (the wikibook, in Spanish or English).
+/// The LaTeX manual for `locale`: its wikibook (the English one if there is none).
 fn latex_docs(locale: &str) -> &'static str {
-    match locale {
-        "es" => "https://es.wikibooks.org/wiki/Manual_de_LaTeX",
-        _ => "https://en.wikibooks.org/wiki/LaTeX",
-    }
+    crate::lang::get(locale)
+        .or_else(|| crate::lang::get("en"))
+        .map(|l| l.wikibook.as_str())
+        .unwrap_or("https://en.wikibooks.org/wiki/LaTeX")
 }
 
 /// Opens a help page in the browser (a network use the user asked for).
@@ -33,6 +33,14 @@ mod tests {
     fn manual_segun_el_idioma() {
         assert!(latex_docs("es").starts_with("https://es.wikibooks.org/"));
         assert!(latex_docs("en").starts_with("https://en.wikibooks.org/"));
-        assert!(latex_docs("fr").starts_with("https://en."));
+        assert_eq!(latex_docs("pt"), "https://pt.wikibooks.org/wiki/Latex");
+        assert_eq!(
+            latex_docs("de"),
+            "https://de.wikibooks.org/wiki/LaTeX-Kompendium"
+        );
+        // No Italian wikibook: the English one.
+        assert_eq!(latex_docs("it"), latex_docs("en"));
+        assert_eq!(latex_docs("xx"), latex_docs("en"));
+        assert_eq!(latex_docs("fr"), "https://fr.wikibooks.org/wiki/LaTeX");
     }
 }

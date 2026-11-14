@@ -11,6 +11,7 @@ pub mod menu;
 pub mod old_app;
 pub mod owner;
 pub mod process;
+pub mod texts;
 #[cfg(target_os = "macos")]
 pub mod trash;
 #[cfg(target_os = "linux")]

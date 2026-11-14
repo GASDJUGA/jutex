@@ -10,31 +10,8 @@ use tauri::{AppHandle, Manager, Wry};
 
 const QUIT: &str = "jutex-quit";
 
-/// The menu's texts in the interface language (`es` by default).
-fn texts(locale: &str) -> [&'static str; 6] {
-    if locale == "en" {
-        [
-            "Edit",
-            "Window",
-            "Quit JuTeX",
-            "Hide JuTeX",
-            "Hide Others",
-            "Show All",
-        ]
-    } else {
-        [
-            "Edición",
-            "Ventana",
-            "Salir de JuTeX",
-            "Ocultar JuTeX",
-            "Ocultar otros",
-            "Mostrar todo",
-        ]
-    }
-}
-
 pub fn build(app: &AppHandle, locale: &str) -> tauri::Result<Menu<Wry>> {
-    let [edit, window, quit, hide, hide_others, show_all] = texts(locale);
+    let [edit, window, quit, hide, hide_others, show_all] = super::texts::menu(locale);
     let info = app.package_info();
     let about = AboutMetadata {
         name: Some(info.name.clone()),

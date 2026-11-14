@@ -111,6 +111,8 @@
     "toEmptyWindow": "Sposta nell’altra finestra (sulla home)"
   },
   "history": {
+    "beforeRestoreFile": "Prima di ripristinare “{path}”",
+    "beforeRestoreProject": "Prima di ripristinare il progetto",
     "saveVersion": "Salva versione…",
     "saveTitle": "Salva versione",
     "save": "Salva",

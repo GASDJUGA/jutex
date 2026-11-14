@@ -34,17 +34,24 @@ pub fn system_languages() -> Vec<String> {
         .collect()
 }
 
+/// The language of a Windows `LANGID` (by its primary language: es-MX and es-ES are `es`).
+#[cfg_attr(not(windows), allow(dead_code))]
+pub fn code_of_langid(langid: u16) -> Option<&'static str> {
+    let primary = langid & 0x3ff;
+    lang::all()
+        .iter()
+        .find(|l| l.windows_lang == primary)
+        .map(|l| l.code.as_str())
+}
+
 /// The interface language of Windows (the user's display language).
 #[cfg(windows)]
 pub fn system_languages() -> Vec<String> {
     use windows_sys::Win32::Globalization::GetUserDefaultUILanguage;
     // SAFETY: reads the user's language.
-    let primary = unsafe { GetUserDefaultUILanguage() } & 0x3ff;
-    lang::all()
-        .iter()
-        .filter(|l| l.windows_lang == primary)
-        .map(|l| l.code.clone())
-        .collect()
+    code_of_langid(unsafe { GetUserDefaultUILanguage() })
+        .map(|code| vec![code.to_owned()])
+        .unwrap_or_default()
 }
 
 /// The language JuTeX uses when the setting is «same as the system».
@@ -63,6 +70,19 @@ mod tests {
                 .find(|(n, _)| *n == k)
                 .map(|(_, v)| v.to_string())
         }
+    }
+
+    #[test]
+    fn idioma_de_windows() {
+        assert_eq!(code_of_langid(0x080a), Some("es")); // es-MX
+        assert_eq!(code_of_langid(0x2c0a), Some("es")); // es-AR
+        assert_eq!(code_of_langid(0x0409), Some("en")); // en-US
+        assert_eq!(code_of_langid(0x0416), Some("pt")); // pt-BR
+        assert_eq!(code_of_langid(0x0816), Some("pt")); // pt-PT
+        assert_eq!(code_of_langid(0x0c07), Some("de")); // de-AT
+        assert_eq!(code_of_langid(0x040c), Some("fr"));
+        assert_eq!(code_of_langid(0x0410), Some("it"));
+        assert_eq!(code_of_langid(0x0419), None); // ru-RU
     }
 
     #[test]
