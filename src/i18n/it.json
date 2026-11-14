@@ -414,6 +414,7 @@
       "name": "Nome del progetto",
       "namePlaceholder": "Per esempio: Tesi di laurea magistrale",
       "template": "Modello",
+      "language": "Lingua del documento",
       "blank": "Progetto vuoto",
       "create": "Crea progetto"
     },

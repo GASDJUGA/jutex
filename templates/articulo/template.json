@@ -1,0 +1,22 @@
+{
+  "order": 1,
+  "default": true,
+  "name": {
+    "es": "Artículo XeLaTeX",
+    "en": "XeLaTeX article",
+    "pt": "Artigo XeLaTeX",
+    "fr": "Article XeLaTeX",
+    "de": "XeLaTeX-Artikel",
+    "it": "Articolo XeLaTeX"
+  },
+  "description": {
+    "es": "Artículo con XeLaTeX, babel, AMS y bibliografía.",
+    "en": "Article with XeLaTeX, babel, AMS and bibliography.",
+    "pt": "Artigo com XeLaTeX, babel, AMS e bibliografia.",
+    "fr": "Article avec XeLaTeX, babel, AMS et bibliographie.",
+    "de": "Artikel mit XeLaTeX, babel, AMS und Literaturverzeichnis.",
+    "it": "Articolo con XeLaTeX, babel, AMS e bibliografia."
+  },
+  "mainFile": "main.tex",
+  "compiler": "xelatex"
+}

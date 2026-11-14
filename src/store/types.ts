@@ -92,11 +92,11 @@ export type OpenFolderResult = {
   candidates: string[];
 };
 
-/** A text of a template in each language; the ones it lacks show the English one. */
-export type Localized = { es: string; en: string } & Partial<Record<Locale, string>>;
+/** A text of a template in each language (English if one is missing). */
+export type Localized = Partial<Record<Locale, string>>;
 
 export function localized(text: Localized, locale: Locale): string {
-  return text[locale] ?? text.en;
+  return text[locale] ?? text.en ?? "";
 }
 
 export type TemplateInfo = {
@@ -106,6 +106,8 @@ export type TemplateInfo = {
   mainFile: string;
   compiler: Compiler;
   default: boolean;
+  /** The languages it comes in. */
+  languages: Locale[];
 };
 
 /** A file or folder of a project (mirrors `FileNode` in src-tauri/src/files). */

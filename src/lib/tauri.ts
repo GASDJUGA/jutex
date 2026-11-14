@@ -75,7 +75,8 @@ export type DropEvent =
 export type Backend = {
   listProjects(): Promise<ProjectSummary[]>;
   listTemplates(): Promise<TemplateInfo[]>;
-  createProject(name: string, template: string | null): Promise<ProjectSummary>;
+  /** A new project in `language` (the template, or the blank one, in that language). */
+  createProject(name: string, template: string | null, language: Locale): Promise<ProjectSummary>;
   /** Native folder picker; `null` if cancelled. */
   openFolderDialog(title: string): Promise<OpenFolderResult | null>;
   /** Native ZIP picker; `null` if cancelled. */
@@ -303,7 +304,8 @@ export type Backend = {
 export const tauriBackend: Backend = {
   listProjects: () => invoke("list_projects"),
   listTemplates: () => invoke("list_templates"),
-  createProject: (name, template) => invoke("create_project", { name, template }),
+  createProject: (name, template, language) =>
+    invoke("create_project", { name, template, language }),
   openFolderDialog: (title) => invoke("open_folder_dialog", { title }),
   importZipDialog: (title, filterName) => invoke("import_zip_dialog", { title, filterName }),
   setMainFile: (id, path) => invoke("set_main_file", { id, path }),

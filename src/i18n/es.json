@@ -414,6 +414,7 @@
       "name": "Nombre del proyecto",
       "namePlaceholder": "Por ejemplo: Tesis de magíster",
       "template": "Plantilla",
+      "language": "Idioma del documento",
       "blank": "Proyecto vacío",
       "create": "Crear proyecto"
     },

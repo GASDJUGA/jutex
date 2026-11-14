@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { LOCALES, languageName, type Locale } from "../../lib/languages";
+import { useSettings } from "../../store/settings";
 import { useI18n, useT } from "../../i18n";
 import { errorText } from "../../lib/errors";
 import { useProjects } from "../../store/projects";
@@ -37,7 +39,15 @@ export function NewProjectDialog({
   const { templates, create } = useProjects();
   const [name, setName] = useState("");
   const [template, setTemplate] = useState(initialTemplate ?? "");
+  const [language, setLanguage] = useState<Locale>(
+    () => useSettings.getState().effectiveDocumentLanguage,
+  );
   const { pending, error, run } = useAction();
+  // The languages the chosen template comes in (a blank project, any).
+  const languages = template
+    ? (templates.find((tpl) => tpl.id === template)?.languages ?? [])
+    : LOCALES;
+  const chosen = languages.includes(language) ? language : (languages[0] ?? language);
 
   return (
     <Dialog
@@ -46,7 +56,7 @@ export function NewProjectDialog({
       submitDisabled={pending || name.trim() === ""}
       error={error}
       onClose={onClose}
-      onSubmit={() => run(() => create(name.trim(), template || null), onCreated)}
+      onSubmit={() => run(() => create(name.trim(), template || null, chosen), onCreated)}
     >
       <label className="flex flex-col gap-1">
         {t("projects.newDialog.name")}
@@ -69,6 +79,20 @@ export function NewProjectDialog({
           {templates.map((tpl) => (
             <option key={tpl.id} value={tpl.id}>
               {localized(tpl.name, locale)}
+            </option>
+          ))}
+        </select>
+      </label>
+      <label className="flex flex-col gap-1">
+        {t("projects.newDialog.language")}
+        <select
+          value={chosen}
+          onChange={(e) => setLanguage(e.target.value as Locale)}
+          className={inputClass}
+        >
+          {languages.map((code) => (
+            <option key={code} value={code}>
+              {languageName(code)}
             </option>
           ))}
         </select>

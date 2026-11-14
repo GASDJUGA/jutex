@@ -414,6 +414,7 @@
       "name": "Nom du projet",
       "namePlaceholder": "Par exemple : Mémoire de master",
       "template": "Modèle",
+      "language": "Langue du document",
       "blank": "Projet vierge",
       "create": "Créer le projet"
     },

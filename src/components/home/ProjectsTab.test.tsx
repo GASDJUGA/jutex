@@ -1,4 +1,5 @@
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { mockTemplates } from "../../mocks/templates";
 import { beforeEach, describe, expect, it } from "vitest";
 import App from "../../App";
 import { createMockBackend } from "../../lib/mockBackend";
@@ -139,7 +140,34 @@ describe("Proyectos", () => {
     ).toBeInTheDocument();
     const buttons = screen.getAllByRole("button", { name: /Nuevo proyecto/ });
     fireEvent.click(buttons[buttons.length - 1]);
-    expect(screen.getByRole("combobox", { name: "Plantilla" })).toHaveValue("articulo-xelatex-es");
+    expect(screen.getByRole("combobox", { name: "Plantilla" })).toHaveValue("articulo");
+  });
+
+  it("el proyecto nuevo sale en el idioma elegido (por defecto, el de los documentos)", async () => {
+    const backend = createMockBackend([]);
+    setBackend(backend);
+    render(<App />);
+    await screen.findByRole("heading", { name: "Todavía no hay proyectos" });
+    const buttons = screen.getAllByRole("button", { name: /Nuevo proyecto/ });
+    fireEvent.click(buttons[buttons.length - 1]);
+    const language = screen.getByRole("combobox", { name: "Idioma del documento" });
+    const options = () => [...language.querySelectorAll("option")].map((o) => o.value);
+    expect(language).toHaveValue("es");
+    // A template offers the languages it comes in; a blank project, all of them.
+    const article = mockTemplates.find((t) => t.id === "articulo")!;
+    expect(options()).toEqual(article.languages);
+    fireEvent.change(screen.getByRole("combobox", { name: "Plantilla" }), {
+      target: { value: "" },
+    });
+    expect(options()).toEqual(["es", "en", "pt", "fr", "de", "it"]);
+    fireEvent.change(language, { target: { value: "en" } });
+    fireEvent.change(screen.getByRole("textbox", { name: "Nombre del proyecto" }), {
+      target: { value: "Thesis" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Crear proyecto" }));
+    await waitFor(async () =>
+      expect((await backend.listProjects()).find((p) => p.name === "Thesis")?.spellLang).toBe("en"),
+    );
   });
 });
 
@@ -185,7 +213,7 @@ describe("Papelera", () => {
 
   it("restaurar con una carpeta del mismo nombre muestra el error", async () => {
     await trashTesis();
-    await useProjects.getState().create("Tesis de magíster", null);
+    await useProjects.getState().create("Tesis de magíster", null, "es");
     fireEvent.click(await screen.findByRole("button", { name: "Restaurar: Tesis de magíster" }));
     expect(await screen.findByRole("alert")).toHaveTextContent(
       "Ya existe un proyecto o una carpeta con ese nombre.",

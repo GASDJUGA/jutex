@@ -414,6 +414,7 @@
       "name": "Nome do projeto",
       "namePlaceholder": "Por exemplo: Dissertação de mestrado",
       "template": "Modelo",
+      "language": "Idioma do documento",
       "blank": "Projeto em branco",
       "create": "Criar projeto"
     },

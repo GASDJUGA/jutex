@@ -18,20 +18,22 @@ describe("useProjects", () => {
     const s = useProjects.getState();
     expect(s.status).toBe("ready");
     expect(s.projects).toHaveLength(mockProjects.length);
-    expect(s.templates.find((t) => t.default)?.id).toBe("articulo-xelatex-es");
+    expect(s.templates.find((t) => t.default)?.id).toBe("articulo");
   });
 
   it("crear agrega el proyecto y respeta la plantilla", async () => {
-    const p = await useProjects.getState().create("Nuevo", "beamer");
+    const p = await useProjects.getState().create("Nuevo", "beamer", "es");
     expect(p.compiler).toBe("xelatex");
     expect(names()).toContain("Nuevo");
   });
 
   it("los errores del backend se propagan con su código", async () => {
-    await expect(useProjects.getState().create("Tesis de magíster", null)).rejects.toMatchObject({
+    await expect(
+      useProjects.getState().create("Tesis de magíster", null, "es"),
+    ).rejects.toMatchObject({
       code: "alreadyExists",
     });
-    await expect(useProjects.getState().create("a/b", null)).rejects.toMatchObject({
+    await expect(useProjects.getState().create("a/b", null, "es")).rejects.toMatchObject({
       code: "invalidName",
     });
   });

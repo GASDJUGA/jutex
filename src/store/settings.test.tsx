@@ -154,7 +154,8 @@ describe("pantalla de Ajustes", () => {
       }),
     );
     // A new blank project gets the defaults.
-    const project = await backend.createProject("Nuevo", null);
+    const info = await backend.getSettings();
+    const project = await backend.createProject("Nuevo", null, info.effectiveDocumentLanguage);
     expect([project.compiler, project.spellLang]).toEqual(["lualatex", "en"]);
   });
 

@@ -1,0 +1,37 @@
+\documentclass[11pt,a4paper]{report}
+
+% Language and fonts (compile with XeLaTeX)
+\usepackage{fontspec}
+\usepackage[english]{babel}
+
+\usepackage{amsmath, amssymb, amsthm}
+\usepackage{graphicx}
+\usepackage[hidelinks]{hyperref}
+
+% Theorem environments
+\theoremstyle{plain}
+\newtheorem{theorem}{Theorem}[chapter]
+\newtheorem{proposition}[theorem]{Proposition}
+\theoremstyle{definition}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{example}[theorem]{Example}
+\theoremstyle{remark}
+\newtheorem*{remark}{Remark}
+
+% Unit vectors
+\newcommand{\ihat}{\boldsymbol{\hat{\textbf{\i}}}}
+\newcommand{\jhat}{\boldsymbol{\hat{\textbf{\j}}}}
+\newcommand{\khat}{\boldsymbol{\hat{\textbf{k}}}}
+
+\title{Notes on \emph{Course name}}
+\author{First Last}
+\date{Semester 2026}
+
+\begin{document}
+
+\maketitle
+\tableofcontents
+
+\input{chapters/01-introduction}
+
+\end{document}

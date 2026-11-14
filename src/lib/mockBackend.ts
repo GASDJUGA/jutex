@@ -282,16 +282,17 @@ export function createMockBackend(
   return {
     listProjects: async () => projects.map((p) => ({ ...p })),
     listTemplates: async () => mockTemplates.map((t) => ({ ...t })),
-    createProject: async (name, template) => {
+    createProject: async (name, template, language) => {
       validName(name);
       if (nameTaken(name)) fail("alreadyExists", `ya existe: ${name}`);
       const info = template ? mockTemplates.find((t) => t.id === template) : undefined;
-      if (template && !info) fail("unknownTemplate", `plantilla desconocida: ${template}`);
+      if (template && !info?.languages.includes(language))
+        fail("unknownTemplate", `plantilla desconocida: ${template} (${language})`);
       return add(
         make(name, {
           compiler: info?.compiler ?? settings.defaultCompiler,
           mainFile: info?.mainFile ?? "main.tex",
-          spellLang: settings.newProjectSpellcheck ? effectiveDocumentLanguage() : "off",
+          spellLang: settings.newProjectSpellcheck ? language : "off",
         }),
       );
     },

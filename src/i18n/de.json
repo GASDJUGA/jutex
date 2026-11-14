@@ -414,6 +414,7 @@
       "name": "Name des Projekts",
       "namePlaceholder": "Zum Beispiel: Masterarbeit",
       "template": "Vorlage",
+      "language": "Sprache des Dokuments",
       "blank": "Leeres Projekt",
       "create": "Projekt erstellen"
     },

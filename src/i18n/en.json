@@ -414,6 +414,7 @@
       "name": "Project name",
       "namePlaceholder": "For example: Master's thesis",
       "template": "Template",
+      "language": "Document language",
       "blank": "Blank project",
       "create": "Create project"
     },
