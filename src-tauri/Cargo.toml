@@ -55,7 +55,7 @@ objc2-core-text = { version = "0.3", default-features = false, features = ["std"
 objc2-core-foundation = { version = "0.3", default-features = false, features = ["std", "CFArray", "CFDictionary", "CFNumber", "CFSet", "CFString"] }
 # Already part of the tree on macOS (`trash`, Tauri): the trash through NSFileManager and the
 # machine's memory.
-objc2-foundation = { version = "0.3", default-features = false, features = ["std", "NSData", "NSDictionary", "NSError", "NSArray", "NSEnumerator", "NSFileManager", "NSProcessInfo", "NSString", "NSURL"] }
+objc2-foundation = { version = "0.3", default-features = false, features = ["std", "NSData", "NSDictionary", "NSError", "NSArray", "NSEnumerator", "NSFileManager", "NSLocale", "NSProcessInfo", "NSString", "NSURL"] }
 
 [target.'cfg(windows)'.dependencies]
 # Already part of the tree on Windows (Tauri): programs without a console window and runs in

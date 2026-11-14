@@ -4,6 +4,7 @@ pub mod error;
 pub mod files;
 pub mod gitops;
 pub mod history;
+pub mod lang;
 pub mod migrate;
 pub mod platform;
 pub mod projects;
