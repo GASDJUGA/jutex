@@ -41,6 +41,69 @@ describe("diccionarios", () => {
   });
 });
 
+/** Texts that are the same in English and the other languages (names, abbreviations…). */
+const SAME_AS_ENGLISH = new Set<string>([
+  "Link",
+  "Layout",
+  "Editor",
+  "Visual",
+  "Normal",
+  "Editor: {file}",
+  "Zoom",
+  "v{version} · 100% local",
+  "MiKTeX",
+  "Interface",
+  "Cache",
+  "{name} <{email}>",
+  "E-mail",
+  "Backups",
+  "PgUp",
+  "PgDn",
+  "Format",
+  "Figure…",
+  "Citation (\\cite)",
+  "Section",
+  "Versions",
+  "Code",
+  "Relations",
+  "Page {page}",
+  "Sections",
+  "Version",
+  "Documentation",
+  "Compilation",
+  "Indigo",
+  "Graphite",
+  "Image {name}",
+  "Distribution",
+  "Version {version}",
+  "Compiler",
+  "Name",
+  "In {folder}",
+  "in {seconds} s",
+  "GitHub (optional)",
+  "Details",
+  "File",
+  "Home",
+  "in {count} file",
+  "Output",
+]);
+
+describe("traducciones", () => {
+  const en = leafPaths(dictionaries.en);
+  const get = (d: unknown, path: string) =>
+    String(path.split(".").reduce<unknown>((n, p) => (n as Record<string, unknown>)[p], d));
+
+  it.each(["pt", "fr", "de", "it"] as const)("%s no deja textos en inglés", (locale) => {
+    const untranslated = en.filter((path) => {
+      const text = get(dictionaries[locale], path);
+      return (
+        text === get(dictionaries.en, path) && /\p{L}{2}/u.test(text) && !SAME_AS_ENGLISH.has(text)
+      );
+    });
+    expect(untranslated).toEqual([]);
+  });
+});
+
 describe("translate", () => {
   it("traduce según el idioma", () => {
     expect(translate("es", "menu.file")).toBe("Archivo");
