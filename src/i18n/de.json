@@ -740,7 +740,7 @@
   },
   "logs": {
     "problems": "Probleme",
-    "rawLog": "Vollständiges Protokoll",
+    "rawLog": "Protokoll",
     "output": "Ausgabe",
     "errors": "Fehler",
     "warnings": "Warnungen",

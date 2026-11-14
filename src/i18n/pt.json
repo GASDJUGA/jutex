@@ -740,7 +740,7 @@
   },
   "logs": {
     "problems": "Problemas",
-    "rawLog": "Registro completo",
+    "rawLog": "Log completo",
     "output": "Saída",
     "errors": "Erros",
     "warnings": "Avisos",
