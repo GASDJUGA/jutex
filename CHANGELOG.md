@@ -1,178 +1,187 @@
-# Cambios de JuTeX
+# JuTeX changelog
 
-Lo nuevo de cada versión respecto de la anterior, de la más reciente a la más antigua. Las
-notas de cada release (con cómo instalar) están en `docs/releases/<versión>.md`.
-Hasta la 1.2.2 se llamó LibreTeX.
+What's new in each version compared with the previous one, from newest to oldest. The notes
+of each release (with how to install it) are in `docs/releases/<version>.md`.
+Up to 1.2.2 it was called LibreTeX.
 
 ## 2.1.0 — 2026-11-15
 
-### Novedades
+### New
 
-- Seis idiomas en la interfaz: español, inglés, portugués (Brasil), francés, alemán e
-  italiano. Por defecto, el del sistema (inglés si no es uno de esos); quien ya usaba JuTeX
-  sigue en español.
-- Plantillas en los seis idiomas y el idioma de los documentos nuevos (Ajustes y el diálogo
-  «Nuevo proyecto»); la plantilla del artículo se llama «Artículo».
-- El compilador se elige al crear un proyecto (pdfLaTeX, XeLaTeX o LuaLaTeX; por defecto, el de
-  Ajustes, también para las plantillas); con pdfLaTeX el preámbulo usa `fontenc` y `lmodern`
-  en vez de `fontspec`.
-- Ortografía en los seis idiomas con `spellbook` (Rust), mucho más rápida y liviana que nspell.
-- Al abrir, importar o clonar un proyecto, su idioma (babel o polyglossia) decide la
-  ortografía.
-- Un idioma de babel que falta se ofrece instalar desde Registros, como un `.sty`; el TeX
-  Live de JuTeX trae los seis idiomas.
-- Menú de macOS, aviso de Windows y enlace a la documentación de LaTeX en el idioma.
-- README principal en inglés (`README.es.md` en español).
+- Six interface languages: Spanish, English, Portuguese (Brazil), French, German and
+  Italian. By default, the system's (English if it's not one of those); anyone who already
+  used JuTeX stays in Spanish.
+- Templates in all six languages and a language for new documents (Settings and the «New
+  project» dialog); the article template is called «Article».
+- The compiler is chosen when creating a project (pdfLaTeX, XeLaTeX or LuaLaTeX; by default,
+  the one in Settings, templates included); with pdfLaTeX the preamble uses `fontenc` and
+  `lmodern` instead of `fontspec`.
+- Spell checking in all six languages with `spellbook` (Rust), much faster and lighter than
+  nspell.
+- When opening, importing or cloning a project, its language (babel or polyglossia) decides
+  the spell checking.
+- A missing babel language can be installed from Logs and errors, like a missing `.sty`;
+  JuTeX's own TeX Live comes with all six languages.
+- macOS menu, Windows notice and the link to the LaTeX documentation in the chosen language.
+- Main README in English (`README.es.md` in Spanish).
 
-### Arreglos
+### Fixes
 
-- Ajustes: los selectores ya no cortan los textos largos.
+- Settings: selectors no longer cut off long texts.
 
 ## 2.0.0 — 2026-11-14
 
-### Novedades
+### New
 
-- LibreTeX ahora se llama **JuTeX** (_Just a TeX editor_): ya existe otro editor llamado
-  LibreTeX. Logo nuevo con una J, y el ícono de la app con margen, del tamaño de los de las
-  demás apps en la barra de tareas o el Dock. Repositorio `GASDJUGA/jutex`.
-- La primera vez que se abre, JuTeX trae solo lo de LibreTeX: ajustes, lista de proyectos,
-  diccionario personal, su TeX Live, la caché, lo que recordaba la ventana (pestañas, cursor,
-  página del PDF, paneles) y, en cada proyecto, `.libretex/` → `.jutex/` con su historial. Una
-  carpeta `~/LibreTeX` de proyectos se sigue usando. En Windows, si LibreTeX está abierto,
-  JuTeX pide cerrarlo antes.
-- Arch: el paquete `jutex` reemplaza a `libretex`. En macOS y Windows, LibreTeX se borra o
-  desinstala a mano (ver las notas del release).
+- LibreTeX is now called **JuTeX** (_Just a TeX editor_): another editor called LibreTeX
+  already exists. New logo with a J, and the app icon with a margin, the same size as other
+  apps' icons in the taskbar or the Dock. Repository `GASDJUGA/jutex`.
+- The first time it opens, JuTeX brings over everything from LibreTeX by itself: settings,
+  project list, personal dictionary, its TeX Live, the cache, what the window remembered
+  (tabs, cursor, PDF page, panels) and, in each project, `.libretex/` → `.jutex/` with its
+  history. A `~/LibreTeX` projects folder keeps being used. On Windows, if LibreTeX is open,
+  JuTeX asks you to close it first.
+- Arch: the `jutex` package replaces `libretex`. On macOS and Windows, LibreTeX is deleted or
+  uninstalled by hand (see the release notes).
 
-### Arreglos
+### Fixes
 
-- Linux: el selector de nivel de título de la barra del editor ya no sale blanco (con el texto
-  casi invisible) cuando el escritorio usa un tema claro.
+- Linux: the heading-level selector in the editor toolbar no longer shows up white (with
+  almost invisible text) when the desktop uses a light theme.
 
 ## 1.2.2 — 2026-11-13
 
-### Novedades
+### New
 
-- LibreTeX vuelve a abrirse como se cerró: con el mismo tamaño, maximizado o en pantalla
-  completa (también si se cerró minimizado), y en pantalla completa en el mismo monitor (en
-  Wayland, una ventana normal o maximizada va donde la ponga el escritorio). Y vuelve al
-  proyecto que estaba a la vista, en vez de a Inicio.
-- Plegar y desplegar una carpeta del árbol de archivos o una sección del esquema se ve: lo de
-  adentro se encoge o crece y se desvanece, en vez de desaparecer de golpe (sin animación con
-  «reducir animaciones» del sistema).
+- LibreTeX opens again the way it was closed: with the same size, maximized or in full
+  screen (also if it was closed while minimized), and in full screen on the same monitor (on
+  Wayland, a normal or maximized window goes where the desktop puts it). And it goes back to
+  the project that was in view, instead of Home.
+- Folding and unfolding a folder of the file tree or a section of the outline shows: its
+  contents shrink or grow and fade, instead of vanishing at once (no animation with the
+  system's «reduce motion»).
 
-### Arreglos
+### Fixes
 
-- Escribir con un PDF largo abierto ya no se atrasa respecto del teclado: pdf.js volvía a
-  acomodar todas las capas de texto del PDF en cada tecla, y en WebKit cada visor
-  reemplazado (cada compilación, cada zoom) quedaba vivo con sus escuchas.
-- Con dos ventanas, seleccionar texto en una mientras la otra tenía algo seleccionado ya no
-  hace parpadear la selección.
-- Una copia de un proyecto aparece primera en «Abiertos recientemente» (antes quedaba al
-  final, porque nunca se había abierto).
-- Al abrir un menú (Archivo, Editar…) con el mouse, su primera opción ya no queda marcada
-  como si el puntero estuviera encima; abierto con el teclado sí se marca, para recorrerlo con
-  las flechas.
-- La vista previa de fórmulas ya no falla con una prima justo antes del paréntesis de una
-  función de physics (`\cos(\omega t')`, `\div(J(r',t'))`): MathJax no cerraba ese paréntesis.
-- Linux: con WebKitGTK 2.54 y NVIDIA, la pantalla ya no vuelve durante un rato a un cuadro
-  anterior (una línea recién escrita que iba y venía, el esquema que parpadeaba bajo el
-  puntero).
+- Typing with a long PDF open no longer lags behind the keyboard: pdf.js rearranged every
+  text layer of the PDF on each key, and in WebKit every replaced viewer (each compilation,
+  each zoom) stayed alive with its listeners.
+- With two windows, selecting text in one while the other had something selected no longer
+  makes the selection flicker.
+- A copy of a project shows first in «Recently opened» (it used to be last, because it had
+  never been opened).
+- When a menu (File, Edit…) is opened with the mouse, its first option is no longer
+  highlighted as if the pointer were over it; opened with the keyboard it is, to go through
+  it with the arrow keys.
+- The formula preview no longer fails with a prime right before the parenthesis of a physics
+  function (`\cos(\omega t')`, `\div(J(r',t'))`): MathJax didn't close that parenthesis.
+- Linux: with WebKitGTK 2.54 and NVIDIA, the screen no longer goes back to an earlier frame
+  for a while (a line just typed that came and went, the outline flickering under the
+  pointer).
 
-### Problemas conocidos
+### Known issues
 
-- Linux (WebKitGTK 2.54, NVIDIA): al volver a la ventana, a veces la línea activa parpadea
-  un momento (~0,3 s) entre la anterior y la nueva. La página no cambia: es la pantalla.
-- Al escribir un acento con tecla muerta (´ + o), WebKitGTK deja un cuadro sin el acento ni
-  la letra; si la línea está justo al borde, se nota como un salto breve.
+- Linux (WebKitGTK 2.54, NVIDIA): when coming back to the window, the active line sometimes
+  flickers for a moment (~0.3 s) between the old one and the new one. The page doesn't
+  change: it's the screen.
+- When typing an accent with a dead key (´ + o), WebKitGTK shows a frame without the accent
+  or the letter; if the line is right at the edge, it looks like a short jump.
 
 ## 1.2.1 — 2026-11-09
 
-### Novedades
+### New
 
-- Más animaciones, con el estilo de los diálogos (breves, suaves y desactivadas con «reducir
-  animaciones» del sistema): al cambiar de pestaña la vista entra desde el lado de su
-  pestaña; las secciones del inicio (Proyectos, Papelera, Paquetes, Ajustes), los paneles
-  del riel y el historial suben o bajan según su lugar en la lista; los menús y desplegables
-  se abren y se cierran con una transición, y los avisos aparecen y se van con una. Al
-  cambiar entre proyectos abiertos, la vista actual se va apenas se hace clic y la nueva
-  entra entera aunque tarde un momento en cargar.
-- «Cargando proyecto»: si un proyecto tarda en abrirse, se ve el logo con una barra que se
-  completa a medida que carga (el proyecto, sus archivos, el editor y el PDF), como al
-  iniciarse un Mac; el proyecto entra cuando está listo.
+- More animations, in the style of the dialogs (short, smooth and turned off with the
+  system's «reduce motion»): when switching tabs the view comes in from its tab's side; the
+  home sections (Projects, Trash, Packages, Settings), the side-rail panels and the history
+  move up or down according to their place in the list; menus and drop-downs open and close
+  with a transition, and notices appear and leave with one. When switching between open
+  projects, the current view leaves as soon as you click and the new one comes in whole even
+  if it takes a moment to load.
+- «Loading project»: if a project takes a while to open, you see the logo with a bar that
+  fills as it loads (the project, its files, the editor and the PDF), like a Mac starting up;
+  the project comes in when it's ready.
 
-### Arreglos
+### Fixes
 
-- macOS (vale en todas las plataformas): al pasar del inicio a un proyecto la pestaña ya no
-  salta. Mientras el proyecto entraba de lado, la página quedaba 18 px más ancha que la
-  ventana y un desplazamiento del trackpad movía todo, pestañas incluidas, hasta que
-  terminaba la animación.
-- Escribir `\left(` dentro de un par `\left( … \right)`, justo antes de su `\right`, ahora
-  también agrega su `\right)` (antes se tomaba por el cierre de ese par).
-- La llave se cierra sola justo después de `^` o `_` aunque siga algo ya escrito
-  (`x^{|}y`, para agregar un exponente o subíndice que faltaba).
-- Vista previa de matemáticas con comandos definidos con `\DeclareRobustCommand` y con
-  fuentes propias de fontspec (`\newfontfamily`): una fuente de guion, como la r de
-  Griffiths, se ve como `\mathscr`; `\normalfont`, `\bfseries`, `\itshape`… dentro de
-  `\text{}` ya no la rompen.
-- Escribir en el editor es más rápido: cada letra ya no vuelve a dibujar las pestañas, la
-  barra de herramientas ni el esquema, ni vuelve a leer el preámbulo; el esquema y las
-  macros se ponen al día al dejar de escribir (¼ s). Mover el cursor de línea ya no vuelve
-  a dibujar toda la vista del proyecto.
-- Linux: el parpadeo del texto al escribir con WebKitGTK 2.54 y NVIDIA (problema conocido de
-  la 1.2.0) desaparece con el driver de NVIDIA 620; no requiere cambios en la app. Si tras
-  actualizar el driver la app va lenta, hay que reiniciar el equipo (con el módulo viejo
-  cargado, WebKit dibuja sin la GPU).
-- Seguridad: importar un ZIP usa `zip` 9 (antes 8.6), que cierra varias vulnerabilidades con
-  ZIP manipulados (encabezados contradictorios, tamaños falsos, entradas que agotan la
-  memoria). LibreTeX ya validaba cada ruta por su cuenta; ahora además la biblioteca corta
-  la lectura de una entrada que supera su tamaño declarado.
-- Descargas (TeX Live de LibreTeX, índice de CTAN) con `rustls` 0.23.46, que cierra cuatro
-  alertas de TLS.
-- Dependencias de desarrollo y del menú de MathJax (`glob`, `minimatch`, `undici`) en
-  versiones sin vulnerabilidades conocidas.
-- Seguridad (Windows): en la raíz de `C:\` cualquier usuario del PC puede crear carpetas, así
-  que otro usuario podía preparar un `C:\texlive\…` o un `C:\Strawberry\…` con programas que
-  LibreTeX ejecutaba al compilar, antes que MiKTeX. Ahora esas carpetas se usan solo si son
-  tuyas o del sistema (lo que deja un instalador ejecutado como administrador).
+- macOS (applies to all platforms): the tab no longer jumps when going from home to a
+  project. While the project came in from the side, the page was 18 px wider than the window
+  and a trackpad scroll moved everything, tabs included, until the animation ended.
+- Typing `\left(` inside a `\left( … \right)` pair, right before its `\right`, now also adds
+  its `\right)` (it used to be taken as that pair's closer).
+- The brace closes by itself right after `^` or `_` even if something is already written
+  after it (`x^{|}y`, to add a missing superscript or subscript).
+- Math preview with commands defined with `\DeclareRobustCommand` and with your own fontspec
+  fonts (`\newfontfamily`): a script font, like Griffiths' r, shows as `\mathscr`;
+  `\normalfont`, `\bfseries`, `\itshape`… inside `\text{}` no longer break it.
+- Typing in the editor is faster: each letter no longer redraws the tabs, the toolbar or the
+  outline, nor rereads the preamble; the outline and the macros catch up when you stop
+  typing (¼ s). Moving the cursor to another line no longer redraws the whole project view.
+- Linux: the text flicker while typing with WebKitGTK 2.54 and NVIDIA (a known issue in
+  1.2.0) goes away with NVIDIA driver 620; no app changes needed. If the app is slow after
+  updating the driver, restart the computer (with the old module loaded, WebKit draws
+  without the GPU).
+- Security: importing a ZIP uses `zip` 9 (previously 8.6), which closes several
+  vulnerabilities with crafted ZIPs (contradictory headers, fake sizes, entries that exhaust
+  memory). LibreTeX already validated each path on its own; now the library also stops
+  reading an entry that goes past its declared size.
+- Downloads (LibreTeX's TeX Live, the CTAN index) with `rustls` 0.23.46, which closes four
+  TLS alerts.
+- Development dependencies and those of the MathJax menu (`glob`, `minimatch`, `undici`) in
+  versions without known vulnerabilities.
+- Security (Windows): any user of the PC can create folders at the root of `C:\`, so another
+  user could prepare a `C:\texlive\…` or `C:\Strawberry\…` with programs that LibreTeX ran
+  when compiling, before MiKTeX. Now those folders are only used if they belong to you or to
+  the system (what an installer run as administrator leaves).
 
 ## 1.2.0 — 2026-11-07
 
-Primera versión para **macOS** y **Windows**, además de Linux. (La 1.1.0 quedó como tag de la
-línea macOS, sin release propio: lo suyo está aquí.)
+First version for **macOS** and **Windows**, besides Linux. (1.1.0 stayed as a tag of the
+macOS line, without its own release: its changes are here.)
 
 ### macOS
 
-- Atajos con ⌘ y menú propio de macOS; «Salir» guarda antes de cerrar.
-- MacTeX detectado también al abrir la app desde el Dock; el gestor de paquetes da el comando `sudo tlmgr install …` para copiar. El TeX Live de LibreTeX también funciona en macOS.
-- Pegar imágenes (también las que se copian de Vista Previa), pellizco del trackpad en el visor PDF, Papelera de la app (enviar y restaurar) y «Mostrar en Finder».
+- Shortcuts with ⌘ and a proper macOS menu; «Quit» saves before closing.
+- MacTeX is found also when the app is opened from the Dock; the package manager gives the
+  `sudo tlmgr install …` command to copy. LibreTeX's own TeX Live works on macOS too.
+- Paste images (also those copied from Preview), trackpad pinch in the PDF viewer, the app's
+  Trash (send and restore) and «Show in Finder».
 
 ### Windows
 
-- Instalador por usuario, sin administrador.
-- MiKTeX como gestor de paquetes (instalar, desinstalar y actualizar sin administrador), además del TeX Live oficial y el de LibreTeX.
-- Sin ventanas de consola al compilar, y cancelar termina todos los procesos de la compilación.
-- Pegar capturas, arrastrar y soltar desde el Explorador, «Mostrar en el Explorador», archivos con CRLF conservados al guardar.
+- Per-user installer, without administrator rights.
+- MiKTeX as package manager (install, uninstall and update without administrator rights),
+  besides the official TeX Live and LibreTeX's own.
+- No console windows when compiling, and cancelling ends every process of the compilation.
+- Paste screenshots, drag and drop from Explorer, «Show in Explorer», files with CRLF kept as
+  they are when saving.
 
-### En todas las plataformas
+### On all platforms
 
-- El esquema del archivo se pliega: capítulos y secciones se colapsan y expanden (con el mouse o con ← →), y se recuerda por proyecto.
-- Buscar distingue mayúsculas por defecto, en el editor y en el proyecto («Aa» lo cambia).
-- Sin autocompletado después de `\\` (salto de línea).
-- Transición suave al abrir un proyecto o volver al inicio.
-- Linux: arrastrar una pestaña fuera de la ventana abre una ventana nueva también en Wayland.
+- The file outline folds: chapters and sections collapse and expand (with the mouse or with
+  ← →), remembered per project.
+- Search is case-sensitive by default, in the editor and in the project («Aa» switches it).
+- No autocompletion after `\\` (line break).
+- Smooth transition when opening a project or going back home.
+- Linux: dragging a tab out of the window opens a new window on Wayland too.
 
-### Problema conocido (Linux)
+### Known issue (Linux)
 
-Con **WebKitGTK 2.54** y una tarjeta **NVIDIA** en Wayland, el texto del editor puede parpadear al escribir (es de WebKitGTK; con la 2.52 no pasa). Mientras se arregla: `LIBRETEX_SAFE_RENDERER=1 libretex` lo quita, pero dibuja sin la GPU y va más lento.
+With **WebKitGTK 2.54** and an **NVIDIA** card on Wayland, the editor text may flicker while
+typing (it comes from WebKitGTK; 2.52 doesn't do it). Until it's fixed:
+`LIBRETEX_SAFE_RENDERER=1 libretex` removes it, but draws without the GPU and is slower.
 
 ## 1.0.0 — 2026-10-26
 
-Primera versión estable, para Linux (Arch y AppImage).
+First stable version, for Linux (Arch and AppImage).
 
-- Proyectos: plantillas, abrir carpeta, importar ZIP (también de Overleaf) o desde GitHub; papelera.
-- Editor: CodeMirror con autocompletado (comandos del documento y de los paquetes cargados, `\ref`, `\cite`, rutas), revisión en vivo, ortografía es/en y vista previa de matemáticas.
-- Compilación con latexmk (pdfLaTeX, XeLaTeX, LuaLaTeX), errores enlazados al código, visor PDF con SyncTeX.
-- Gestor de paquetes (TeX Live de LibreTeX, del sistema o de pacman).
-- Historial local, respaldo con Git y GitHub, exportar PDF y ZIP.
-- Varios proyectos en pestañas y en varias ventanas; temas de la interfaz.
-- Pegar imágenes del portapapeles (capturas) como figuras.
+- Projects: templates, open a folder, import a ZIP (Overleaf's too) or from GitHub; trash.
+- Editor: CodeMirror with autocompletion (the document's commands and those of the loaded
+  packages, `\ref`, `\cite`, paths), live checking, Spanish/English spell checking and a
+  math preview.
+- Compilation with latexmk (pdfLaTeX, XeLaTeX, LuaLaTeX), errors linked to the code, PDF
+  viewer with SyncTeX.
+- Package manager (LibreTeX's own TeX Live, the system's, or pacman's).
+- Local history, backup with Git and GitHub, export to PDF and ZIP.
+- Several projects in tabs and in several windows; interface themes.
+- Paste images from the clipboard (screenshots) as figures.

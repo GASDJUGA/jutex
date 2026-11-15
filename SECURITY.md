@@ -1,19 +1,19 @@
-# Seguridad
+# Security
 
-JuTeX abre proyectos, ZIP y PDF que pueden venir de otras personas, y compila con
-programas del sistema. Si encuentras una forma de que un proyecto ajeno ejecute programas,
-lea o escriba fuera de su carpeta, o use la red sin que el usuario lo pida, repórtala en
-privado.
+JuTeX opens projects, ZIPs and PDFs that may come from other people, and compiles them with
+programs on your system. If you find a way for someone else's project to run programs, read
+or write outside its folder, or use the network without the user asking for it, please
+report it privately.
 
-## Cómo reportar
+## How to report
 
-Usa [«Report a vulnerability»](https://github.com/GASDJUGA/jutex/security/advisories/new)
-en la pestaña **Security** del repositorio (aviso privado de GitHub). No abras un issue
-público para una vulnerabilidad.
+Use [«Report a vulnerability»](https://github.com/GASDJUGA/jutex/security/advisories/new)
+in the repository's **Security** tab (a private GitHub advisory). Don't open a public issue
+for a vulnerability.
 
-Incluye, si puedes: la versión de JuTeX y el sistema, los pasos para reproducirlo (un
-proyecto o ZIP mínimo sirve) y qué consigue un atacante.
+If you can, include: the JuTeX version and your system, the steps to reproduce it (a minimal
+project or ZIP is enough) and what an attacker gains.
 
-## Versiones con arreglos
+## Supported versions
 
-Solo la última versión publicada recibe arreglos de seguridad.
+Only the latest published version receives security fixes.

@@ -484,8 +484,13 @@ jutex/
 - Una rama por fase: `fase-N-nombre-corto`.
 - **Cada ítem completado del plan = un commit + `git push` inmediato.** No acumules cambios
   sin subir.
-- Mensajes en español con Conventional Commits: `feat(editor): …`, `fix(compile): …`,
-  `test(latexLog): …`, `docs: …`, `chore: …`.
+- **Todo lo que se ve en GitHub va en inglés** (pedido del usuario el 2026-11-15): mensajes
+  de commit (Conventional Commits: `feat(editor): …`, `fix(compile): …`, `test(latexLog): …`,
+  `docs: …`, `chore: …`), títulos y descripciones de PR, notas de los releases,
+  `CHANGELOG.md`, `README.md`, `CONTRIBUTING.md`, `SECURITY.md`, la descripción del
+  repositorio y las respuestas en issues. Quedan en español: `README.es.md`, este archivo y
+  los diseños y planes de `docs/superpowers/`. Con el usuario se sigue hablando en español.
+  Los commits y PR anteriores al 2026-11-15 quedan como están (no se reescribe lo subido).
 - Al terminar una fase: `gh pr create` con resumen y checklist de aceptación; cuando el CI
   esté verde, `gh pr merge --merge --delete-branch`, y luego tag `v0.N.0` con
   `git tag` + `git push --tags`.
@@ -499,8 +504,9 @@ jutex/
   ejemplo («ana», «UsuarioWin», `~/JuTeX`). El repositorio privado anterior quedó archivado
   como `libretex-privado` (con los PR #1–#29).
 - **Cada release lleva sus notas de cambios** (pedido del usuario): antes de crearlo, escribir
-  `docs/releases/<versión>.md` (cómo instalar en cada plataforma, **«Novedades respecto de
-  <versión anterior publicada>»** por plataforma y comunes, arreglos y problemas conocidos) y
+  `docs/releases/<versión>.md`, en inglés (cómo instalar en cada plataforma, **«What's new
+  since <versión anterior publicada>»** por plataforma y comunes, arreglos y problemas
+  conocidos) y
   agregar esa versión arriba de todo en `CHANGELOG.md` (lo nuevo respecto de la anterior, con
   fecha). El release se crea con `gh release create v<versión> --notes-file
   docs/releases/<versión>.md`; si las notas cambian después, `gh release edit v<versión>
@@ -907,6 +913,10 @@ confírmalo con `grep -rnE 'cfg\((not\()?(target_os|unix|windows)' src-tauri/src
   sistema (alemán y inglés). Revisados desde Linux el `.dmg` y el `.exe`: versión 2.1.0
   (arm64 con firma ad hoc; x64), con plantillas y diccionarios idénticos a los de
   `91ef03d`. La línea Windows no dejó entrada aquí; el usuario lo probó en Windows.
+  Después (pedido del usuario: «todo lo de GitHub en inglés»): descripción del repositorio,
+  `CHANGELOG.md`, `CONTRIBUTING.md`, `SECURITY.md` y las notas de todos los releases
+  (`docs/releases/*.md`, también la 1.0.0, que no tenía archivo) en inglés; los releases
+  publicados se editaron con esas notas.
 - macOS: **2.1.0 revisada en el Mac** (2026-11-15, pedido del usuario; `main` en `91ef03d`,
   PR #26 y #27). Pasan `pnpm lint`/`typecheck`/`test` (678) y `cargo fmt`/`clippy`/`test`
   (285): compila en macOS lo propio de este sistema que Linux no pudo probar. Idioma del
@@ -2904,4 +2914,5 @@ confírmalo con `grep -rnE 'cfg\((not\()?(target_os|unix|windows)' src-tauri/src
 | 2026-11-14 | Plantillas con una copia completa por idioma (`templates/<id>/<idioma>/`) | Elegido por el usuario (enfoque A): cada copia compila y se revisa sola; un test vigila que tengan la misma estructura |
 | 2026-11-14 | Ortografía en Rust con el crate `spellbook` 0.4 (MPL-2.0); diccionarios `dictionary-pt` 4 (LGPL-3.0 o MPL-2.0), `dictionary-fr` 3 (MPL-2.0), `dictionary-de` 3 (GPL-2.0 o GPL-3.0), `dictionary-it` 2 (GPL-3.0) como recursos de Tauri desde `node_modules` | Decidido por el usuario: nspell no cargaba pt ni it («Too many properties to enumerate») y el francés tardaba 2,6 s y 310 MB; spellbook carga los seis en 0,01–0,08 s y 2–23 MB. El CI de Rust instala `node_modules` para los recursos |
 | 2026-11-14 | Al abrir un proyecto sin `project.json`, su babel o polyglossia decide la ortografía; un idioma sin diccionario la apaga | Que un documento ajeno se revise en su idioma sin configurar nada, y no quede todo en rojo |
+| 2026-11-15 | Todo lo que se ve en GitHub en inglés (commits, PR, releases, CHANGELOG, README, CONTRIBUTING, SECURITY, descripción); `README.es.md`, `CLAUDE.md` y los planes internos en español | Pedido del usuario (más alcance, como el README en inglés). Lo interno lo leen el usuario y las tres líneas en español; los commits y PR viejos no se reescriben (prohibido reescribir lo subido) |
 | 2026-11-15 | El compilador se elige al crear el proyecto y las plantillas (escritas para XeLaTeX) se adaptan al elegido; con pdfLaTeX, `fontenc` + `lmodern` en vez de `fontspec` | Pedido del usuario. Una copia por compilador triplicaría las 24 plantillas; la diferencia es una línea del preámbulo. `lmodern` (paquete `lm`, ya en el TeX Live de JuTeX) da fuentes vectoriales con T1 |
