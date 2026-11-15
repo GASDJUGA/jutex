@@ -893,6 +893,25 @@ confírmalo con `grep -rnE 'cfg\((not\()?(target_os|unix|windows)' src-tauri/src
 
 ## 11. Estado actual
 
+- macOS: **2.1.0 revisada en el Mac** (2026-11-15, pedido del usuario; `main` en `91ef03d`,
+  PR #26 y #27). Pasan `pnpm lint`/`typecheck`/`test` (678) y `cargo fmt`/`clippy`/`test`
+  (285): compila en macOS lo propio de este sistema que Linux no pudo probar. Idioma del
+  sistema: `NSLocale.preferredLanguages` da `["es-CL"]` en este Mac (→ `es`); con
+  `-AppleLanguages '(de-DE)'` (sirve para probar otro idioma sin cambiar el del Mac) da
+  `de-DE`. Menú de macOS con sus textos en los seis idiomas (y en inglés para los demás) y
+  rehecho al cambiar el idioma en Ajustes (`commands/settings.rs`). La `.app` de producción
+  en alemán con un HOME vacío arranca y guarda `"locale": "system"` (usuario nuevo); en
+  WKWebView la interfaz sale en alemán y en portugués según `-AppleLanguages`. Los seis
+  diccionarios van en `JuTeX.app/Contents/Resources/dictionaries`. El test ignorado
+  `todas_las_plantillas_compilan` pasa con MacTeX: 90 proyectos (24 plantillas y 6 en blanco
+  × pdfLaTeX, XeLaTeX y LuaLaTeX) en 167 s. `JuTeX_2.1.0_aarch64.dmg` (10,7 MiB, versión
+  2.1.0, firma ad hoc válida, `hdiutil verify` correcto, SHA-256 `c4f43f1c…20bd5e`) construido
+  desde `91ef03d` (el commit del borrador) y subido al borrador `v2.1.0`, que tiene ya los
+  cuatro archivos. **Ojo al probar en el Mac:** el usuario ya usa JuTeX, y WKWebView guarda
+  en el `~/Library/WebKit/org.jutex.app` real aunque se cambie `HOME`: una prueba con un HOME
+  falso escribiría sobre sus pestañas. Para la prueba se respaldó esa carpeta y se repuso
+  idéntica (mismas sumas). Sin probar por el usuario: el menú en otro idioma y la 2.1.0 con
+  sus datos.
 - Linux: **compilador al crear un proyecto** (pedido del usuario el 2026-11-15, antes de
   publicar la 2.1.0; rama `compilador-al-crear`, tras fusionar el PR #26). El diálogo «Nuevo
   proyecto» tiene un selector «Compilador» (pdfLaTeX, XeLaTeX, LuaLaTeX) que empieza en el
