@@ -1,29 +1,29 @@
-# Contribuir a JuTeX
+# Contributing to JuTeX
 
-¡Gracias por el interés! JuTeX es un editor de LaTeX de escritorio, 100 % local, hecho con
-Tauri 2 (Rust) y React + TypeScript.
+Thanks for your interest! JuTeX is a 100 % local desktop LaTeX editor, built with Tauri 2
+(Rust) and React + TypeScript.
 
-## Antes de empezar
+## Before you start
 
-- Para errores e ideas, abre un [issue](https://github.com/GASDJUGA/jutex/issues) antes de
-  un cambio grande, así lo conversamos.
-- Las vulnerabilidades no van en issues: mira [SECURITY.md](SECURITY.md).
+- For bugs and ideas, open an [issue](https://github.com/GASDJUGA/jutex/issues) before a
+  big change, so we can talk it over.
+- Vulnerabilities don't go in issues: see [SECURITY.md](SECURITY.md).
 
-## Entorno
+## Setup
 
-Requisitos por sistema en el [README](README.md#desarrollo): Rust (con `rustup`), Node 26 y
-pnpm (la versión fijada en `packageManager`), y las dependencias de Tauri 2 de tu sistema.
-Una distribución TeX es opcional para desarrollar, pero hace falta para los tests de
-compilación real (se saltan si no hay TeX).
+Requirements for each system are in the [README](README.md#development): Rust (with
+`rustup`), Node 26 and pnpm (the version pinned in `packageManager`), and the Tauri 2
+dependencies for your system. A TeX distribution is optional for development, but the
+real-compilation tests need one (they are skipped without TeX).
 
 ```sh
 pnpm install
 pnpm tauri dev
 ```
 
-## Antes de mandar un PR
+## Before sending a PR
 
-Todo esto debe pasar (el CI lo corre en Linux, macOS y Windows):
+All of this must pass (CI runs it on Linux, macOS and Windows):
 
 ```sh
 pnpm lint
@@ -34,17 +34,19 @@ cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings
 cargo test --manifest-path src-tauri/Cargo.toml
 ```
 
-- Una rama por cambio y un PR a `main` (que está protegida: solo entra por PR con el CI verde).
-- Mensajes en español con [Conventional Commits](https://www.conventionalcommits.org/):
-  `feat(editor): …`, `fix(compile): …`, `docs: …`.
-- La lógica no trivial lleva tests.
-- Lo propio de un sistema va detrás de `#[cfg(...)]` o en `src-tauri/src/platform/` (Rust) y
-  en `src/lib/platform.ts` (interfaz), sin romper los otros.
-- La interfaz está en español e inglés (`src/i18n/es.json` y `en.json`, con las mismas
-  claves).
-- Sin datos personales en commits, logs de prueba ni capturas.
+- One branch per change and a PR to `main` (which is protected: changes only go in through a
+  PR with green CI).
+- Commit messages and PRs in English, with
+  [Conventional Commits](https://www.conventionalcommits.org/): `feat(editor): …`,
+  `fix(compile): …`, `docs: …`.
+- Non-trivial logic comes with tests.
+- Anything specific to one system goes behind `#[cfg(...)]` or in `src-tauri/src/platform/`
+  (Rust) and in `src/lib/platform.ts` (interface), without breaking the others.
+- The interface comes in six languages (`src/i18n/<language>.json`, all with the same keys;
+  the list is in `src/lib/languages.json`). Corrections to the translations are welcome.
+- No personal data in commits, test logs or screenshots.
 
-## Licencia
+## License
 
-Al contribuir aceptas que tu aporte se publique bajo la licencia del proyecto,
+By contributing, you agree that your contribution is published under the project's license,
 [GPL-3.0-or-later](LICENSE).
