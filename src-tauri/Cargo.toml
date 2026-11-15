@@ -1,6 +1,6 @@
 [package]
 name = "jutex"
-version = "2.0.0"
+version = "2.1.0"
 description = "Editor LaTeX local estilo Overleaf"
 authors = ["JuTeX contributors"]
 license = "GPL-3.0-or-later"
@@ -38,6 +38,7 @@ ureq = "3.4"
 sha2 = "0.10"
 ignore = "0.4.33"
 git2 = { version = "0.21.0", default-features = false, features = ["vendored-libgit2"] }
+spellbook = "0.4"
 
 [target.'cfg(target_os = "linux")'.dependencies]
 # Already part of Tauri on Linux (same version): reading images from the clipboard.
@@ -55,7 +56,7 @@ objc2-core-text = { version = "0.3", default-features = false, features = ["std"
 objc2-core-foundation = { version = "0.3", default-features = false, features = ["std", "CFArray", "CFDictionary", "CFNumber", "CFSet", "CFString"] }
 # Already part of the tree on macOS (`trash`, Tauri): the trash through NSFileManager and the
 # machine's memory.
-objc2-foundation = { version = "0.3", default-features = false, features = ["std", "NSData", "NSDictionary", "NSError", "NSArray", "NSEnumerator", "NSFileManager", "NSProcessInfo", "NSString", "NSURL"] }
+objc2-foundation = { version = "0.3", default-features = false, features = ["std", "NSData", "NSDictionary", "NSError", "NSArray", "NSEnumerator", "NSFileManager", "NSLocale", "NSProcessInfo", "NSString", "NSURL"] }
 
 [target.'cfg(windows)'.dependencies]
 # Already part of the tree on Windows (Tauri): programs without a console window and runs in

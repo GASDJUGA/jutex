@@ -35,6 +35,10 @@ const WARNING = /^(LaTeX|LaTeX Font|Package ([\w.-]+)|Class ([\w.-]+)) Warning: 
 const BOX =
   /^(Overfull|Underfull) \\([hv])box (.*?)(?: in paragraph at lines (\d+)--(\d+)| detected at line (\d+)| has occurred while \\output is active)/;
 const MISSING_FILE = /File [`'‘]([^'’]+)['’] not found/;
+/** A babel language that is not installed: its `.ldf` is what is missing. */
+const MISSING_LANGUAGE = /Package babel Error: Unknown option [`'‘]([\w-]+)['’]/;
+/** TeX breaks log lines at this many characters (`max_print_line`). */
+const MAX_PRINT_LINE = 79;
 const CONTEXT_LINE = /^l\.(\d+)/;
 /** Noise that only repeats a real error, or summaries handled by latexmk reruns. */
 const DERIVED_ERROR = /Emergency stop|==> Fatal error occurred/;
@@ -80,6 +84,28 @@ class FileStack {
   }
 }
 
+/** What is missing according to an error message (a file, or a babel language's `.ldf`). */
+function missingOf(message: string): Pick<LogEntry, "kind" | "missingFile"> {
+  const file = MISSING_FILE.exec(message)?.[1];
+  const language = MISSING_LANGUAGE.exec(message)?.[1];
+  const missing = file ?? (language ? `${language}.ldf` : undefined);
+  return missing ? { kind: "missingFile", missingFile: missing } : {};
+}
+
+/**
+ * The message that starts at `lines[start]`, with the lines TeX broke at
+ * `MAX_PRINT_LINE` characters joined back; `next` is the line after it.
+ */
+function unwrap(lines: string[], start: number): { text: string; next: number } {
+  let text = lines[start];
+  let i = start;
+  while (lines[i].length === MAX_PRINT_LINE && i + 1 < lines.length && lines[i + 1] !== "") {
+    i++;
+    text += lines[i];
+  }
+  return { text, next: i + 1 };
+}
+
 /** Following lines of an error, up to the first blank line (at most `max`). */
 function contextAfter(lines: string[], start: number, max = 8): string[] {
   const context: string[] = [];
@@ -100,16 +126,15 @@ export function parseLatexLog(log: string): ParsedLog {
     let m: RegExpExecArray | null;
 
     if ((m = FILE_LINE.exec(text))) {
-      const context = contextAfter(lines, i + 1);
-      const message = clean(m[3]);
-      const missing = MISSING_FILE.exec(message);
+      const { text: full, next } = unwrap(lines, i);
+      const message = clean(FILE_LINE.exec(full)?.[3] ?? m[3]);
       entries.push({
         severity: "error",
         message,
         file: normalizeFile(m[1]),
         line: Number(m[2]),
-        context,
-        ...(missing ? { kind: "missingFile" as const, missingFile: missing[1] } : {}),
+        context: contextAfter(lines, next),
+        ...missingOf(message),
       });
       continue;
     }
@@ -117,15 +142,14 @@ export function parseLatexLog(log: string): ParsedLog {
     if ((m = BANG.exec(text))) {
       const context = contextAfter(lines, i + 1);
       const lineMatch = context.map((c) => CONTEXT_LINE.exec(c)).find(Boolean);
-      const message = clean(m[1]);
-      const missing = MISSING_FILE.exec(message);
+      const message = clean(BANG.exec(unwrap(lines, i).text)?.[1] ?? m[1]);
       entries.push({
         severity: "error",
         message,
         file: files.top(),
         line: lineMatch ? Number(lineMatch[1]) : null,
         context,
-        ...(missing ? { kind: "missingFile" as const, missingFile: missing[1] } : {}),
+        ...missingOf(message),
       });
       continue;
     }

@@ -45,7 +45,7 @@ describe("proyectos que no son de confianza", () => {
   });
 
   it("los proyectos creados en JuTeX no muestran el aviso", async () => {
-    const created = await backend.createProject("Nuevo", null);
+    const created = await backend.createProject("Nuevo", null, "es");
     await backend.createFile(created.id, ".latexmkrc");
     expect(created.trusted).toBe(true);
     render(<App />);

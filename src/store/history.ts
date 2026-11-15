@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { translate, useI18n } from "../i18n";
 import { getBackend } from "../lib/tauri";
 import { useBackup } from "./backup";
 import { useBuffers } from "./buffers";
@@ -15,8 +16,8 @@ type Source = {
   list: (id: string) => Promise<HistoryEntry[]>;
   changes: (id: string, version: string) => Promise<FileChange[]>;
   file: (id: string, version: string, path: string) => Promise<VersionFile>;
-  restoreFile: (id: string, version: string, path: string) => Promise<void>;
-  restore: (id: string, version: string) => Promise<string[]>;
+  restoreFile: (id: string, version: string, path: string, before: string) => Promise<void>;
+  restore: (id: string, version: string, before: string) => Promise<string[]>;
 };
 
 const backupEntry = (b: Backup): HistoryEntry => ({
@@ -35,15 +36,15 @@ function api(source: HistorySource): Source {
         list: (id) => backend.historyList(id),
         changes: (id, v) => backend.historyChanges(id, v),
         file: (id, v, path) => backend.historyFile(id, v, path),
-        restoreFile: (id, v, path) => backend.historyRestoreFile(id, v, path),
-        restore: (id, v) => backend.historyRestore(id, v),
+        restoreFile: (id, v, path, before) => backend.historyRestoreFile(id, v, path, before),
+        restore: (id, v, before) => backend.historyRestore(id, v, before),
       }
     : {
         list: async (id) => (await backend.backupList(id)).map(backupEntry),
         changes: (id, v) => backend.backupChanges(id, v),
         file: (id, v, path) => backend.backupFile(id, v, path),
-        restoreFile: (id, v, path) => backend.backupRestoreFile(id, v, path),
-        restore: (id, v) => backend.backupRestore(id, v),
+        restoreFile: (id, v, path, before) => backend.backupRestoreFile(id, v, path, before),
+        restore: (id, v, before) => backend.backupRestore(id, v, before),
       };
 }
 
@@ -188,7 +189,11 @@ export const useHistory = create<HistoryState>()((set, get) => ({
     try {
       // What is typed and not saved yet goes into the version kept before restoring.
       await useBuffers.getState().saveAll();
-      await api(get().source).restoreFile(projectId, selected, selectedFile);
+      // The version that keeps what is there now is named in the interface's language.
+      const before = translate(useI18n.getState().locale, "history.beforeRestoreFile", {
+        path: selectedFile,
+      });
+      await api(get().source).restoreFile(projectId, selected, selectedFile, before);
       await reloadChangedFiles(projectId, [selectedFile]);
       await get().load(projectId);
     } finally {
@@ -203,7 +208,8 @@ export const useHistory = create<HistoryState>()((set, get) => ({
     set({ restoring: true });
     try {
       await useBuffers.getState().saveAll();
-      const changed = await api(get().source).restore(projectId, selected);
+      const before = translate(useI18n.getState().locale, "history.beforeRestoreProject");
+      const changed = await api(get().source).restore(projectId, selected, before);
       await reloadChangedFiles(projectId, changed);
       await get().load(projectId);
       return changed;

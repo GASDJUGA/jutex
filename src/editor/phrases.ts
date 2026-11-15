@@ -31,6 +31,130 @@ const es: Record<string, string> = {
   "$ unchanged lines": "$ líneas sin cambios",
 };
 
+/** Portuguese (Brazil) texts for CodeMirror's built-in UI. */
+const pt: Record<string, string> = {
+  Find: "Localizar",
+  Replace: "Substituir",
+  next: "próximo",
+  previous: "anterior",
+  all: "tudo",
+  "match case": "diferenciar maiúsculas",
+  "by word": "palavra inteira",
+  regexp: "expressão regular",
+  replace: "substituir",
+  "replace all": "substituir tudo",
+  close: "fechar",
+  "current match": "ocorrência atual",
+  "replaced $ matches": "$ ocorrências substituídas",
+  "replaced match on line $": "ocorrência substituída na linha $",
+  "on line": "na linha",
+  "Go to line": "Ir para a linha",
+  go: "ir",
+  "Folded lines": "Linhas recolhidas",
+  "Unfolded lines": "Linhas expandidas",
+  to: "até",
+  "folded code": "código recolhido",
+  unfold: "expandir",
+  "Fold line": "Recolher linha",
+  "Unfold line": "Expandir linha",
+  Completions: "Sugestões",
+  "$ unchanged lines": "$ linhas sem alterações",
+};
+
+/** French texts for CodeMirror's built-in UI. */
+const fr: Record<string, string> = {
+  Find: "Rechercher",
+  Replace: "Remplacer",
+  next: "suivant",
+  previous: "précédent",
+  all: "tout",
+  "match case": "respecter la casse",
+  "by word": "mot entier",
+  regexp: "expression régulière",
+  replace: "remplacer",
+  "replace all": "tout remplacer",
+  close: "fermer",
+  "current match": "occurrence actuelle",
+  "replaced $ matches": "$ occurrences remplacées",
+  "replaced match on line $": "occurrence remplacée à la ligne $",
+  "on line": "à la ligne",
+  "Go to line": "Aller à la ligne",
+  go: "aller",
+  "Folded lines": "Lignes repliées",
+  "Unfolded lines": "Lignes dépliées",
+  to: "à",
+  "folded code": "code replié",
+  unfold: "déplier",
+  "Fold line": "Replier la ligne",
+  "Unfold line": "Déplier la ligne",
+  Completions: "Suggestions",
+  "$ unchanged lines": "$ lignes inchangées",
+};
+
+/** German texts for CodeMirror's built-in UI. */
+const de: Record<string, string> = {
+  Find: "Suchen",
+  Replace: "Ersetzen",
+  next: "nächstes",
+  previous: "vorheriges",
+  all: "alle",
+  "match case": "Groß-/Kleinschreibung",
+  "by word": "ganzes Wort",
+  regexp: "regulärer Ausdruck",
+  replace: "ersetzen",
+  "replace all": "alle ersetzen",
+  close: "schließen",
+  "current match": "aktueller Treffer",
+  "replaced $ matches": "$ Treffer ersetzt",
+  "replaced match on line $": "Treffer in Zeile $ ersetzt",
+  "on line": "in Zeile",
+  "Go to line": "Zu Zeile gehen",
+  go: "los",
+  "Folded lines": "Eingeklappte Zeilen",
+  "Unfolded lines": "Ausgeklappte Zeilen",
+  to: "bis",
+  "folded code": "eingeklappter Code",
+  unfold: "ausklappen",
+  "Fold line": "Zeile einklappen",
+  "Unfold line": "Zeile ausklappen",
+  Completions: "Vorschläge",
+  "$ unchanged lines": "$ unveränderte Zeilen",
+};
+
+/** Italian texts for CodeMirror's built-in UI. */
+const it: Record<string, string> = {
+  Find: "Trova",
+  Replace: "Sostituisci",
+  next: "successivo",
+  previous: "precedente",
+  all: "tutto",
+  "match case": "maiuscole/minuscole",
+  "by word": "parola intera",
+  regexp: "espressione regolare",
+  replace: "sostituisci",
+  "replace all": "sostituisci tutto",
+  close: "chiudi",
+  "current match": "occorrenza attuale",
+  "replaced $ matches": "$ occorrenze sostituite",
+  "replaced match on line $": "occorrenza sostituita alla riga $",
+  "on line": "alla riga",
+  "Go to line": "Vai alla riga",
+  go: "vai",
+  "Folded lines": "Righe compresse",
+  "Unfolded lines": "Righe espanse",
+  to: "a",
+  "folded code": "codice compresso",
+  unfold: "espandi",
+  "Fold line": "Comprimi riga",
+  "Unfold line": "Espandi riga",
+  Completions: "Suggerimenti",
+  "$ unchanged lines": "$ righe invariate",
+};
+
+/** CodeMirror's texts by language (English is CodeMirror's own). */
+export const PHRASES: Partial<Record<Locale, Record<string, string>>> = { es, pt, fr, de, it };
+
 export function editorPhrases(locale: Locale) {
-  return locale === "es" ? EditorState.phrases.of(es) : [];
+  const phrases = PHRASES[locale];
+  return phrases ? EditorState.phrases.of(phrases) : [];
 }

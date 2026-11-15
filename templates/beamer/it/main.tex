@@ -1,0 +1,53 @@
+\documentclass[aspectratio=169]{beamer}
+
+% Lingua e caratteri (compilare con XeLaTeX)
+\usepackage{fontspec}
+\usepackage[italian]{babel}
+\usepackage{amsmath}
+
+\usetheme{default}
+\setbeamertemplate{navigation symbols}{}
+\setbeamertemplate{footline}[frame number]
+\definecolor{accento}{HTML}{6B5CE7}
+\setbeamercolor{structure}{fg=accento}
+
+\title{Titolo della presentazione}
+\subtitle{Sottotitolo}
+\author{Nome Cognome}
+\institute{Istituzione}
+\date{\today}
+
+\begin{document}
+
+\begin{frame}
+  \titlepage
+\end{frame}
+
+\begin{frame}{Indice}
+  \tableofcontents
+\end{frame}
+
+\section{Motivazione}
+
+\begin{frame}{Motivazione}
+  \begin{itemize}
+    \item<1-> Primo punto.
+    \item<2-> Secondo punto, che compare dopo.
+  \end{itemize}
+\end{frame}
+
+\section{Risultati}
+
+\begin{frame}{Un risultato}
+  \begin{block}{Equazione delle onde}
+    \[
+      \frac{\partial^2 u}{\partial t^2} = c^2 \nabla^2 u
+    \]
+  \end{block}
+\end{frame}
+
+\begin{frame}
+  \centering\Large Grazie!
+\end{frame}
+
+\end{document}

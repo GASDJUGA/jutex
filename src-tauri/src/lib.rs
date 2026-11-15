@@ -4,11 +4,13 @@ pub mod error;
 pub mod files;
 pub mod gitops;
 pub mod history;
+pub mod lang;
 pub mod migrate;
 pub mod platform;
 pub mod projects;
 pub mod settings;
 pub mod spell;
+pub mod spellcheck;
 pub mod state;
 pub mod tex;
 pub mod util;
@@ -46,8 +48,8 @@ pub fn run() {
             #[cfg(target_os = "macos")]
             {
                 let locale = settings::load(&state.settings_file)
-                    .map(|s| s.locale)
-                    .unwrap_or_default();
+                    .map(|s| s.effective_locale(state.system_locale))
+                    .unwrap_or_else(|_| state.system_locale.to_owned());
                 app.set_menu(platform::menu::build(app.handle(), &locale)?)?;
                 app.on_menu_event(|app, event| {
                     platform::menu::on_menu_event(app, event.id().as_ref())
@@ -149,6 +151,8 @@ pub fn run() {
             commands::spell::personal_dictionary,
             commands::spell::add_to_dictionary,
             commands::spell::remove_from_dictionary,
+            commands::spell::spell_wrong,
+            commands::spell::spell_suggest,
             commands::files::search_project,
             commands::files::replace_in_project,
             commands::tex::tex_status,

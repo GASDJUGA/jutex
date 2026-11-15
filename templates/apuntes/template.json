@@ -1,9 +1,20 @@
 {
   "order": 2,
-  "name": { "es": "Apuntes de curso", "en": "Course notes" },
+  "name": {
+    "es": "Apuntes de curso",
+    "en": "Course notes",
+    "pt": "Anotações de curso",
+    "fr": "Notes de cours",
+    "de": "Vorlesungsmitschrift",
+    "it": "Appunti del corso"
+  },
   "description": {
     "es": "Capítulos en archivos separados, teoremas, definiciones y ejemplos.",
-    "en": "Chapters in separate files, theorems, definitions and examples."
+    "en": "Chapters in separate files, theorems, definitions and examples.",
+    "pt": "Capítulos em arquivos separados, teoremas, definições e exemplos.",
+    "fr": "Chapitres dans des fichiers séparés, théorèmes, définitions et exemples.",
+    "de": "Kapitel in eigenen Dateien, Sätze, Definitionen und Beispiele.",
+    "it": "Capitoli in file separati, teoremi, definizioni ed esempi."
   },
   "mainFile": "main.tex",
   "compiler": "xelatex"

@@ -1,9 +1,20 @@
 {
   "order": 3,
-  "name": { "es": "Tarea / informe", "en": "Homework / report" },
+  "name": {
+    "es": "Tarea / informe",
+    "en": "Homework / report",
+    "pt": "Tarefa / relatório",
+    "fr": "Devoir / rapport",
+    "de": "Hausaufgabe / Bericht",
+    "it": "Compito / relazione"
+  },
   "description": {
     "es": "Encabezado con curso y estudiante, preguntas numeradas y respuestas.",
-    "en": "Header with course and student, numbered questions and answers."
+    "en": "Header with course and student, numbered questions and answers.",
+    "pt": "Cabeçalho com curso e estudante, perguntas numeradas e respostas.",
+    "fr": "En-tête avec cours et étudiant, questions numérotées et réponses.",
+    "de": "Kopfzeile mit Kurs und Name, nummerierte Fragen und Antworten.",
+    "it": "Intestazione con corso e studente, domande numerate e risposte."
   },
   "mainFile": "main.tex",
   "compiler": "xelatex"

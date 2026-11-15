@@ -4,12 +4,14 @@ use crate::error::{AppError, AppResult};
 
 pub mod clipboard;
 pub mod fonts;
+pub mod locale;
 #[cfg(target_os = "macos")]
 pub mod menu;
 #[cfg(windows)]
 pub mod old_app;
 pub mod owner;
 pub mod process;
+pub mod texts;
 #[cfg(target_os = "macos")]
 pub mod trash;
 #[cfg(target_os = "linux")]

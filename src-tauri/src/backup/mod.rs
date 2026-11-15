@@ -522,8 +522,8 @@ pub fn file_at(root: &Path, id: &str, path: &str) -> AppResult<VersionFile> {
 }
 
 /// What is on disk now becomes a backup before restoring (if it changed), so nothing is lost.
-fn keep_current(repo: &Repository, root: &Path, author: &Identity, what: &str) -> AppResult<()> {
-    commit_all(repo, root, &format!("Antes de restaurar {what}"), author)?;
+fn keep_current(repo: &Repository, root: &Path, author: &Identity, before: &str) -> AppResult<()> {
+    commit_all(repo, root, before, author)?;
     Ok(())
 }
 
@@ -532,13 +532,15 @@ pub fn restore_file(
     root: &Path,
     id: &str,
     path: &str,
+    before: &str,
     fallback: Option<&Identity>,
     trash: &dyn TrashBin,
 ) -> AppResult<()> {
+    let before = gitops::version_label(before)?;
     let repo = require(root)?;
     let author = author_of(&repo, fallback)?;
     gitops::restore_file_in(&repo, root, id, path, trash, || {
-        keep_current(&repo, root, &author, &format!("«{path}»"))
+        keep_current(&repo, root, &author, &before)
     })
 }
 
@@ -547,13 +549,15 @@ pub fn restore_file(
 pub fn restore_project(
     root: &Path,
     id: &str,
+    before: &str,
     fallback: Option<&Identity>,
     trash: &dyn TrashBin,
 ) -> AppResult<Vec<String>> {
+    let before = gitops::version_label(before)?;
     let repo = require(root)?;
     let author = author_of(&repo, fallback)?;
     gitops::restore_tree_in(&repo, root, id, trash, || {
-        keep_current(&repo, root, &author, "el proyecto")
+        keep_current(&repo, root, &author, &before)
     })
 }
 
@@ -833,7 +837,15 @@ pub(crate) mod tests {
         backup(root, "v2", None).unwrap();
         fs::write(root.join("main.tex"), "tres sin respaldar").unwrap();
 
-        restore_file(root, &first.id, "main.tex", None, &trash).unwrap();
+        restore_file(
+            root,
+            &first.id,
+            "main.tex",
+            "Antes de restaurar «main.tex»",
+            None,
+            &trash,
+        )
+        .unwrap();
         assert_eq!(fs::read_to_string(root.join("main.tex")).unwrap(), "uno");
         let kept = &list(root).unwrap()[0];
         assert_eq!(kept.message, "Antes de restaurar «main.tex»");
@@ -845,7 +857,14 @@ pub(crate) mod tests {
             Some("tres sin respaldar")
         );
 
-        let changed = restore_project(root, &first.id, None, &trash).unwrap();
+        let changed = restore_project(
+            root,
+            &first.id,
+            "Antes de restaurar el proyecto",
+            None,
+            &trash,
+        )
+        .unwrap();
         // main.tex is «uno» already; cap/b.tex was added after v1.
         assert_eq!(changed, ["cap/b.tex"]);
         assert!(!root.join("cap/b.tex").exists());
@@ -858,7 +877,7 @@ pub(crate) mod tests {
         assert_eq!(list(root).unwrap().len(), 4);
         for bad in ["../fuera.tex", ".git/config", ".jutex/project.json"] {
             assert!(
-                restore_file(root, &first.id, bad, None, &trash).is_err(),
+                restore_file(root, &first.id, bad, "x", None, &trash).is_err(),
                 "{bad}"
             );
         }

@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import type { Locale } from "../lib/languages";
 import { getBackend } from "../lib/tauri";
 import { useBuffers } from "./buffers";
 import type { OpenFolderResult, ProjectSummary, TemplateInfo, TrashedProject } from "./types";
@@ -16,7 +17,7 @@ type ProjectsState = {
 
   /** Reloads projects and templates. Errors are rethrown after setting `status`. */
   load: () => Promise<void>;
-  create: (name: string, template: string | null) => Promise<ProjectSummary>;
+  create: (name: string, template: string | null, language: Locale) => Promise<ProjectSummary>;
   openFolder: (title: string) => Promise<OpenFolderResult | null>;
   importZip: (title: string, filterName: string) => Promise<OpenFolderResult | null>;
   /** «Desde GitHub»: clones a repository as a new project (network). */
@@ -89,7 +90,8 @@ export const useProjects = create<ProjectsState>()((set) => {
         throw error;
       }
     },
-    create: async (name, template) => store(await getBackend().createProject(name, template)),
+    create: async (name, template, language) =>
+      store(await getBackend().createProject(name, template, language)),
     openFolder: async (title) => storeResult(await getBackend().openFolderDialog(title)),
     importZip: async (title, filterName) =>
       storeResult(await getBackend().importZipDialog(title, filterName)),

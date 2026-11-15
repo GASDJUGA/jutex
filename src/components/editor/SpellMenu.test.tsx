@@ -82,6 +82,16 @@ describe("ortografía en el proyecto", () => {
   it("el idioma se elige por proyecto en el menú Ver; «Sin revisión» quita las marcas", async () => {
     await openWithTypo();
     fireEvent.click(screen.getByRole("button", { name: "Ver" }));
+    // The six languages, each by its own name.
+    for (const name of [
+      "Español",
+      "English",
+      "Português (Brasil)",
+      "Français",
+      "Deutsch",
+      "Italiano",
+    ])
+      expect(screen.getByRole("menuitemradio", { name })).toBeInTheDocument();
     fireEvent.click(screen.getByRole("menuitemradio", { name: "Sin revisión" }));
     await waitFor(() => expect(marks()).toEqual([]));
     expect(useProjects.getState().current?.spellLang).toBe("off");

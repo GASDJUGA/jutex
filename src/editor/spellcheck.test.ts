@@ -1,18 +1,21 @@
-import { readFileSync } from "node:fs";
 import { EditorState } from "@codemirror/state";
 import { EditorView } from "@codemirror/view";
 import { waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { directChecker } from "../lib/spell/checker";
-import { createSpeller } from "../lib/spell/speller";
+import { makeChecker } from "../lib/spell/checker";
 import { replaceWord, spellcheck, type MisspelledWord } from "./spellcheck";
 
-const es = directChecker(
-  createSpeller(
-    readFileSync("node_modules/dictionary-es/index.aff", "utf8"),
-    readFileSync("node_modules/dictionary-es/index.dic", "utf8"),
-  ),
-);
+/** A checker with a few known misspellings (the dictionaries are tested in Rust). */
+const WRONG = new Set(["Introduccion", "electrico", "Palabrra", "ecuacion", "graficoo", "qq"]);
+const SUGGESTIONS: Record<string, string[]> = { ecuacion: ["ecuaciones", "ecuación"] };
+const es = makeChecker({
+  async request(type, payload) {
+    if (type === "wrong") return (payload as string[]).filter((w) => WRONG.has(w));
+    if (type === "suggest") return SUGGESTIONS[payload as string] ?? [];
+    return [];
+  },
+  dispose() {},
+});
 
 let view: EditorView | null = null;
 afterEach(() => {

@@ -1,0 +1,55 @@
+\documentclass[11pt,a4paper]{article}
+
+% Sprache und Schriften (mit XeLaTeX kompilieren)
+\usepackage{fontspec}
+\usepackage[ngerman]{babel}
+
+% Mathematik, Abbildungen und Links
+\usepackage{amsmath, amssymb}
+\usepackage{graphicx}
+\usepackage[hidelinks]{hyperref}
+
+\title{Titel des Artikels}
+\author{Vorname Nachname}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+  Kurze Zusammenfassung der Arbeit: das Problem, der Ansatz und die wichtigsten Ergebnisse.
+\end{abstract}
+
+\section{Einleitung}
+\label{sec:einleitung}
+
+Dies ist ein Beispielartikel. Umlaute und das ß (ä, ö, ü, ß) funktionieren dank
+XeLaTeX direkt. Mehr dazu in Abschnitt~\ref{sec:hauptteil} und in
+Quelle~\cite{knuth1984}.
+
+\section{Hauptteil}
+\label{sec:hauptteil}
+
+Eine nummerierte Gleichung:
+\begin{equation}
+  \label{eq:euler}
+  e^{i\pi} + 1 = 0
+\end{equation}
+
+und ein ausgerichtetes System:
+\begin{align}
+  \nabla \cdot \vec{E} &= \frac{\rho}{\varepsilon_0}, \\
+  \nabla \cdot \vec{B} &= 0.
+\end{align}
+
+Gleichung~\eqref{eq:euler} verbindet fünf grundlegende Konstanten.
+
+\section{Fazit}
+
+Fassen Sie hier die wichtigsten Ergebnisse zusammen.
+
+\bibliographystyle{plain}
+\bibliography{literatur}
+
+\end{document}

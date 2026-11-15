@@ -53,6 +53,52 @@ describe("ajustes", () => {
     expect(localStorage.getItem(LEGACY_STORAGE_KEY)).toBeNull();
   });
 
+  it("«igual que el sistema» usa el idioma del sistema", async () => {
+    setBackend(createMockBackend(undefined, { systemLocale: "de" }));
+    await useSettings.getState().load();
+    expect(useSettings.getState().locale).toBe("system");
+    expect(useI18n.getState().locale).toBe("de");
+    expect(useSettings.getState().effectiveDocumentLanguage).toBe("de");
+    await useSettings.getState().update({ locale: "es" });
+    expect(useI18n.getState().locale).toBe("es");
+    await useSettings.getState().update({ locale: "system" });
+    expect(useI18n.getState().locale).toBe("de");
+  });
+
+  it("los selectores de idioma muestran los seis con su nombre propio", async () => {
+    setBackend(createMockBackend(undefined, { systemLocale: "de" }));
+    await act(() => useSettings.getState().update({ locale: "es" }));
+    render(<SettingsTab />);
+    const language = screen.getByRole("combobox", { name: "Idioma" });
+    const options = [...language.querySelectorAll("option")].map((o) => o.textContent);
+    expect(options).toEqual([
+      "Igual que el sistema (Deutsch)",
+      "Español",
+      "English",
+      "Português (Brasil)",
+      "Français",
+      "Deutsch",
+      "Italiano",
+    ]);
+    const documents = screen.getByRole("combobox", { name: /^Idioma de los documentos nuevos/ });
+    expect([...documents.querySelectorAll("option")].map((o) => o.textContent)).toEqual([
+      "Igual que la interfaz",
+      "Español",
+      "English",
+      "Português (Brasil)",
+      "Français",
+      "Deutsch",
+      "Italiano",
+    ]);
+    fireEvent.change(documents, { target: { value: "it" } });
+    await waitFor(() => expect(useSettings.getState().effectiveDocumentLanguage).toBe("it"));
+    const spell = screen.getByRole("checkbox", {
+      name: /^Revisar la ortografía de los proyectos nuevos/,
+    });
+    fireEvent.click(spell);
+    await waitFor(() => expect(useSettings.getState().newProjectSpellcheck).toBe(false));
+  });
+
   it("el idioma de la interfaz se aplica al cargar y al cambiarlo", async () => {
     await backend.updateSettings({ locale: "en" });
     await useSettings.getState().load();
@@ -92,7 +138,7 @@ describe("pantalla de Ajustes", () => {
     fireEvent.change(screen.getByRole("combobox", { name: /Compilador por defecto/ }), {
       target: { value: "lualatex" },
     });
-    fireEvent.change(screen.getByRole("combobox", { name: /Idioma de los proyectos nuevos/ }), {
+    fireEvent.change(screen.getByRole("combobox", { name: /Idioma de los documentos nuevos/ }), {
       target: { value: "en" },
     });
     fireEvent.click(screen.getByRole("checkbox", { name: /Páginas en modo oscuro/ }));
@@ -103,12 +149,13 @@ describe("pantalla de Ajustes", () => {
         editorFontFamily: "Fira Code",
         editorFontSize: 18,
         defaultCompiler: "lualatex",
-        defaultSpellLang: "en",
+        documentLanguage: "en",
         pdfDarkMode: true,
       }),
     );
     // A new blank project gets the defaults.
-    const project = await backend.createProject("Nuevo", null);
+    const info = await backend.getSettings();
+    const project = await backend.createProject("Nuevo", null, info.effectiveDocumentLanguage);
     expect([project.compiler, project.spellLang]).toEqual(["lualatex", "en"]);
   });
 

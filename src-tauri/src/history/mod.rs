@@ -210,31 +210,39 @@ pub fn file_at(root: &Path, id: &str, path: &str) -> AppResult<VersionFile> {
     gitops::file_in(&open(root)?, id, path)
 }
 
-/// The current state is kept as a version before restoring, so nothing is lost.
-fn keep_current(root: &Path, what: &str) -> AppResult<()> {
-    snapshot(
-        root,
-        VersionKind::Manual,
-        Some(&format!("Antes de restaurar {what}")),
-    )?;
+/// The current state is kept as a version named `before` (in the interface's language)
+/// before restoring, so nothing is lost.
+fn keep_current(root: &Path, before: &str) -> AppResult<()> {
+    snapshot(root, VersionKind::Manual, Some(before))?;
     Ok(())
 }
 
 /// Brings back `path` as it was in version `id` (deleted if it did not exist then).
-pub fn restore_file(root: &Path, id: &str, path: &str, trash: &dyn TrashBin) -> AppResult<()> {
+pub fn restore_file(
+    root: &Path,
+    id: &str,
+    path: &str,
+    before: &str,
+    trash: &dyn TrashBin,
+) -> AppResult<()> {
+    let before = gitops::version_label(before)?;
     let repo = open(root)?;
-    gitops::restore_file_in(&repo, root, id, path, trash, || {
-        keep_current(root, &format!("«{path}»"))
-    })
+    gitops::restore_file_in(&repo, root, id, path, trash, || keep_current(root, &before))
 }
 
 /// Brings the whole project back to version `id`: its files as they were, and the files
 /// added since (those the history knew) to the trash. Files the history never kept
 /// (ignored ones, LaTeX's outputs) are left alone. Returns the paths that changed.
-pub fn restore_project(root: &Path, id: &str, trash: &dyn TrashBin) -> AppResult<Vec<String>> {
+pub fn restore_project(
+    root: &Path,
+    id: &str,
+    before: &str,
+    trash: &dyn TrashBin,
+) -> AppResult<Vec<String>> {
+    let before = gitops::version_label(before)?;
     let repo = open(root)?;
     // After keep_current, HEAD is exactly what is on disk now.
-    gitops::restore_tree_in(&repo, root, id, trash, || keep_current(root, "el proyecto"))
+    gitops::restore_tree_in(&repo, root, id, trash, || keep_current(root, &before))
 }
 
 #[cfg(test)]
@@ -477,7 +485,14 @@ mod tests {
         let first = snapshot(root, VersionKind::Auto, None).unwrap().unwrap();
         fs::write(root.join("main.tex"), "dos").unwrap();
         fs::write(root.join("nuevo.tex"), "n").unwrap();
-        restore_file(root, &first.id, "main.tex", &trash).unwrap();
+        restore_file(
+            root,
+            &first.id,
+            "main.tex",
+            "Antes de restaurar «main.tex»",
+            &trash,
+        )
+        .unwrap();
         assert_eq!(fs::read_to_string(root.join("main.tex")).unwrap(), "uno");
         // «dos» is still in the history, as the version saved before restoring.
         let before = &list(root).unwrap()[0];
@@ -490,7 +505,14 @@ mod tests {
             Some("dos")
         );
         // A file that did not exist in that version goes to the trash.
-        restore_file(root, &first.id, "nuevo.tex", &trash).unwrap();
+        restore_file(
+            root,
+            &first.id,
+            "nuevo.tex",
+            "Antes de restaurar «nuevo.tex»",
+            &trash,
+        )
+        .unwrap();
         assert!(!root.join("nuevo.tex").exists());
         assert_eq!(trash.list().unwrap().len(), 1);
     }
@@ -511,7 +533,8 @@ mod tests {
         snapshot(root, VersionKind::Auto, None).unwrap();
         fs::write(root.join("main.tex"), "tres sin guardar en el historial").unwrap();
 
-        let changed = restore_project(root, &first.id, &trash).unwrap();
+        let changed =
+            restore_project(root, &first.id, "Antes de restaurar el proyecto", &trash).unwrap();
         assert_eq!(changed, ["cap/a.tex", "cap/b.tex", "main.tex"]);
         assert_eq!(fs::read_to_string(root.join("main.tex")).unwrap(), "uno");
         assert_eq!(fs::read_to_string(root.join("cap/a.tex")).unwrap(), "a");
@@ -544,7 +567,24 @@ mod tests {
             ".git/config",
             "/etc/passwd",
         ] {
-            assert!(restore_file(root, &v.id, bad, &trash).is_err(), "{bad}");
+            assert!(
+                restore_file(root, &v.id, bad, "x", &trash).is_err(),
+                "{bad}"
+            );
         }
+    }
+    #[test]
+    fn el_nombre_de_antes_de_restaurar_no_cambia_el_tipo() {
+        let dir = project(&[("main.tex", "uno")]);
+        let root = dir.path();
+        let trash_dir = TempDir::new().unwrap();
+        let trash = FakeTrash::new(trash_dir.path().join("papelera"));
+        let first = snapshot(root, VersionKind::Auto, None).unwrap().unwrap();
+        fs::write(root.join("main.tex"), "dos").unwrap();
+        let before = "Before restoring «main.tex»\nJuTeX-Kind: auto";
+        restore_file(root, &first.id, "main.tex", before, &trash).unwrap();
+        let kept = &list(root).unwrap()[0];
+        assert_eq!(kept.name, "Before restoring «main.tex» JuTeX-Kind: auto");
+        assert_eq!(kept.kind, VersionKind::Manual);
     }
 }

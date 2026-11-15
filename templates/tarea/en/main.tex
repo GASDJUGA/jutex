@@ -1,0 +1,61 @@
+\documentclass[11pt,a4paper]{article}
+
+% Language and fonts (compile with XeLaTeX)
+\usepackage{fontspec}
+\usepackage[english]{babel}
+
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{amsmath, amssymb}
+\usepackage{graphicx}
+\usepackage{enumitem}
+\usepackage[hidelinks]{hyperref}
+
+% Assignment details
+\newcommand{\course}{Course name}
+\newcommand{\assignment}{Assignment 1}
+\newcommand{\student}{First Last}
+\newcommand{\instructor}{Instructor name}
+
+% Numbered question and answer environment
+\newcounter{question}
+\newcommand{\question}[1]{%
+  \stepcounter{question}%
+  \section*{Question \thequestion\ifx\relax#1\relax\else: #1\fi}}
+\newenvironment{answer}{\par\noindent\textbf{Answer.}\ }{\hfill$\blacksquare$\par}
+
+\begin{document}
+
+\noindent
+\begin{minipage}[t]{0.6\textwidth}
+  \textbf{\course}\\
+  \assignment
+\end{minipage}%
+\begin{minipage}[t]{0.4\textwidth}
+  \raggedleft
+  \student\\
+  Instructor: \instructor\\
+  \today
+\end{minipage}
+\par\medskip\hrule\medskip
+
+\question{Derivatives}
+Compute $\dfrac{d}{dx}\left(x^2 \sin x\right)$.
+
+\begin{answer}
+  By the product rule,
+  \[
+    \frac{d}{dx}\left(x^2 \sin x\right) = 2x \sin x + x^2 \cos x.
+  \]
+\end{answer}
+
+\question{}
+State two properties of the definite integral.
+
+\begin{answer}
+  \begin{enumerate}[label=(\alph*)]
+    \item Linearity: $\int_a^b (\alpha f + \beta g) = \alpha \int_a^b f + \beta \int_a^b g$.
+    \item Additivity: $\int_a^b f = \int_a^c f + \int_c^b f$.
+  \end{enumerate}
+\end{answer}
+
+\end{document}

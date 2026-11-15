@@ -1,7 +1,9 @@
+import type { Locale } from "../lib/languages";
+
 export type Compiler = "pdflatex" | "xelatex" | "lualatex";
 
 /** Mirrors `ProjectSummary` in src-tauri/src/projects/ops.rs. */
-export type SpellLang = "es" | "en" | "off";
+export type SpellLang = Locale | "off";
 
 export type EditorTheme = "light" | "dark";
 /** Interface colors (Ajustes → Interfaz); «indigo» is the default. */
@@ -11,7 +13,8 @@ export type IndentMode = "environments" | "full" | "none";
 
 /** `~/.config/jutex/settings.json` (5.8). */
 export type Settings = {
-  locale: "es" | "en";
+  /** `system`: the system's language (English if JuTeX does not have it). */
+  locale: Locale | "system";
   /** Empty: the default monospace fonts. */
   editorFontFamily: string;
   editorFontSize: number;
@@ -25,8 +28,10 @@ export type Settings = {
   pdfDarkMode: boolean;
   /** Compiler of new blank projects. */
   defaultCompiler: Compiler;
-  /** Spelling language of new projects. */
-  defaultSpellLang: SpellLang;
+  /** Language of new documents (`interface`: the interface's). */
+  documentLanguage: Locale | "interface";
+  /** New projects start with spelling checked in their language (or off). */
+  newProjectSpellcheck: boolean;
   /** Minutes between automatic versions of the history (0: off). */
   historyMinutes: number;
   /** Author of the Git backups when `git config` has none (empty: not set). */
@@ -47,6 +52,12 @@ export type SettingsInfo = {
   /** Where new projects go now (with `~`). */
   projectsDir: string;
   appDirs: AppDirs;
+  /** The system's interface language (one of JuTeX's). */
+  systemLocale: Locale;
+  /** `locale` with `system` resolved. */
+  effectiveLocale: Locale;
+  /** `documentLanguage` with `interface` resolved. */
+  effectiveDocumentLanguage: Locale;
 };
 
 export type ProjectSummary = {
@@ -81,7 +92,12 @@ export type OpenFolderResult = {
   candidates: string[];
 };
 
-export type Localized = { es: string; en: string };
+/** A text of a template in each language (English if one is missing). */
+export type Localized = Partial<Record<Locale, string>>;
+
+export function localized(text: Localized, locale: Locale): string {
+  return text[locale] ?? text.en ?? "";
+}
 
 export type TemplateInfo = {
   id: string;
@@ -90,6 +106,8 @@ export type TemplateInfo = {
   mainFile: string;
   compiler: Compiler;
   default: boolean;
+  /** The languages it comes in. */
+  languages: Locale[];
 };
 
 /** A file or folder of a project (mirrors `FileNode` in src-tauri/src/files). */

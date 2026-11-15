@@ -208,10 +208,10 @@ export function createMockBackup(
       content: find(repo(id), version).contents[path] ?? null,
       binary: false,
     }),
-    backupRestoreFile: async (id, version, path) => {
+    backupRestoreFile: async (id, version, path, before) => {
       const r = repo(id);
       const content = find(r, version).contents[path];
-      commit(id, r, `Antes de restaurar «${path}»`);
+      commit(id, r, before);
       if (content === undefined) files(id).delete(path);
       else files(id).write(path, content);
     },
@@ -314,10 +314,10 @@ export function createMockBackup(
       };
       r.remoteCommits = [{ backup, contents }, ...(r.remoteCommits ?? [])];
     },
-    backupRestore: async (id, version) => {
+    backupRestore: async (id, version, before) => {
       const r = repo(id);
       const target = find(r, version).contents;
-      commit(id, r, "Antes de restaurar el proyecto");
+      commit(id, r, before);
       const changed = diffSnapshots(snapshot(id), target).map((c) => c.path);
       for (const path of changed) {
         if (path in target) files(id).write(path, target[path]);

@@ -1,0 +1,86 @@
+[
+  {
+    "code": "es",
+    "name": "Español",
+    "babel": "spanish",
+    "aliases": ["spanish", "espanol"],
+    "texlive": ["babel-spanish", "hyphen-spanish"],
+    "pacman": "texlive-langspanish",
+    "windowsLang": 10,
+    "wikibook": "https://es.wikibooks.org/wiki/Manual_de_LaTeX",
+    "blankComment": "% Idioma y fuentes (compilar con XeLaTeX)"
+  },
+  {
+    "code": "en",
+    "name": "English",
+    "babel": "english",
+    "aliases": [
+      "english",
+      "american",
+      "usenglish",
+      "british",
+      "ukenglish",
+      "canadian",
+      "australian",
+      "newzealand"
+    ],
+    "texlive": ["babel-english", "hyphen-english"],
+    "pacman": "texlive-langenglish",
+    "windowsLang": 9,
+    "wikibook": "https://en.wikibooks.org/wiki/LaTeX",
+    "blankComment": "% Language and fonts (compile with XeLaTeX)"
+  },
+  {
+    "code": "pt",
+    "name": "Português (Brasil)",
+    "babel": "brazilian",
+    "aliases": ["brazil", "brazilian", "portuguese", "portuges"],
+    "texlive": ["babel-portuges", "hyphen-portuguese"],
+    "pacman": "texlive-langportuguese",
+    "windowsLang": 22,
+    "wikibook": "https://pt.wikibooks.org/wiki/Latex",
+    "blankComment": "% Idioma e fontes (compilar com XeLaTeX)"
+  },
+  {
+    "code": "fr",
+    "name": "Français",
+    "babel": "french",
+    "aliases": ["french", "francais", "frenchb", "acadian", "canadien"],
+    "texlive": ["babel-french", "hyphen-french"],
+    "pacman": "texlive-langfrench",
+    "windowsLang": 12,
+    "wikibook": "https://fr.wikibooks.org/wiki/LaTeX",
+    "blankComment": "% Langue et polices (compiler avec XeLaTeX)"
+  },
+  {
+    "code": "de",
+    "name": "Deutsch",
+    "babel": "ngerman",
+    "aliases": [
+      "german",
+      "ngerman",
+      "germanb",
+      "ngermanb",
+      "austrian",
+      "naustrian",
+      "swissgerman",
+      "nswissgerman"
+    ],
+    "texlive": ["babel-german", "hyphen-german"],
+    "pacman": "texlive-langgerman",
+    "windowsLang": 7,
+    "wikibook": "https://de.wikibooks.org/wiki/LaTeX-Kompendium",
+    "blankComment": "% Sprache und Schriften (mit XeLaTeX kompilieren)"
+  },
+  {
+    "code": "it",
+    "name": "Italiano",
+    "babel": "italian",
+    "aliases": ["italian"],
+    "texlive": ["babel-italian", "hyphen-italian"],
+    "pacman": "texlive-langitalian",
+    "windowsLang": 16,
+    "wikibook": "https://en.wikibooks.org/wiki/LaTeX",
+    "blankComment": "% Lingua e caratteri (compilare con XeLaTeX)"
+  }
+]

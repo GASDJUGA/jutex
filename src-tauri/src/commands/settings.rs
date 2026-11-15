@@ -18,6 +18,12 @@ pub struct SettingsInfo {
     pub settings: Settings,
     pub projects_dir: String,
     pub app_dirs: AppDirs,
+    /// The system's interface language (one of JuTeX's), for «Igual que el sistema (…)».
+    pub system_locale: String,
+    /// The interface language in use (`locale` with `system` resolved).
+    pub effective_locale: String,
+    /// The language of new documents (`documentLanguage` with `interface` resolved).
+    pub effective_document_language: String,
 }
 
 /// JuTeX's folders: XDG on Linux (`~/.config/jutex`…), `~/Library/…` on macOS.
@@ -35,7 +41,11 @@ fn info(state: &AppState, settings: Settings) -> SettingsInfo {
     let ctx = state.ctx();
     let home = ctx.home_dir.as_deref();
     let parent = |path: &Path| tilde(path.parent().unwrap_or(path), home);
+    let system = state.system_locale;
     SettingsInfo {
+        system_locale: system.to_owned(),
+        effective_locale: settings.effective_locale(system),
+        effective_document_language: settings.effective_document_language(system),
         settings,
         projects_dir: tilde(&ctx.projects_dir, home),
         app_dirs: AppDirs {
@@ -82,7 +92,7 @@ pub async fn update_settings(
     let info = change(&state, move |path| settings::update(path, &changes)).await?;
     // The macOS menu bar follows the interface language.
     #[cfg(target_os = "macos")]
-    if let Ok(menu) = crate::platform::menu::build(&app, &info.settings.locale) {
+    if let Ok(menu) = crate::platform::menu::build(&app, &info.effective_locale) {
         let _ = app.set_menu(menu);
     }
     #[cfg(not(target_os = "macos"))]

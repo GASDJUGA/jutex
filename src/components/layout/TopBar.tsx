@@ -1,4 +1,5 @@
 import { ChevronDown, Download } from "lucide-react";
+import { LOCALES, languageName } from "../../lib/languages";
 import { useMemo, useState } from "react";
 import { compilerLabels } from "../../mocks/projects";
 import { runCommand, runViewCommand } from "../../editor/activeView";
@@ -229,8 +230,8 @@ export function TopBar({ projectName, mainFile, errorCount, warningCount }: TopB
         },
         sep,
         { kind: "label", label: t("spell.language") },
-        ...(["es", "en", "off"] as const).map((lang) => ({
-          label: t(`spell.${lang}`),
+        ...[...LOCALES, "off" as const].map((lang) => ({
+          label: lang === "off" ? t("spell.off") : languageName(lang),
           checked: spellLang === lang,
           radio: true,
           onSelect: () => void useSpell.getState().setLanguage(lang).catch(notifyError),

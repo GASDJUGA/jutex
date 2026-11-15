@@ -1,0 +1,37 @@
+\documentclass[11pt,a4paper]{report}
+
+% Lingua e caratteri (compilare con XeLaTeX)
+\usepackage{fontspec}
+\usepackage[italian]{babel}
+
+\usepackage{amsmath, amssymb, amsthm}
+\usepackage{graphicx}
+\usepackage[hidelinks]{hyperref}
+
+% Ambienti per i teoremi
+\theoremstyle{plain}
+\newtheorem{teorema}{Teorema}[chapter]
+\newtheorem{proposizione}[teorema]{Proposizione}
+\theoremstyle{definition}
+\newtheorem{definizione}[teorema]{Definizione}
+\newtheorem{esempio}[teorema]{Esempio}
+\theoremstyle{remark}
+\newtheorem*{osservazione}{Osservazione}
+
+% Versori
+\newcommand{\ihat}{\boldsymbol{\hat{\textbf{\i}}}}
+\newcommand{\jhat}{\boldsymbol{\hat{\textbf{\j}}}}
+\newcommand{\khat}{\boldsymbol{\hat{\textbf{k}}}}
+
+\title{Appunti di \emph{Nome del corso}}
+\author{Nome Cognome}
+\date{Semestre 2026}
+
+\begin{document}
+
+\maketitle
+\tableofcontents
+
+\input{capitoli/01-introduzione}
+
+\end{document}

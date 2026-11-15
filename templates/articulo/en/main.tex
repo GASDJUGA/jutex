@@ -1,0 +1,55 @@
+\documentclass[11pt,a4paper]{article}
+
+% Language and fonts (compile with XeLaTeX)
+\usepackage{fontspec}
+\usepackage[english]{babel}
+
+% Mathematics, figures and links
+\usepackage{amsmath, amssymb}
+\usepackage{graphicx}
+\usepackage[hidelinks]{hyperref}
+
+\title{Title of the article}
+\author{First Last}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+  A short summary of the work: the problem, the approach and the main results.
+\end{abstract}
+
+\section{Introduction}
+\label{sec:introduction}
+
+This is a sample article. Accents and any Unicode character (é, ñ, ü, ç) work directly
+thanks to XeLaTeX. For more details, see Section~\ref{sec:development} and
+reference~\cite{knuth1984}.
+
+\section{Development}
+\label{sec:development}
+
+A numbered equation:
+\begin{equation}
+  \label{eq:euler}
+  e^{i\pi} + 1 = 0
+\end{equation}
+
+and an aligned system:
+\begin{align}
+  \nabla \cdot \vec{E} &= \frac{\rho}{\varepsilon_0}, \\
+  \nabla \cdot \vec{B} &= 0.
+\end{align}
+
+Equation~\eqref{eq:euler} relates five fundamental constants.
+
+\section{Conclusions}
+
+Summarize the main conclusions here.
+
+\bibliographystyle{plain}
+\bibliography{references}
+
+\end{document}

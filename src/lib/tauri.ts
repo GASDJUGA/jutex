@@ -1,4 +1,5 @@
 import { convertFileSrc, invoke, isTauri } from "@tauri-apps/api/core";
+import type { Locale } from "./languages";
 import { listen } from "@tauri-apps/api/event";
 import { getCurrentWebview } from "@tauri-apps/api/webview";
 import type {
@@ -74,7 +75,8 @@ export type DropEvent =
 export type Backend = {
   listProjects(): Promise<ProjectSummary[]>;
   listTemplates(): Promise<TemplateInfo[]>;
-  createProject(name: string, template: string | null): Promise<ProjectSummary>;
+  /** A new project in `language` (the template, or the blank one, in that language). */
+  createProject(name: string, template: string | null, language: Locale): Promise<ProjectSummary>;
   /** Native folder picker; `null` if cancelled. */
   openFolderDialog(title: string): Promise<OpenFolderResult | null>;
   /** Native ZIP picker; `null` if cancelled. */
@@ -97,9 +99,10 @@ export type Backend = {
   historyChanges(id: string, version: string): Promise<FileChange[]>;
   historyFile(id: string, version: string, path: string): Promise<VersionFile>;
   /** Brings back a file as it was (what is there now is kept as a version first). */
-  historyRestoreFile(id: string, version: string, path: string): Promise<void>;
+  /** `before`: name of the version that keeps what is there now (already translated). */
+  historyRestoreFile(id: string, version: string, path: string, before: string): Promise<void>;
   /** Brings the project back to a version; returns the paths that changed. */
-  historyRestore(id: string, version: string): Promise<string[]>;
+  historyRestore(id: string, version: string, before: string): Promise<string[]>;
   /** Where the project's backup with Git stands (no network). */
   backupStatus(id: string): Promise<BackupStatus>;
   /** Turns the backup on; `author` only when `git config` has none (kept for next time). */
@@ -113,9 +116,9 @@ export type Backend = {
   backupChanges(id: string, version: string): Promise<FileChange[]>;
   backupFile(id: string, version: string, path: string): Promise<VersionFile>;
   /** Brings back a file from a backup (what is there now is backed up first). */
-  backupRestoreFile(id: string, version: string, path: string): Promise<void>;
+  backupRestoreFile(id: string, version: string, path: string, before: string): Promise<void>;
   /** Brings the project back to a backup; returns the paths that changed. */
-  backupRestore(id: string, version: string): Promise<string[]>;
+  backupRestore(id: string, version: string, before: string): Promise<string[]>;
   /** Opens a fixed help page (`latex`: the LaTeX manual) in the system browser. */
   openHelpLink(topic: "latex", locale: string): Promise<void>;
   /** The machine's memory in bytes (null if unknown). */
@@ -150,6 +153,10 @@ export type Backend = {
   /** Installed monospace font families. */
   monospaceFonts(): Promise<string[]>;
   /** Words of the personal dictionary (`~/.config/jutex/dictionary.txt`). */
+  /** The words of `words` that are not correct in `lang` (personal dictionary included). */
+  spellWrong(lang: Locale, words: string[]): Promise<string[]>;
+  /** Corrections for `word` in `lang`, unordered. */
+  spellSuggest(lang: Locale, word: string): Promise<string[]>;
   personalDictionary(): Promise<string[]>;
   /** Adds a word; returns the dictionary. */
   addToDictionary(word: string): Promise<string[]>;
@@ -297,7 +304,8 @@ export type Backend = {
 export const tauriBackend: Backend = {
   listProjects: () => invoke("list_projects"),
   listTemplates: () => invoke("list_templates"),
-  createProject: (name, template) => invoke("create_project", { name, template }),
+  createProject: (name, template, language) =>
+    invoke("create_project", { name, template, language }),
   openFolderDialog: (title) => invoke("open_folder_dialog", { title }),
   importZipDialog: (title, filterName) => invoke("import_zip_dialog", { title, filterName }),
   setMainFile: (id, path) => invoke("set_main_file", { id, path }),
@@ -309,8 +317,9 @@ export const tauriBackend: Backend = {
   historyList: (id) => invoke("history_list", { id }),
   historyChanges: (id, version) => invoke("history_changes", { id, version }),
   historyFile: (id, version, path) => invoke("history_file", { id, version, path }),
-  historyRestoreFile: (id, version, path) => invoke("history_restore_file", { id, version, path }),
-  historyRestore: (id, version) => invoke("history_restore", { id, version }),
+  historyRestoreFile: (id, version, path, before) =>
+    invoke("history_restore_file", { id, version, path, before }),
+  historyRestore: (id, version, before) => invoke("history_restore", { id, version, before }),
   backupStatus: (id) => invoke("backup_status", { id }),
   backupEnable: (id, author) => invoke("backup_enable", { id, author: author ?? null }),
   githubIdentity: () => invoke("github_identity"),
@@ -319,8 +328,9 @@ export const tauriBackend: Backend = {
   backupList: (id) => invoke("backup_list", { id }),
   backupChanges: (id, version) => invoke("backup_changes", { id, version }),
   backupFile: (id, version, path) => invoke("backup_file", { id, version, path }),
-  backupRestoreFile: (id, version, path) => invoke("backup_restore_file", { id, version, path }),
-  backupRestore: (id, version) => invoke("backup_restore", { id, version }),
+  backupRestoreFile: (id, version, path, before) =>
+    invoke("backup_restore_file", { id, version, path, before }),
+  backupRestore: (id, version, before) => invoke("backup_restore", { id, version, before }),
   openHelpLink: (topic, locale) => invoke("open_help_link", { topic, locale }),
   totalMemory: () => invoke("total_memory"),
   backupTools: () => invoke("backup_tools"),
@@ -342,6 +352,8 @@ export const tauriBackend: Backend = {
   updateSettings: (changes) => invoke("update_settings", { changes }),
   chooseProjectsDir: (title) => invoke("choose_projects_dir", { title }),
   monospaceFonts: () => invoke("monospace_fonts"),
+  spellWrong: (lang, words) => invoke("spell_wrong", { lang, words }),
+  spellSuggest: (lang, word) => invoke("spell_suggest", { lang, word }),
   personalDictionary: () => invoke("personal_dictionary"),
   addToDictionary: (word) => invoke("add_to_dictionary", { word }),
   removeFromDictionary: (word) => invoke("remove_from_dictionary", { word }),

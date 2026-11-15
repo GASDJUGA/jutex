@@ -36,19 +36,32 @@ pub const TEXLIVE_KEY_FINGERPRINT: &str = "C78B82D8C79512F79CC0D7C80D5E5D9106BAB
 /// Largest checksum, signature or key file accepted.
 const MAX_SMALL_DOWNLOAD: u64 = 256 * 1024;
 
-/// Installed after the basic scheme: what the default template (XeLaTeX + babel spanish)
-/// needs. Everything else is installed on demand from the package manager.
-pub const BASE_PACKAGES: [&str; 8] = [
+/// Installed after the basic scheme, besides the languages: what the templates need
+/// (XeLaTeX with fontspec). Everything else is installed on demand from the package manager.
+const BASE_PACKAGES: [&str; 6] = [
     "xetex",
     "xetexconfig",
     "fontspec",
     "lm",
-    "babel-spanish",
-    "hyphen-spanish",
     "latexmk",
     // SyncTeX between the editor and the PDF (not in the basic scheme).
     "synctex",
 ];
+
+/// What JuTeX's TeX Live installs after the basic scheme: [`BASE_PACKAGES`] and babel with
+/// hyphenation for each of JuTeX's languages (small packages: a document in any of them
+/// compiles from the start).
+pub fn base_packages() -> Vec<String> {
+    let mut packages: Vec<String> = BASE_PACKAGES.iter().map(|p| p.to_string()).collect();
+    for language in crate::lang::all() {
+        for p in &language.texlive {
+            if !packages.contains(p) {
+                packages.push(p.clone());
+            }
+        }
+    }
+    packages
+}
 
 /// The `install-tl` profile: basic scheme, no docs or sources, PATH untouched (on Windows,
 /// also no Start menu shortcuts nor file associations). Paths with `/`, also on Windows.
@@ -493,7 +506,7 @@ pub fn install(
             .find_map(|bin| crate::tex::detect::executable_in(&bin, "tlmgr"))
             .ok_or_else(|| AppError::Other("la instalación no tiene tlmgr".into()))?;
         let mut command = crate::platform::process::command(tlmgr);
-        command.arg("install").args(BASE_PACKAGES);
+        command.arg("install").args(base_packages());
         run_step(command, "tlmgr", job, on, |done, total, package| {
             Progress::Packages {
                 done,
@@ -558,7 +571,11 @@ mod tests {
     #[ignore]
     fn instalacion_real() {
         let tmp = tempfile::TempDir::new().unwrap();
-        let root = tmp.path().join("texlive");
+        // JUTEX_TEST_TEXLIVE=<folder>: install there and keep it (to compile the templates
+        // with it afterwards: `todas_las_plantillas_compilan` with its bin first in PATH).
+        let root = std::env::var_os("JUTEX_TEST_TEXLIVE")
+            .map(PathBuf::from)
+            .unwrap_or_else(|| tmp.path().join("texlive"));
         let job = Job::default();
         let install = install(&root, &tmp.path().join("trabajo"), &job, &mut |p| {
             eprintln!("{p:?}")
@@ -566,9 +583,15 @@ mod tests {
         .unwrap();
         let bin = crate::tex::detect::texlive_bin_dirs(&root).remove(0);
         assert!(install.starts_with(&root));
+        // Every language of JuTeX compiles from the start (here Spanish and French).
         std::fs::write(
             tmp.path().join("doc.tex"),
             "\\documentclass{article}\\usepackage{fontspec}\\usepackage[spanish]{babel}\n\\begin{document}Canción\\end{document}\n",
+        )
+        .unwrap();
+        std::fs::write(
+            tmp.path().join("fr.tex"),
+            "\\documentclass{article}\\usepackage{fontspec}\\usepackage[french]{babel}\n\\begin{document}Ça va : oui !\\end{document}\n",
         )
         .unwrap();
         // Only this TeX Live (and the system's basic tools).
@@ -581,14 +604,20 @@ mod tests {
         };
         let path = std::env::join_paths(std::iter::once(bin.clone()).chain(system)).unwrap();
         let latexmk = crate::tex::detect::executable_in(&bin, "latexmk").unwrap();
-        let status = crate::platform::process::command(latexmk)
-            .args(["-xelatex", "-interaction=nonstopmode", "doc.tex"])
-            .current_dir(tmp.path())
-            .env("PATH", path)
-            .status()
-            .unwrap();
-        assert!(status.success());
-        assert!(tmp.path().join("doc.pdf").is_file());
+        for doc in ["doc", "fr"] {
+            let status = crate::platform::process::command(&latexmk)
+                .args([
+                    "-xelatex",
+                    "-interaction=nonstopmode",
+                    &format!("{doc}.tex"),
+                ])
+                .current_dir(tmp.path())
+                .env("PATH", &path)
+                .status()
+                .unwrap();
+            assert!(status.success(), "{doc}");
+            assert!(tmp.path().join(format!("{doc}.pdf")).is_file(), "{doc}");
+        }
     }
 
     #[test]
@@ -673,5 +702,33 @@ mod tests {
         assert!(job.check().is_ok());
         job.cancel();
         assert_eq!(job.check().unwrap_err().code(), "cancelled");
+    }
+    #[test]
+    fn el_tex_live_de_jutex_trae_los_seis_idiomas() {
+        let packages = base_packages();
+        for p in [
+            "xetex",
+            "fontspec",
+            "latexmk",
+            "synctex",
+            "babel-spanish",
+            "hyphen-spanish",
+        ] {
+            assert!(packages.iter().any(|x| x == p), "{p}");
+        }
+        for p in [
+            "babel-french",
+            "hyphen-german",
+            "babel-portuges",
+            "babel-italian",
+            "babel-english",
+        ] {
+            assert!(packages.iter().any(|x| x == p), "{p}");
+        }
+        // Each one once.
+        let mut unique = packages.clone();
+        unique.sort();
+        unique.dedup();
+        assert_eq!(unique.len(), packages.len());
     }
 }

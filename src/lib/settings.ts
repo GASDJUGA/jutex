@@ -3,6 +3,7 @@
  * the browser preview's backend and to migrate the values older versions kept in the
  * browser storage).
  */
+import { LOCALES } from "./languages";
 import type { EditableSettings, Identity, Settings, UiTheme } from "../store/types";
 
 export const MIN_FONT_SIZE = 8;
@@ -13,7 +14,7 @@ export const MAX_HISTORY_MINUTES = 120;
 export const UI_THEMES: UiTheme[] = ["indigo", "graphite", "forest", "ocean", "light"];
 
 export const DEFAULT_SETTINGS: Settings = {
-  locale: "es",
+  locale: "system",
   editorFontFamily: "",
   editorFontSize: 14,
   uiTheme: "indigo",
@@ -25,7 +26,8 @@ export const DEFAULT_SETTINGS: Settings = {
   mathPreviewHover: false,
   pdfDarkMode: false,
   defaultCompiler: "xelatex",
-  defaultSpellLang: "es",
+  documentLanguage: "interface",
+  newProjectSpellcheck: true,
   historyMinutes: 10,
   gitName: "",
   gitEmail: "",
@@ -40,7 +42,7 @@ const oneOf =
 const isBoolean = (v: unknown) => typeof v === "boolean";
 
 const VALID: { [K in keyof EditableSettings]: (value: unknown) => boolean } = {
-  locale: oneOf("es", "en"),
+  locale: oneOf("system", ...LOCALES),
   editorFontFamily: (v) =>
     typeof v === "string" && [...v].length <= 100 && !/[\p{Cc};{}"\\]/u.test(v),
   editorFontSize: (v) =>
@@ -54,7 +56,8 @@ const VALID: { [K in keyof EditableSettings]: (value: unknown) => boolean } = {
   mathPreviewHover: isBoolean,
   pdfDarkMode: isBoolean,
   defaultCompiler: oneOf("pdflatex", "xelatex", "lualatex"),
-  defaultSpellLang: oneOf("es", "en", "off"),
+  documentLanguage: oneOf("interface", ...LOCALES),
+  newProjectSpellcheck: isBoolean,
   historyMinutes: (v) =>
     typeof v === "number" && Number.isInteger(v) && v >= 0 && v <= MAX_HISTORY_MINUTES,
   gitName: (v) =>

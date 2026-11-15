@@ -1,0 +1,55 @@
+\documentclass[11pt,a4paper]{article}
+
+% Idioma e fontes (compilar com XeLaTeX)
+\usepackage{fontspec}
+\usepackage[brazilian]{babel}
+
+% Matemática, figuras e links
+\usepackage{amsmath, amssymb}
+\usepackage{graphicx}
+\usepackage[hidelinks]{hyperref}
+
+\title{Título do artigo}
+\author{Nome Sobrenome}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+  Resumo breve do trabalho: o problema, a abordagem e os resultados principais.
+\end{abstract}
+
+\section{Introdução}
+\label{sec:introducao}
+
+Este é um artigo de exemplo. Os acentos, o ç e o til (ã, õ) funcionam
+diretamente graças ao XeLaTeX. Para mais detalhes, veja a seção~\ref{sec:desenvolvimento} e a
+referência~\cite{knuth1984}.
+
+\section{Desenvolvimento}
+\label{sec:desenvolvimento}
+
+Uma equação numerada:
+\begin{equation}
+  \label{eq:euler}
+  e^{i\pi} + 1 = 0
+\end{equation}
+
+e um sistema alinhado:
+\begin{align}
+  \nabla \cdot \vec{E} &= \frac{\rho}{\varepsilon_0}, \\
+  \nabla \cdot \vec{B} &= 0.
+\end{align}
+
+A equação~\eqref{eq:euler} relaciona cinco constantes fundamentais.
+
+\section{Conclusões}
+
+Resuma aqui as conclusões principais.
+
+\bibliographystyle{plain}
+\bibliography{referencias}
+
+\end{document}

@@ -19,13 +19,14 @@ pub struct Tlpdb {
     pub packages: HashMap<String, TlPackage>,
     /// Package → the collection that depends on it.
     pub collection_of: HashMap<String, String>,
-    /// Style/class file basename → package (`ctex.sty` → `ctex`).
+    /// Style, class or babel language file basename → package (`ctex.sty` → `ctex`).
     pub file_owner: HashMap<String, String>,
 }
 
-/// Files whose basename is worth indexing (what `\usepackage`/`\documentclass` load).
+/// Files whose basename is worth indexing (what `\usepackage`/`\documentclass` load, and
+/// babel's languages: `french.ldf`).
 fn is_style(path: &str) -> bool {
-    path.ends_with(".sty") || path.ends_with(".cls")
+    path.ends_with(".sty") || path.ends_with(".cls") || path.ends_with(".ldf")
 }
 
 /// Parses the text of a `texlive.tlpdb`. Platform-specific packages (`latexmk.x86_64-linux`)
@@ -173,5 +174,13 @@ mod tests {
             Some("physics")
         );
         assert!(started.elapsed().as_secs_f64() < 2.0);
+    }
+    #[test]
+    fn los_idiomas_de_babel_tambien_tienen_dueno() {
+        let db = parse(
+            "name babel-french\ncategory Package\nshortdesc Babel support for French\nrunfiles size=60\n texmf-dist/tex/generic/babel-french/french.ldf\n texmf-dist/tex/generic/babel-french/frenchb.ldf\n",
+        );
+        assert_eq!(db.file_owner["french.ldf"], "babel-french");
+        assert_eq!(db.file_owner["frenchb.ldf"], "babel-french");
     }
 }

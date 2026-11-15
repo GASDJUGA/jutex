@@ -47,6 +47,7 @@ import type {
   Version,
 } from "../store/types";
 import { replaceText, searchFiles } from "./projectSearch";
+import { resolveLocale, type Locale } from "./languages";
 import { DEFAULT_SETTINGS, validSetting } from "./settings";
 import type { Backend, ClipboardImage, FilesChangedEvent } from "./tauri";
 import type {
@@ -98,7 +99,16 @@ async function samplePdf(): Promise<Uint8Array> {
   }
 }
 
-export function createMockBackend(seed: ProjectSummary[] = mockProjects): MockBackend {
+export type MockBackendOptions = {
+  /** The system's language (default: the browser's, as in the preview). */
+  systemLocale?: Locale;
+};
+
+export function createMockBackend(
+  seed: ProjectSummary[] = mockProjects,
+  options: MockBackendOptions = {},
+): MockBackend {
+  const systemLocale = options.systemLocale ?? resolveLocale(navigator.languages);
   let projects = seed.map((p) => ({ ...p }));
   let trashed: (TrashedProject & { project: ProjectSummary })[] = [];
   /** The personal dictionary of the spell checker. */
@@ -121,8 +131,15 @@ export function createMockBackend(seed: ProjectSummary[] = mockProjects): MockBa
     histories.set(id, [{ version, contents }, ...list]);
     return version;
   };
+  const effectiveLocale = (): Locale =>
+    settings.locale === "system" ? systemLocale : settings.locale;
+  const effectiveDocumentLanguage = (): Locale =>
+    settings.documentLanguage === "interface" ? effectiveLocale() : settings.documentLanguage;
   const settingsInfo = (): SettingsInfo => ({
     settings: { ...settings },
+    systemLocale,
+    effectiveLocale: effectiveLocale(),
+    effectiveDocumentLanguage: effectiveDocumentLanguage(),
     projectsDir: settings.projectsDir ?? "~/JuTeX",
     appDirs: {
       config: "~/.config/jutex",
@@ -265,16 +282,17 @@ export function createMockBackend(seed: ProjectSummary[] = mockProjects): MockBa
   return {
     listProjects: async () => projects.map((p) => ({ ...p })),
     listTemplates: async () => mockTemplates.map((t) => ({ ...t })),
-    createProject: async (name, template) => {
+    createProject: async (name, template, language) => {
       validName(name);
       if (nameTaken(name)) fail("alreadyExists", `ya existe: ${name}`);
       const info = template ? mockTemplates.find((t) => t.id === template) : undefined;
-      if (template && !info) fail("unknownTemplate", `plantilla desconocida: ${template}`);
+      if (template && !info?.languages.includes(language))
+        fail("unknownTemplate", `plantilla desconocida: ${template} (${language})`);
       return add(
         make(name, {
           compiler: info?.compiler ?? settings.defaultCompiler,
           mainFile: info?.mainFile ?? "main.tex",
-          spellLang: settings.defaultSpellLang,
+          spellLang: settings.newProjectSpellcheck ? language : "off",
         }),
       );
     },
@@ -379,19 +397,19 @@ export function createMockBackend(seed: ProjectSummary[] = mockProjects): MockBa
       const content = (JSON.parse(entry!.contents) as Record<string, string>)[path];
       return { content: content ?? null, binary: false };
     },
-    historyRestoreFile: async (id, version, path) => {
+    historyRestoreFile: async (id, version, path, before) => {
       const entry = (histories.get(id) ?? []).find((h) => h.version.id === version);
       if (!entry) fail("notFound", version);
       const content = (JSON.parse(entry!.contents) as Record<string, string>)[path];
-      recordVersion(id, "manual", `Antes de restaurar «${path}»`);
+      recordVersion(id, "manual", before);
       if (content === undefined) files(id).delete(path);
       else files(id).write(path, content);
     },
-    historyRestore: async (id, version) => {
+    historyRestore: async (id, version, before) => {
       const entry = (histories.get(id) ?? []).find((h) => h.version.id === version);
       if (!entry) fail("notFound", version);
       const target = JSON.parse(entry!.contents) as Record<string, string>;
-      recordVersion(id, "manual", "Antes de restaurar el proyecto");
+      recordVersion(id, "manual", before);
       const now = Object.fromEntries(files(id).textFiles());
       const changed = [...new Set([...Object.keys(now), ...Object.keys(target)])]
         .filter((path) => now[path] !== target[path])
@@ -421,6 +439,9 @@ export function createMockBackend(seed: ProjectSummary[] = mockProjects): MockBa
       return { ...settingsInfo(), projectsDir: "~/Documentos/Proyectos LaTeX" };
     },
     monospaceFonts: async () => ["DejaVu Sans Mono", "Fira Code", "JetBrains Mono"],
+    // No dictionaries in the browser preview: every word is correct.
+    spellWrong: async () => [],
+    spellSuggest: async () => [],
     personalDictionary: async () => [...dictionary],
     addToDictionary: async (word) => {
       if (!/^[\p{L}\p{N}'’.-]{1,64}$/u.test(word) || !/\p{L}/u.test(word)) {

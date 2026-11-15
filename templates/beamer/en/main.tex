@@ -1,0 +1,53 @@
+\documentclass[aspectratio=169]{beamer}
+
+% Language and fonts (compile with XeLaTeX)
+\usepackage{fontspec}
+\usepackage[english]{babel}
+\usepackage{amsmath}
+
+\usetheme{default}
+\setbeamertemplate{navigation symbols}{}
+\setbeamertemplate{footline}[frame number]
+\definecolor{accent}{HTML}{6B5CE7}
+\setbeamercolor{structure}{fg=accent}
+
+\title{Title of the presentation}
+\subtitle{Subtitle}
+\author{First Last}
+\institute{Institution}
+\date{\today}
+
+\begin{document}
+
+\begin{frame}
+  \titlepage
+\end{frame}
+
+\begin{frame}{Outline}
+  \tableofcontents
+\end{frame}
+
+\section{Motivation}
+
+\begin{frame}{Motivation}
+  \begin{itemize}
+    \item<1-> First point.
+    \item<2-> Second point, which appears later.
+  \end{itemize}
+\end{frame}
+
+\section{Results}
+
+\begin{frame}{A result}
+  \begin{block}{Wave equation}
+    \[
+      \frac{\partial^2 u}{\partial t^2} = c^2 \nabla^2 u
+    \]
+  \end{block}
+\end{frame}
+
+\begin{frame}
+  \centering\Large Thank you!
+\end{frame}
+
+\end{document}

@@ -139,10 +139,11 @@ pub async fn backup_restore_file(
     id: String,
     version: String,
     path: String,
+    before: String,
 ) -> AppResult<()> {
     let trash = state.ctx().trash.clone();
     with_backup(&state, &id, move |root, author| {
-        backup::restore_file(root, &version, &path, author, trash.as_ref())
+        backup::restore_file(root, &version, &path, &before, author, trash.as_ref())
     })
     .await
 }
@@ -153,10 +154,11 @@ pub async fn backup_restore(
     state: State<'_, AppState>,
     id: String,
     version: String,
+    before: String,
 ) -> AppResult<Vec<String>> {
     let trash = state.ctx().trash.clone();
     with_backup(&state, &id, move |root, author| {
-        backup::restore_project(root, &version, author, trash.as_ref())
+        backup::restore_project(root, &version, &before, author, trash.as_ref())
     })
     .await
 }

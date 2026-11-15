@@ -67,16 +67,16 @@ fn default_spell_lang() -> String {
     "es".to_owned()
 }
 
-/// Spelling languages of a project: Spanish, English or no checking.
-pub const SPELL_LANGS: [&str; 3] = ["es", "en", "off"];
+/// Whether `lang` is a spelling language of a project: one of JuTeX's languages, or `off`
+/// (no checking).
+pub fn is_spell_lang(lang: &str) -> bool {
+    lang == "off" || crate::lang::get(lang).is_some()
+}
 
-/// A stored `spellLang`, or the default if it is not one of [`SPELL_LANGS`].
-pub fn spell_lang_or_default(lang: &str) -> String {
-    if SPELL_LANGS.contains(&lang) {
-        lang.to_owned()
-    } else {
-        default_spell_lang()
-    }
+/// A stored `spellLang`, or `fallback` (the language of new documents) if JuTeX does not
+/// know it.
+pub fn spell_lang_or_default(lang: &str, fallback: &str) -> String {
+    if is_spell_lang(lang) { lang } else { fallback }.to_owned()
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -251,5 +251,12 @@ mod tests {
             std::fs::read_to_string(tmp.path().join(".gitignore")).unwrap(),
             "*.aux"
         );
+    }
+    #[test]
+    fn idiomas_de_ortografia() {
+        assert_eq!(spell_lang_or_default("klingon", "fr"), "fr");
+        assert_eq!(spell_lang_or_default("de", "es"), "de");
+        assert_eq!(spell_lang_or_default("off", "es"), "off");
+        assert!(is_spell_lang("it") && is_spell_lang("off") && !is_spell_lang("ru"));
     }
 }

@@ -41,8 +41,12 @@ pub async fn create_project(
     state: State<'_, AppState>,
     name: String,
     template: Option<String>,
+    language: Option<String>,
 ) -> AppResult<ProjectSummary> {
-    with_ctx(&state, move |ctx| ctx.create(&name, template.as_deref())).await
+    with_ctx(&state, move |ctx| {
+        ctx.create(&name, template.as_deref(), language.as_deref())
+    })
+    .await
 }
 
 /// Shows the native folder picker and registers the chosen folder. `None` if cancelled.

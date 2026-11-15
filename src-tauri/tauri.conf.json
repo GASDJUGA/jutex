@@ -1,7 +1,7 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "JuTeX",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "identifier": "org.jutex.app",
   "build": {
     "beforeDevCommand": "pnpm dev",
@@ -51,7 +51,19 @@
       "icons/icon.ico"
     ],
     "resources": {
-      "../templates/": "templates/"
+      "../templates/": "templates/",
+      "../node_modules/dictionary-es/index.aff": "dictionaries/es.aff",
+      "../node_modules/dictionary-es/index.dic": "dictionaries/es.dic",
+      "../node_modules/dictionary-en/index.aff": "dictionaries/en.aff",
+      "../node_modules/dictionary-en/index.dic": "dictionaries/en.dic",
+      "../node_modules/dictionary-pt/index.aff": "dictionaries/pt.aff",
+      "../node_modules/dictionary-pt/index.dic": "dictionaries/pt.dic",
+      "../node_modules/dictionary-fr/index.aff": "dictionaries/fr.aff",
+      "../node_modules/dictionary-fr/index.dic": "dictionaries/fr.dic",
+      "../node_modules/dictionary-de/index.aff": "dictionaries/de.aff",
+      "../node_modules/dictionary-de/index.dic": "dictionaries/de.dic",
+      "../node_modules/dictionary-it/index.aff": "dictionaries/it.aff",
+      "../node_modules/dictionary-it/index.dic": "dictionaries/it.dic"
     },
     "category": "Productivity",
     "shortDescription": "Editor de LaTeX local estilo Overleaf"

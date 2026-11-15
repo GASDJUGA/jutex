@@ -1,16 +1,6 @@
 /**
- * Hunspell checking with nspell: what the spell-check worker runs (and the tests, directly).
+ * Order of spelling suggestions: Hunspell lists them in no useful order.
  */
-import nspell from "nspell";
-
-export type Speller = {
-  /** The words of `words` that are not correct. */
-  wrong(words: string[]): string[];
-  suggest(word: string): string[];
-  /** The personal dictionary's words are correct too. */
-  add(words: string[]): void;
-  remove(words: string[]): void;
-};
 
 /** Most suggestions offered for a word. */
 export const MAX_SUGGESTIONS = 6;
@@ -40,21 +30,11 @@ export function typingDistance(a: string, b: string): number {
   return d[x.length][y.length];
 }
 
-/** nspell's suggestions, closest first (it lists them in no useful order). */
+/** The dictionary's suggestions, closest first. */
 export function rankSuggestions(word: string, suggestions: string[]): string[] {
   return suggestions
     .map((s, index) => ({ s, index, cost: typingDistance(word, s) }))
     .sort((p, q) => p.cost - q.cost || p.index - q.index)
     .map((p) => p.s)
     .slice(0, MAX_SUGGESTIONS);
-}
-
-export function createSpeller(aff: string, dic: string): Speller {
-  const spell = nspell(aff, dic);
-  return {
-    wrong: (words) => words.filter((w) => !spell.correct(w)),
-    suggest: (word) => rankSuggestions(word, spell.suggest(word)),
-    add: (words) => words.forEach((w) => spell.add(w)),
-    remove: (words) => words.forEach((w) => spell.remove(w)),
-  };
 }

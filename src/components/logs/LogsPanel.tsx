@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { useT, type TranslationKey } from "../../i18n";
+import { offersInstall } from "../../lib/latexLog/install";
 import type { LogEntry } from "../../lib/latexLog/parse";
 import { useCompile } from "../../store/compile";
 import { useProjectView } from "../../store/project";
@@ -171,7 +172,7 @@ function ProblemItem({ entry }: { entry: LogEntry }) {
           </pre>
         )}
       </button>
-      {entry.kind === "missingFile" && entry.missingFile?.endsWith(".sty") && (
+      {offersInstall(entry) && entry.missingFile && (
         <div className="px-3 pb-2">
           <MissingPackage file={entry.missingFile} />
         </div>
