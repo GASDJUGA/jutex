@@ -893,6 +893,20 @@ confírmalo con `grep -rnE 'cfg\((not\()?(target_os|unix|windows)' src-tauri/src
 
 ## 11. Estado actual
 
+- Linux: **release 2.1.0 publicado** (2026-11-15, confirmado por el usuario tras probarlo en
+  Windows): https://github.com/GASDJUGA/jutex/releases/tag/v2.1.0, tag `v2.1.0` en `61ada53`
+  (PR #28, solo `CLAUDE.md` desde `91ef03d`, de donde salieron los cuatro archivos).
+  Archivos:
+  - `JuTeX_2.1.0_amd64.AppImage` (SHA-256 `9bd567e8…`);
+  - `jutex-2.1.0-1-x86_64.pkg.tar.zst` (`9ec811a2…`, con la copia del PKGBUILD apuntando a
+    `91ef03d`);
+  - `JuTeX_2.1.0_aarch64.dmg` (`c4f43f1c…`);
+  - `JuTeX_2.1.0_x64-setup.exe` (`383d4624…`).
+
+  Los de Linux abren el inicio con «v2.1.0» en Xvfb con un HOME vacío y siguen el idioma del
+  sistema (alemán y inglés). Revisados desde Linux el `.dmg` y el `.exe`: versión 2.1.0
+  (arm64 con firma ad hoc; x64), con plantillas y diccionarios idénticos a los de
+  `91ef03d`. La línea Windows no dejó entrada aquí; el usuario lo probó en Windows.
 - macOS: **2.1.0 revisada en el Mac** (2026-11-15, pedido del usuario; `main` en `91ef03d`,
   PR #26 y #27). Pasan `pnpm lint`/`typecheck`/`test` (678) y `cargo fmt`/`clippy`/`test`
   (285): compila en macOS lo propio de este sistema que Linux no pudo probar. Idioma del
