@@ -4,6 +4,27 @@ Lo nuevo de cada versión respecto de la anterior, de la más reciente a la más
 notas de cada release (con cómo instalar) están en `docs/releases/<versión>.md`.
 Hasta la 1.2.2 se llamó LibreTeX.
 
+## 2.1.0 (sin publicar)
+
+### Novedades
+
+- Seis idiomas en la interfaz: español, inglés, portugués (Brasil), francés, alemán e
+  italiano. Por defecto, el del sistema (inglés si no es uno de esos); quien ya usaba JuTeX
+  sigue en español.
+- Plantillas en los seis idiomas y el idioma de los documentos nuevos (Ajustes y el diálogo
+  «Nuevo proyecto»); la plantilla del artículo se llama «Artículo XeLaTeX».
+- Ortografía en los seis idiomas con `spellbook` (Rust), mucho más rápida y liviana que nspell.
+- Al abrir, importar o clonar un proyecto, su idioma (babel o polyglossia) decide la
+  ortografía.
+- Un idioma de babel que falta se ofrece instalar desde Registros, como un `.sty`; el TeX
+  Live de JuTeX trae los seis idiomas.
+- Menú de macOS, aviso de Windows y enlace a la documentación de LaTeX en el idioma.
+- README principal en inglés (`README.es.md` en español).
+
+### Arreglos
+
+- Ajustes: los selectores ya no cortan los textos largos.
+
 ## 2.0.0 — 2026-11-14
 
 ### Novedades

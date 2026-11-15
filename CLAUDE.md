@@ -131,7 +131,7 @@ respaldo opcional en GitHub (5.9), siempre de forma explícita a petición del u
 | Editor | **CodeMirror 6**. Lenguaje LaTeX: probar `codemirror-lang-latex` (verificar en npm que exista y esté mantenido); si no sirve, usar `@codemirror/legacy-modes/mode/stex` vía `StreamLanguage` |
 | PDF | `pdfjs-dist`, worker empaquetado localmente |
 | Matemáticas | **MathJax** (v3 `mathjax-full` o v4 `@mathjax/src`; verifica cuál es la estable actual) con salida SVG, empaquetado localmente |
-| Ortografía | `nspell` + diccionarios `dictionary-es` / `dictionary-en` empaquetados |
+| Ortografía | crate `spellbook` (Rust) + diccionarios Hunspell `dictionary-es/en/pt/fr/de/it` empaquetados como recursos (desde 2.1.0; antes `nspell`) |
 | Diff de historial | `@codemirror/merge` |
 | Rust (crates) | `serde`, `serde_json`, `tokio`, `notify`, `walkdir`, `ignore`, `regex`, `zip`, `git2`, `trash`, `directories`, `thiserror` |
 | Compilación | `latexmk` (pdfLaTeX / XeLaTeX / LuaLaTeX) |
@@ -166,7 +166,10 @@ Cualquier dependencia nueva fuera de esta tabla debe justificarse en la sección
    borrar = enviar a la papelera (`trash`), confirmación antes de acciones destructivas.
 4. **Identidad propia.** El diseño se inspira en el layout de Overleaf, pero no se copian su
    logo, nombre ni assets. JuTeX tiene logo y paleta propios.
-5. **Idioma.** UI en español por defecto, preparada para i18n (`es`, `en`).
+5. **Idioma.** Seis idiomas (`es`, `en`, `pt` de Brasil, `fr`, `de`, `it`; tabla única en
+   `src/lib/languages.json`): la interfaz sigue al sistema (inglés si no es uno de esos) o
+   al elegido, y los documentos nuevos (plantillas, babel, ortografía) al de la interfaz o al
+   elegido. Los textos de la interfaz en `src/i18n/<idioma>.json`, todos con las mismas claves.
 6. **Rendimiento.** El editor debe seguir fluido con archivos de varios miles de líneas; el
    visor PDF renderiza páginas de forma perezosa.
 
@@ -183,8 +186,9 @@ Cualquier dependencia nueva fuera de esta tabla debe justificarse en la sección
 - **Proyectos:**
   - Lista/tarjetas con nombre, ruta, última modificación y compilador; búsqueda y orden
     (recientes, nombre, fecha). Miniatura opcional de la primera página del último PDF.
-  - **Nuevo proyecto:** vacío o desde plantilla (ver `templates/`): *Artículo XeLaTeX en
-    español* (por defecto), *Apuntes de curso*, *Tarea / informe*, *Presentación Beamer*.
+  - **Nuevo proyecto:** vacío o desde plantilla (ver `templates/<id>/<idioma>/`, una copia por
+    idioma): *Artículo XeLaTeX* (por defecto), *Apuntes de curso*, *Tarea / informe*,
+    *Presentación Beamer*, en el idioma elegido (el de los documentos nuevos por defecto).
   - **Abrir carpeta existente:** detectar el archivo principal (el `.tex` con
     `\documentclass`); si hay varios, preguntar.
   - **Importar ZIP** (incluidos ZIPs exportados desde Overleaf).
@@ -339,7 +343,8 @@ Accesible desde la pestaña **Paquetes** del inicio y desde el riel de iconos de
    permite instalar paquetes con `tlmgr`, así que JuTeX ofrece un asistente que descarga
    `install-tl-unx.tar.gz` desde `https://mirror.ctan.org/systems/texlive/tlnet/` y hace una
    instalación de usuario en `~/.local/share/jutex/texlive/` con un archivo *profile*
-   (esquema básico + XeTeX + `babel-spanish` + `latexmk`, sin modificar el PATH del sistema).
+   (esquema básico + XeTeX + `latexmk` + babel y separación de los seis idiomas, sin modificar
+   el PATH del sistema).
    Con este backend `tlmgr` funciona sin root, y JuTeX lo antepone en el PATH al compilar.
 2. **TeX Live oficial del sistema con `tlmgr` escribible** (por ejemplo `/usr/local/texlive`).
 3. **TeX Live de pacman (solo lectura).** Muestra si un paquete está instalado (`kpsewhich`)
@@ -387,7 +392,9 @@ el elegido es el que compila y el que gestiona los paquetes.
 
 Tema de la interfaz (Índigo por defecto, Grafito, Bosque, Océano, Claro), fuente y tamaño del
 editor, tema del editor, keymap (normal / Vim / Emacs), sangría
-automática, revisión en vivo on/off, compilador por defecto, idioma de la UI, diccionario,
+automática, revisión en vivo on/off, compilador por defecto, idioma de la UI («igual que el
+sistema» o uno de los seis), idioma de los documentos nuevos («igual que la interfaz» o uno),
+revisar la ortografía de los proyectos nuevos, diccionario,
 directorio de proyectos, ruta de la distribución TeX, preview matemático on/off, preview al
 pasar el mouse.
 
@@ -883,6 +890,29 @@ confírmalo con `grep -rnE 'cfg\((not\()?(target_os|unix|windows)' src-tauri/src
 ---
 
 ## 11. Estado actual
+
+- Linux: **más idiomas** (pedido del usuario el 2026-11-14: «que la app tenga más alcance»;
+  rama `mas-idiomas`, diseño `docs/superpowers/specs/2026-11-14-mas-idiomas-design.md`, plan
+  `docs/superpowers/plans/2026-11-14-mas-idiomas.md`). Seis idiomas (es, en, pt de Brasil, fr,
+  de, it) en la interfaz y los documentos. Hecho: tabla única `src/lib/languages.json` (Rust
+  `lang.rs`, interfaz `lib/languages.ts`); idioma del sistema (`platform/locale.rs`:
+  LANGUAGE/LC_ALL/LC_MESSAGES/LANG, NSLocale, GetUserDefaultUILanguage); ajustes `locale`
+  («system» o un código), `documentLanguage` («interface» o un código) y
+  `newProjectSpellcheck` (reemplazan a `defaultSpellLang`); `settle_first_run`: quien ya usaba
+  JuTeX (hay `settings.json` o `projects.json` sin `locale`) queda en español; interfaz en los
+  seis (`translate` cae en inglés); `main.tsx` espera los ajustes antes de dibujar (ningún
+  cuadro en otro idioma, comprobado en WebKitGTK con LANG=de_DE); menú de macOS y aviso de
+  Windows en `platform/texts.rs`; «Antes de restaurar …» lo nombra la interfaz; plantillas en
+  `templates/<id>/<idioma>/` (24, todas compilan: test ignorado
+  `todas_las_plantillas_compilan`); ortografía en Rust con `spellbook` (`spellcheck.rs`, comandos
+  `spell_wrong`/`spell_suggest`; nspell no cargaba pt ni it y el francés tardaba 2,6 s y
+  310 MB); idioma de un proyecto abierto (`detect_language`); idioma de babel que falta → su
+  `.ldf` en Registros con «Instalar y recompilar»; TeX Live de JuTeX con los seis idiomas
+  (212 MB); README principal en inglés (`README.es.md`), capturas en inglés
+  (`docs/screenshots/en`, `scripts/screenshots.py <dir> <idioma>`). **Sin probar en macOS ni
+  Windows:** el código propio de esos sistemas (NSLocale, GetUserDefaultUILanguage, menú,
+  aviso) no se compila en Linux ni en el CI de esta rama; esas líneas lo revisan antes de
+  fusionar. Notas en `docs/releases/2.1.0.md`; falta la versión 2.1.0 y el release.
 
 - macOS: JuTeX revisado en el Mac (2026-11-14, pedido del usuario; rama `mac-jutex`, tarea 9
   del plan de renombrar). Pasan `pnpm lint`/`typecheck`/`test` (640) y `cargo fmt`/`clippy`/
@@ -2821,3 +2851,8 @@ confírmalo con `grep -rnE 'cfg\((not\()?(target_os|unix|windows)' src-tauri/src
 | 2026-11-09 | Se siguen aceptando los nombres viejos donde llegan de afuera: `"libretex"` en `texDistribution`, `LIBRETEX_SAFE_RENDERER`, el `LibreTeX-Kind` de las versiones del historial | Ajustes, variables y versiones guardadas antes del cambio siguen valiendo |
 | 2026-11-14 | El ícono de la app (`src-tauri/app-icon.svg`) es el logo con margen transparente (824 de 1024, la cuadrícula de macOS); el logo de la interfaz llena su cuadro | Pedido del usuario: el ícono anterior llenaba el cuadro y en la barra de tareas se veía más grande que los de otras apps |
 | 2026-11-14 | Paquete de Arch `jutex` con `provides`, `conflicts` y `replaces` de `libretex` | Pacman cambia uno por otro al actualizar; en macOS y Windows el usuario desinstala LibreTeX a mano (README) |
+| 2026-11-14 | Seis idiomas en una tabla única (`src/lib/languages.json`) que leen Rust (`include_str!`) y la interfaz | Pedido del usuario (más alcance). Una sola fuente para códigos, nombres, opción de babel, paquetes de TeX Live, grupo de pacman, `LANGID` de Windows y wikibook |
+| 2026-11-14 | Idioma de la interfaz por defecto = el del sistema (`"system"`, inglés si no es uno de los seis); quien ya usaba JuTeX queda en español (`settle_first_run`) | Pedido del usuario. Guardar `"system"` y no el detectado: una instalación nueva sigue al sistema si este cambia, y lo elegido queda fijo |
+| 2026-11-14 | Plantillas con una copia completa por idioma (`templates/<id>/<idioma>/`) | Elegido por el usuario (enfoque A): cada copia compila y se revisa sola; un test vigila que tengan la misma estructura |
+| 2026-11-14 | Ortografía en Rust con el crate `spellbook` 0.4 (MPL-2.0); diccionarios `dictionary-pt` 4 (LGPL-3.0 o MPL-2.0), `dictionary-fr` 3 (MPL-2.0), `dictionary-de` 3 (GPL-2.0 o GPL-3.0), `dictionary-it` 2 (GPL-3.0) como recursos de Tauri desde `node_modules` | Decidido por el usuario: nspell no cargaba pt ni it («Too many properties to enumerate») y el francés tardaba 2,6 s y 310 MB; spellbook carga los seis en 0,01–0,08 s y 2–23 MB. El CI de Rust instala `node_modules` para los recursos |
+| 2026-11-14 | Al abrir un proyecto sin `project.json`, su babel o polyglossia decide la ortografía; un idioma sin diccionario la apaga | Que un documento ajeno se revise en su idioma sin configurar nada, y no quede todo en rojo |

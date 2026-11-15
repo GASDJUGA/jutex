@@ -1,214 +1,228 @@
 # JuTeX
 
-_Just a TeX editor._ Editor de LaTeX de escritorio con una experiencia similar a Overleaf, pero **100 % local**:
-los proyectos viven en tu disco, se compilan con la distribución TeX de tu máquina y no hay
-servidores, cuentas ni telemetría. Solo el gestor de paquetes y el respaldo en GitHub usan
-internet, y únicamente cuando tú lo pides.
+**English** · [Español](README.es.md)
 
-Antes se llamaba LibreTeX; se cambió porque ya existe otro editor con ese nombre. Si vienes
-de LibreTeX, mira [Pasar de LibreTeX a JuTeX](#pasar-de-libretex-a-jutex).
+_Just a TeX editor._ A desktop LaTeX editor with an experience similar to Overleaf, but **100%
+local**: your projects live on your disk, they are compiled with your machine's TeX
+distribution, and there are no servers, accounts or telemetry. Only the package manager and the
+GitHub backup use the internet, and only when you ask.
 
-![Vista de proyecto: editor, vista previa de la fórmula y PDF](docs/screenshots/proyecto.png)
+In six languages: English, Spanish, Portuguese (Brazil), French, German and Italian (see
+[Languages](#languages)).
 
-## Qué hace
+It used to be called LibreTeX; it was renamed because another editor already has that name. If
+you come from LibreTeX, see [Moving from LibreTeX to JuTeX](#moving-from-libretex-to-jutex).
 
-**Proyectos**
+![Project view: editor, formula preview and PDF](docs/screenshots/en/proyecto.png)
 
-- Lista de proyectos con búsqueda y orden; varios proyectos abiertos a la vez en pestañas, y
-  en varias ventanas: arrastra una pestaña fuera para verla en otra ventana.
-- Crear desde plantillas (artículo XeLaTeX en español, apuntes, tarea, Beamer), abrir una
-  carpeta, importar un ZIP (también los de Overleaf) o traer un proyecto desde GitHub.
-- Papelera propia (es la del sistema): restaurar o eliminar definitivamente.
+## What it does
+
+**Projects**
+
+- Project list with search and sorting; several projects open at once in tabs, and in several
+  windows: drag a tab out to see it in another window.
+- Create from templates (XeLaTeX article, course notes, homework, Beamer) in any of the six
+  languages, open a folder, import a ZIP (Overleaf's too) or bring a project from GitHub.
+- Its own trash (the system's): restore or delete permanently.
 
 **Editor**
 
-- CodeMirror 6 con resaltado, plegado de entornos y secciones, cierre automático de llaves,
-  `$` y entornos, comentar con `Ctrl+/` y teclados Vim o Emacs opcionales.
-- Autocompletado de comandos y entornos (los de matemáticas primero dentro de una fórmula),
-  de tus propios `\newcommand`, de `\ref` y `\cite` del proyecto y de rutas de archivos.
-- **Vista previa de matemáticas en vivo** con MathJax, que entiende las macros de tu
-  preámbulo.
-- Revisión en vivo de llaves, entornos y fórmulas sin cerrar mientras escribes, y revisión
-  ortográfica en español e inglés con diccionario personal.
-- Buscar y reemplazar en el archivo y en todo el proyecto (texto o expresión regular).
-- Recuerda dónde quedaste: archivos abiertos, cursor de cada uno y página del PDF.
+- CodeMirror 6 with highlighting, folding of environments and sections, automatic closing of
+  braces, `$` and environments, comment with `Ctrl+/`, and optional Vim or Emacs keymaps.
+- Autocompletion of commands and environments (math ones first inside a formula), of your own
+  `\newcommand`s, of the project's `\ref` and `\cite`, and of file paths.
+- **Live math preview** with MathJax, which understands your preamble's macros.
+- Live checking of unclosed braces, environments and formulas while you type, and spell
+  checking in the six languages with a personal dictionary.
+- Find and replace in the file and in the whole project (text or regular expression).
+- Remembers where you left off: open files, each one's cursor and the PDF page.
 
-**Compilación y PDF**
+**Compiling and PDF**
 
-- `latexmk` con pdfLaTeX, XeLaTeX o LuaLaTeX; siempre manual (`Ctrl+Enter`), con la salida
-  en vivo y los errores enlazados a su línea.
-- Visor PDF integrado que conserva la página y el zoom al recompilar, con búsqueda y SyncTeX
-  en ambos sentidos (`Ctrl+J` y doble clic en el PDF).
-- Exportar el PDF (`Ctrl+Shift+S`) o un ZIP de fuentes listo para Overleaf.
+- `latexmk` with pdfLaTeX, XeLaTeX or LuaLaTeX; always manual (`Ctrl+Enter`), with live output
+  and errors linked to their line.
+- Built-in PDF viewer that keeps the page and zoom when recompiling, with search and SyncTeX
+  both ways (`Ctrl+J` and double click in the PDF).
+- Export the PDF (`Ctrl+Shift+S`) or a ZIP of the sources ready for Overleaf.
 
-**Paquetes**
+**Packages**
 
-- Busca en TeX Live y en CTAN, instala, actualiza y desinstala; si al compilar falta un
-  `.sty`, ofrece instalar el paquete y recompilar con un clic.
-- Si tu TeX Live es el de pacman (solo lectura), te dice qué paquete de pacman instalar.
+- Searches TeX Live and CTAN, installs, updates and uninstalls; if a `.sty` or a babel language
+  is missing when compiling, it offers to install the package and recompile with one click.
+- If your TeX Live is pacman's (read-only), it tells you which pacman package to install.
 
-![Gestor de paquetes en el panel del proyecto](docs/screenshots/paquetes.png)
+![Package manager in the project panel](docs/screenshots/en/paquetes.png)
 
-**Historial y respaldo**
+**History and backup**
 
-- Historial local automático (cada pocos minutos y tras compilar) y versiones con nombre;
-  diferencias por archivo y restaurar un archivo o el proyecto entero.
-- Respaldo opcional con el Git del proyecto y, si quieres, en un repositorio privado de
-  GitHub: subir, traer cambios y continuar en otra máquina. JuTeX no guarda contraseñas
-  ni tokens.
+- Automatic local history (every few minutes and after compiling) and named versions;
+  differences per file, and restore a file or the whole project.
+- Optional backup with the project's Git and, if you want, in a private GitHub repository:
+  push, pull changes and continue on another machine. JuTeX stores no passwords or tokens.
 
-![Historial con las diferencias de una versión](docs/screenshots/historial.png)
+![History with the differences of a version](docs/screenshots/en/historial.png)
 
-![Respaldo con Git conectado a GitHub](docs/screenshots/respaldo.png)
+![Git backup connected to GitHub](docs/screenshots/en/respaldo.png)
 
-![Inicio con la lista de proyectos](docs/screenshots/inicio.png)
+![Home with the project list](docs/screenshots/en/inicio.png)
 
-## Plataformas
+## Languages
 
-- **Linux (Arch):** paquete de Arch y AppImage en los
-  [releases](https://github.com/GASDJUGA/jutex/releases); también se puede compilar el
-  paquete desde el código con `makepkg -si` en `packaging/arch`.
-- **macOS 13 o posterior, Apple Silicon:** `.dmg` en los releases (ver
-  [Instalación en macOS](#instalación-en-macos)).
-- **Windows 11 (x64):** instalador en los releases, sin permisos de administrador (ver
-  [Instalación en Windows](#instalación-en-windows)).
+The interface is in English, Spanish, Portuguese (Brazil), French, German and Italian. By
+default it follows the system's language (English if the system uses another one); change it
+in **Settings → Interface → Language**, and your choice stays when you update.
 
-## Requisitos (Arch Linux)
+New documents come in the interface's language, or in the one you choose in **Settings →
+Language of new documents** or in the **New project** dialog: the template with its texts,
+babel and spell checking in that language. When you open or import a project, JuTeX reads its
+babel or polyglossia and checks its spelling in its language. The Portuguese, French, German
+and Italian translations are new: corrections are welcome.
+
+## Platforms
+
+- **Linux (Arch):** Arch package and AppImage in the
+  [releases](https://github.com/GASDJUGA/jutex/releases); you can also build the package from
+  the source with `makepkg -si` in `packaging/arch`.
+- **macOS 13 or later, Apple Silicon:** `.dmg` in the releases (see
+  [Installing on macOS](#installing-on-macos)).
+- **Windows 11 (x64):** installer in the releases, without administrator rights (see
+  [Installing on Windows](#installing-on-windows)).
+
+## Requirements (Arch Linux)
 
 ```sh
 sudo pacman -S --needed webkit2gtk-4.1 git
 ```
 
-`git` se usa para el respaldo con Git. Para listar tus repositorios de GitHub y crear uno
-nuevo desde la app hace falta además GitHub CLI (`sudo pacman -S github-cli` y luego
-`gh auth login`).
+`git` is used for the Git backup. To list your GitHub repositories and create a new one from
+the app you also need GitHub CLI (`sudo pacman -S github-cli`, then `gh auth login`).
 
-### Distribución TeX (opcional)
+### TeX distribution (optional)
 
-Para compilar hace falta una distribución TeX, pero no es necesario instalarla antes. Hay
-dos caminos, y si tienes los dos, eliges cuál usar en **Paquetes** o en **Ajustes**:
+Compiling needs a TeX distribution, but you don't have to install it first. There are two
+ways, and if you have both, you choose which one to use in **Packages** or in **Settings**:
 
-- **TeX Live de JuTeX** (sin sudo): en la pestaña **Paquetes**, «Instalar el TeX Live de
-  JuTeX». Descarga unos 80 MB desde CTAN, ocupa unos 210 MB en
-  `~/.local/share/jutex/texlive` y no toca el sistema. Trae lo necesario para XeLaTeX en
-  español; los demás paquetes se instalan, actualizan y desinstalan desde la propia app.
-- **TeX Live de pacman**: JuTeX lo usa tal cual. Sus paquetes no se pueden instalar
-  desde la app; cuando falta uno, JuTeX te dice qué paquete de pacman lo trae. Un
-  conjunto razonable para empezar:
+- **JuTeX's TeX Live** (no sudo): in the **Packages** tab, “Install JuTeX's TeX Live”. It
+  downloads about 80 MB from CTAN, takes about 210 MB in `~/.local/share/jutex/texlive` and
+  does not touch the system. It brings what XeLaTeX needs in the six languages; other packages
+  are installed, updated and uninstalled from the app itself.
+- **pacman's TeX Live**: JuTeX uses it as it is. Its packages can't be installed from the app;
+  when one is missing, JuTeX tells you which pacman package has it. A reasonable set to start
+  with:
 
   ```sh
   sudo pacman -S --needed texlive-basic texlive-latex texlive-latexrecommended \
-    texlive-latexextra texlive-xetex texlive-langspanish texlive-binextra
+    texlive-latexextra texlive-xetex texlive-langenglish texlive-binextra
   ```
 
-## Instalación en macOS
+  plus the group of each other language you write in (`texlive-langspanish`,
+  `texlive-langportuguese`, `texlive-langfrench`, `texlive-langgerman`,
+  `texlive-langitalian`).
 
-1. Abre `JuTeX_<versión>_aarch64.dmg` y arrastra **JuTeX** a **Aplicaciones**.
-2. La app no está firmada con una cuenta de Apple Developer, así que la primera vez macOS no
-   la deja abrir («Apple no pudo verificar…»). Para abrirla igual:
-   - **macOS 15 o posterior:** intenta abrirla una vez, cierra el aviso y ve a **Ajustes del
-     Sistema → Privacidad y seguridad**; abajo aparece «Se bloqueó el uso de JuTeX»: pulsa
-     **Abrir igualmente** y confirma.
-   - **macOS 13 y 14:** clic derecho (o Control + clic) sobre JuTeX en Aplicaciones →
-     **Abrir** → **Abrir**.
-   - Si dice que la app «está dañada», quítale la marca de descarga desde la Terminal:
+## Installing on macOS
+
+1. Open `JuTeX_<version>_aarch64.dmg` and drag **JuTeX** to **Applications**.
+2. The app is not signed with an Apple Developer account, so the first time macOS won't open it
+   (“Apple could not verify…”). To open it anyway:
+   - **macOS 15 or later:** try to open it once, close the notice and go to **System Settings →
+     Privacy & Security**; at the bottom it says “JuTeX was blocked”: click **Open Anyway** and
+     confirm.
+   - **macOS 13 and 14:** right click (or Control + click) on JuTeX in Applications → **Open** →
+     **Open**.
+   - If it says the app “is damaged”, remove the download mark from the Terminal:
 
      ```sh
      xattr -dr com.apple.quarantine /Applications/JuTeX.app
      ```
 
-   Después se abre como cualquier otra app.
+   After that it opens like any other app.
 
-Lo demás, igual que en Linux, es opcional:
+Everything else, as on Linux, is optional:
 
-- **TeX:** [MacTeX](https://tug.org/mactex/) (`brew install --cask mactex-no-gui`, pide la
-  contraseña de administrador) o el TeX Live de JuTeX desde la pestaña **Paquetes**, que
-  para verificar la descarga necesita GnuPG (`brew install gnupg`). Con MacTeX los paquetes
-  se instalan con `sudo tlmgr install …`; JuTeX te da el comando para copiarlo.
-- **Respaldo con Git:** `git` viene con las herramientas de línea de comandos de Xcode
-  (`xcode-select --install`); para GitHub, `brew install gh` y `gh auth login`.
+- **TeX:** [MacTeX](https://tug.org/mactex/) (`brew install --cask mactex-no-gui`, asks for the
+  administrator password) or JuTeX's TeX Live from the **Packages** tab, which needs GnuPG to
+  check the download (`brew install gnupg`). With MacTeX, packages are installed with
+  `sudo tlmgr install …`; JuTeX gives you the command to copy.
+- **Git backup:** `git` comes with Xcode's command line tools (`xcode-select --install`); for
+  GitHub, `brew install gh` and `gh auth login`.
 
-## Instalación en Windows
+## Installing on Windows
 
-1. Ejecuta `JuTeX_<versión>_x64-setup.exe`. Instala JuTeX solo para tu usuario (en
-   `%LOCALAPPDATA%\JuTeX`), sin pedir permisos de administrador, y lo deja en el menú
-   Inicio. Se desinstala desde **Configuración → Aplicaciones**; tus proyectos y ajustes no
-   se borran.
-2. El instalador no está firmado con un certificado de firma de código, así que la primera vez
-   Windows SmartScreen puede avisar «Windows protegió su PC». Para instalarlo igual: pulsa
-   **Más información** → **Ejecutar de todas formas**. Solo pasa con el instalador que se
-   descarga de internet, y una vez.
+1. Run `JuTeX_<version>_x64-setup.exe`. It installs JuTeX only for your user (in
+   `%LOCALAPPDATA%\JuTeX`), without asking for administrator rights, and puts it in the Start
+   menu. It is uninstalled from **Settings → Apps**; your projects and settings are not
+   deleted.
+2. The installer is not signed with a code signing certificate, so the first time Windows
+   SmartScreen may say “Windows protected your PC”. To install it anyway: click **More info** →
+   **Run anyway**. It only happens with the installer downloaded from the internet, and once.
 
-WebView2, el motor que dibuja la interfaz, ya viene en Windows 11. Lo demás es opcional (en
-PowerShell; ningún comando pide administrador):
+WebView2, the engine that draws the interface, already comes with Windows 11. Everything else
+is optional (in PowerShell; no command needs administrator rights):
 
-- **TeX:** [MiKTeX](https://miktex.org) para tu usuario, con el Perl que necesita su
-  `latexmk`:
+- **TeX:** [MiKTeX](https://miktex.org) for your user, with the Perl its `latexmk` needs:
 
   ```powershell
   winget install --id MiKTeX.MiKTeX -e
   winget install --id StrawberryPerl.StrawberryPerl -e
   ```
 
-  JuTeX instala y desinstala los paquetes de MiKTeX desde la pestaña **Paquetes**, y MiKTeX
-  puede instalar al compilar lo que falte. O bien, sin instalar nada antes, el TeX Live de
-  JuTeX desde la pestaña **Paquetes** (verifica la descarga con el GnuPG que trae Git for
-  Windows). Un TeX Live oficial instalado en `C:\texlive` también sirve.
+  JuTeX installs and uninstalls MiKTeX's packages from the **Packages** tab, and MiKTeX can
+  install what is missing while compiling. Or, without installing anything first, JuTeX's TeX
+  Live from the **Packages** tab (it checks the download with the GnuPG that comes with Git for
+  Windows). An official TeX Live installed in `C:\texlive` works too.
 
-- **Respaldo con Git:** `winget install --id Git.Git -e`; para GitHub,
-  `winget install --id GitHub.cli -e` y `gh auth login`.
+- **Git backup:** `winget install --id Git.Git -e`; for GitHub,
+  `winget install --id GitHub.cli -e` and `gh auth login`.
 
-## Dónde guarda JuTeX sus archivos
+## Where JuTeX keeps its files
 
-Los proyectos viven donde tú los pongas (por defecto, `~/JuTeX`; en Windows,
-`%USERPROFILE%\JuTeX`; si ya tenías `~/LibreTeX` de antes, se sigue usando esa); cada uno
-guarda sus metadatos, el PDF compilado y el historial en su carpeta oculta `.jutex/`. Lo demás:
+Projects live wherever you put them (by default `~/JuTeX`; on Windows,
+`%USERPROFILE%\JuTeX`; if you already had `~/LibreTeX` from before, that one is used); each one
+keeps its metadata, the compiled PDF and the history in its hidden `.jutex/` folder. The rest:
 
-| Qué                                               | Linux                  | macOS                                           | Windows                            |
-| ------------------------------------------------- | ---------------------- | ----------------------------------------------- | ---------------------------------- |
-| Ajustes, lista de proyectos, diccionario personal | `~/.config/jutex`      | `~/Library/Application Support/org.JuTeX.jutex` | `%APPDATA%\JuTeX\jutex\config`     |
-| TeX Live de JuTeX, registro de la papelera        | `~/.local/share/jutex` | `~/Library/Application Support/org.JuTeX.jutex` | `%APPDATA%\JuTeX\jutex\data`       |
-| Caché (índice de CTAN, catálogo de paquetes)      | `~/.cache/jutex`       | `~/Library/Caches/org.JuTeX.jutex`              | `%LOCALAPPDATA%\JuTeX\jutex\cache` |
+| What                                        | Linux                  | macOS                                           | Windows                            |
+| ------------------------------------------- | ---------------------- | ----------------------------------------------- | ---------------------------------- |
+| Settings, project list, personal dictionary | `~/.config/jutex`      | `~/Library/Application Support/org.JuTeX.jutex` | `%APPDATA%\JuTeX\jutex\config`     |
+| JuTeX's TeX Live, the trash's record        | `~/.local/share/jutex` | `~/Library/Application Support/org.JuTeX.jutex` | `%APPDATA%\JuTeX\jutex\data`       |
+| Cache (CTAN index, package catalog)         | `~/.cache/jutex`       | `~/Library/Caches/org.JuTeX.jutex`              | `%LOCALAPPDATA%\JuTeX\jutex\cache` |
 
-También se ven en **Ajustes → Rutas**.
+They are also shown in **Settings → Paths**.
 
-## Pasar de LibreTeX a JuTeX
+## Moving from LibreTeX to JuTeX
 
-JuTeX 2.0.0 es la versión siguiente de LibreTeX 1.2.2 con otro nombre. La primera vez que se
-abre, mueve solo lo que dejó LibreTeX: ajustes, lista de proyectos, diccionario personal,
-el TeX Live de la app, la caché y lo que recordaba la ventana (pestañas, cursor, tamaños de
-los paneles). Cada proyecto pasa de `.libretex/` a `.jutex/` (con su historial) la primera
-vez que JuTeX lo lee. La carpeta `~/LibreTeX` de tus proyectos queda donde está.
-Cierra LibreTeX antes de abrir JuTeX por primera vez (en Windows, si sigue abierto, JuTeX te
-lo pide).
+JuTeX 2.0.0 is the version after LibreTeX 1.2.2 with another name. The first time it opens, it
+moves by itself what LibreTeX left: settings, project list, personal dictionary, the app's TeX
+Live, the cache and what the window remembered (tabs, cursor, panel sizes). Each project goes
+from `.libretex/` to `.jutex/` (with its history) the first time JuTeX reads it. The
+`~/LibreTeX` folder with your projects stays where it is. Close LibreTeX before opening JuTeX
+for the first time (on Windows, if it is still open, JuTeX asks you to).
 
-- **Arch Linux:** `sudo pacman -U jutex-<versión>-1-x86_64.pkg.tar.zst` reemplaza al paquete
-  `libretex`.
-- **AppImage:** borra el `LibreTeX_…AppImage` y usa el de JuTeX.
-- **macOS:** instala JuTeX desde su `.dmg` y arrastra **LibreTeX** de Aplicaciones a la
-  papelera.
-- **Windows:** el instalador de JuTeX no reemplaza al de LibreTeX. Instala JuTeX, ábrelo una
-  vez y después desinstala LibreTeX desde **Configuración → Aplicaciones**, sin marcar
-  «Eliminar los datos de aplicación» (si lo desinstalas antes con esa casilla, se borra lo que
-  recordaba la ventana: pestañas, cursor y paneles; los proyectos y ajustes no).
+- **Arch Linux:** `sudo pacman -U jutex-<version>-1-x86_64.pkg.tar.zst` replaces the `libretex`
+  package.
+- **AppImage:** delete the `LibreTeX_…AppImage` and use JuTeX's.
+- **macOS:** install JuTeX from its `.dmg` and drag **LibreTeX** from Applications to the trash.
+- **Windows:** JuTeX's installer does not replace LibreTeX's. Install JuTeX, open it once and
+  then uninstall LibreTeX from **Settings → Apps**, without ticking “Delete the application
+  data” (if you uninstall it before with that box ticked, what the window remembered is deleted:
+  tabs, cursor and panels; projects and settings are not).
 
-## Atajos principales
+## Main shortcuts
 
-En macOS, ⌘ en lugar de Ctrl (cambiar de pestaña sigue siendo Ctrl+Tab, o ⇧⌘] / ⇧⌘[).
+On macOS, ⌘ instead of Ctrl (switching tabs is still Ctrl+Tab, or ⇧⌘] / ⇧⌘[).
 
-| Atajo                           | Acción                                         |
-| ------------------------------- | ---------------------------------------------- |
-| `Ctrl+S`                        | Guardar (no compila)                           |
-| `Ctrl+Enter`                    | Compilar                                       |
-| `Ctrl+Shift+S`                  | Guardar el PDF compilado como…                 |
-| `Ctrl+Shift+F`                  | Buscar en el proyecto                          |
-| `Ctrl+J` / doble clic en el PDF | SyncTeX: del código al PDF y del PDF al código |
-| `Ctrl+Tab`                      | Pestaña siguiente                              |
-| `F1`                            | Todos los atajos                               |
+| Shortcut                           | Action                                     |
+| ---------------------------------- | ------------------------------------------ |
+| `Ctrl+S`                           | Save (does not compile)                    |
+| `Ctrl+Enter`                       | Compile                                    |
+| `Ctrl+Shift+S`                     | Save the compiled PDF as…                  |
+| `Ctrl+Shift+F`                     | Search the project                         |
+| `Ctrl+J` / double click in the PDF | SyncTeX: from the code to the PDF and back |
+| `Ctrl+Tab`                         | Next tab                                   |
+| `F1`                               | All the shortcuts                          |
 
-## Desarrollo
+## Development
 
-Requisitos adicionales:
+Additional requirements:
 
 ```sh
 sudo pacman -S --needed rustup nodejs pnpm base-devel curl wget file openssl \
@@ -218,29 +232,32 @@ rustup default stable
 
 ```sh
 pnpm install
-pnpm tauri dev        # app en modo desarrollo
-pnpm test             # tests del frontend (Vitest)
+pnpm tauri dev        # the app in development mode
+pnpm test             # frontend tests (Vitest)
 pnpm typecheck
 pnpm lint
 cargo test --manifest-path src-tauri/Cargo.toml
 cargo clippy --manifest-path src-tauri/Cargo.toml -- -D warnings
 ```
 
-Compilar el paquete de la aplicación (en Linux, el AppImage; en macOS, el `.app` y el `.dmg`;
-en Windows, el instalador `…-setup.exe`; en `src-tauri/target/release/bundle/`):
+`pnpm install` is needed before building the Rust side too: the spelling dictionaries are
+bundled from `node_modules`.
+
+Building the application package (on Linux, the AppImage; on macOS, the `.app` and the `.dmg`;
+on Windows, the `…-setup.exe` installer; in `src-tauri/target/release/bundle/`):
 
 ```sh
 pnpm tauri build
 ```
 
-En macOS los requisitos de desarrollo son las herramientas de línea de comandos de Xcode
-(`xcode-select --install`), Rust con [rustup](https://rustup.rs), Node 26 y pnpm
-(`brew install node pnpm`). `scripts/macos/wkprobe.swift` prueba el frontend en WKWebView, el
-motor de la app.
+On macOS the development requirements are Xcode's command line tools
+(`xcode-select --install`), Rust with [rustup](https://rustup.rs), Node 26 and pnpm
+(`brew install node pnpm`). `scripts/macos/wkprobe.swift` tests the frontend in WKWebView, the
+app's engine.
 
-En Windows los requisitos de desarrollo son las Build Tools de Visual Studio 2022 con
-«Desarrollo para el escritorio con C++», Rust con la toolchain MSVC, Node 26, pnpm y Git for
-Windows (en PowerShell):
+On Windows the development requirements are the Visual Studio 2022 Build Tools with “Desktop
+development with C++”, Rust with the MSVC toolchain, Node 26, pnpm and Git for Windows (in
+PowerShell):
 
 ```powershell
 winget install --id Microsoft.VisualStudio.2022.BuildTools -e
@@ -250,30 +267,31 @@ winget install --id pnpm.pnpm -e
 winget install --id Git.Git -e
 ```
 
-El plan de construcción, las decisiones de diseño y el estado del proyecto están en
-[`CLAUDE.md`](CLAUDE.md). Las capturas salen de la vista previa con datos de ejemplo.
+The build plan, the design decisions and the project's status are in [`CLAUDE.md`](CLAUDE.md)
+(in Spanish). The screenshots come from the browser preview with sample data
+(`scripts/screenshots.py`, one set per language).
 
 ### Wayland + NVIDIA
 
-Con el driver de NVIDIA, el renderer DMA-BUF de WebKitGTK cierra la conexión con Wayland
-(«Error 71») por la sincronización explícita del driver. JuTeX define
-`__NV_DISABLE_EXPLICIT_SYNC=1` en Wayland + NVIDIA, así la página se sigue dibujando con la
-GPU (scroll fluido). Las variables que ya hayas definido se respetan.
+With NVIDIA's driver, WebKitGTK's DMA-BUF renderer closes the connection to Wayland (“Error
+71”) because of the driver's explicit sync. JuTeX sets `__NV_DISABLE_EXPLICIT_SYNC=1` on
+Wayland + NVIDIA, so the page keeps being drawn with the GPU (smooth scrolling). Variables you
+already set are respected.
 
-Si en tu sistema la ventana sigue fallando, el modo anterior (sin aceleración, más lento)
-se activa así:
+If the window still fails on your system, the previous mode (no acceleration, slower) is
+turned on like this:
 
 ```sh
 JUTEX_SAFE_RENDERER=1 jutex
 ```
 
-## Contribuir y reportar problemas
+## Contributing and reporting problems
 
-Los errores y las ideas van en [Issues](https://github.com/GASDJUGA/jutex/issues). Cómo
-preparar el entorno y mandar cambios: [CONTRIBUTING.md](CONTRIBUTING.md). Las
-vulnerabilidades se reportan en privado: [SECURITY.md](SECURITY.md). Lo nuevo de cada versión
-está en [CHANGELOG.md](CHANGELOG.md).
+Bugs and ideas go to [Issues](https://github.com/GASDJUGA/jutex/issues). How to set up the
+environment and send changes: [CONTRIBUTING.md](CONTRIBUTING.md). Vulnerabilities are reported
+privately: [SECURITY.md](SECURITY.md). What is new in each version is in
+[CHANGELOG.md](CHANGELOG.md).
 
-## Licencia
+## License
 
 [GPL-3.0-or-later](LICENSE).
