@@ -49,9 +49,10 @@ de LibreTeX, mira [Pasar de LibreTeX a JuTeX](#pasar-de-libretex-a-jutex).
 
 **Paquetes**
 
-- Busca en TeX Live y en CTAN, instala, actualiza y desinstala; si al compilar falta un
-  `.sty` o un idioma de babel, ofrece instalar el paquete y recompilar con un clic.
-- Si tu TeX Live es el de pacman (solo lectura), te dice qué paquete de pacman instalar.
+- Busca en TeX Live (o MiKTeX) y en CTAN, instala, actualiza y desinstala; si al compilar
+  falta un `.sty` o un idioma de babel, ofrece instalar el paquete y recompilar con un clic.
+- Si el TeX de tu sistema no se puede cambiar desde la app (el TeX Live de pacman, MacTeX), te
+  da el comando para instalar lo que falta.
 
 ![Gestor de paquetes en el panel del proyecto](docs/screenshots/paquetes.png)
 
@@ -91,6 +92,39 @@ portugués, francés, alemán e italiano son nuevas: las correcciones son bienve
 - **Windows 11 (x64):** instalador en los releases, sin permisos de administrador (ver
   [Instalación en Windows](#instalación-en-windows)).
 
+## Distribución TeX (opcional)
+
+Para compilar hace falta una distribución TeX, pero no es necesario instalarla antes. Hay
+dos caminos, y si tienes los dos, eliges cuál usar en **Paquetes** o en **Ajustes**:
+
+- **TeX Live de JuTeX** (sin permisos de administrador): en la pestaña **Paquetes**,
+  «Instalar el TeX Live de JuTeX». Descarga unos 80 MB desde CTAN, ocupa unos 210 MB en la
+  carpeta de datos de JuTeX (ver [Dónde guarda JuTeX sus archivos](#dónde-guarda-jutex-sus-archivos))
+  y no toca el sistema. Trae lo necesario para XeLaTeX en los seis idiomas; los demás
+  paquetes se instalan, actualizan y desinstalan desde la propia app.
+- **El TeX de tu sistema**: JuTeX lo usa tal cual. Lo que se puede hacer desde la app depende
+  de cuál sea:
+  - **TeX Live de pacman (Arch Linux):** sus paquetes no se pueden instalar desde la app;
+    cuando falta uno, JuTeX te dice qué paquete de pacman lo trae. Un conjunto razonable para
+    empezar:
+
+    ```sh
+    sudo pacman -S --needed texlive-basic texlive-latex texlive-latexrecommended \
+      texlive-latexextra texlive-xetex texlive-langspanish texlive-binextra
+    ```
+
+    más el grupo de cada otro idioma en que escribas (`texlive-langenglish`,
+    `texlive-langportuguese`, `texlive-langfrench`, `texlive-langgerman`,
+    `texlive-langitalian`).
+
+  - **MacTeX (macOS):** los paquetes se instalan con `sudo tlmgr install …`; JuTeX te da el
+    comando para copiar (ver [Instalación en macOS](#instalación-en-macos)).
+  - **MiKTeX (Windows):** JuTeX instala, actualiza y desinstala sus paquetes desde la pestaña
+    **Paquetes**, sin permisos de administrador (ver
+    [Instalación en Windows](#instalación-en-windows)).
+  - **Un TeX Live oficial en el que puedas escribir** (por ejemplo en `C:\texlive` o uno
+    instalado para tu usuario): sus paquetes se gestionan desde la app con `tlmgr`.
+
 ## Requisitos (Arch Linux)
 
 ```sh
@@ -100,24 +134,6 @@ sudo pacman -S --needed webkit2gtk-4.1 git
 `git` se usa para el respaldo con Git. Para listar tus repositorios de GitHub y crear uno
 nuevo desde la app hace falta además GitHub CLI (`sudo pacman -S github-cli` y luego
 `gh auth login`).
-
-### Distribución TeX (opcional)
-
-Para compilar hace falta una distribución TeX, pero no es necesario instalarla antes. Hay
-dos caminos, y si tienes los dos, eliges cuál usar en **Paquetes** o en **Ajustes**:
-
-- **TeX Live de JuTeX** (sin sudo): en la pestaña **Paquetes**, «Instalar el TeX Live de
-  JuTeX». Descarga unos 80 MB desde CTAN, ocupa unos 210 MB en
-  `~/.local/share/jutex/texlive` y no toca el sistema. Trae lo necesario para XeLaTeX en los
-  seis idiomas; los demás paquetes se instalan, actualizan y desinstalan desde la propia app.
-- **TeX Live de pacman**: JuTeX lo usa tal cual. Sus paquetes no se pueden instalar
-  desde la app; cuando falta uno, JuTeX te dice qué paquete de pacman lo trae. Un
-  conjunto razonable para empezar:
-
-  ```sh
-  sudo pacman -S --needed texlive-basic texlive-latex texlive-latexrecommended \
-    texlive-latexextra texlive-xetex texlive-langspanish texlive-binextra
-  ```
 
 ## Instalación en macOS
 

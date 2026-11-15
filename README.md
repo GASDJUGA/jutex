@@ -47,9 +47,11 @@ you come from LibreTeX, see [Moving from LibreTeX to JuTeX](#moving-from-librete
 
 **Packages**
 
-- Searches TeX Live and CTAN, installs, updates and uninstalls; if a `.sty` or a babel language
-  is missing when compiling, it offers to install the package and recompile with one click.
-- If your TeX Live is pacman's (read-only), it tells you which pacman package to install.
+- Searches TeX Live (or MiKTeX) and CTAN, installs, updates and uninstalls; if a `.sty` or a
+  babel language is missing when compiling, it offers to install the package and recompile
+  with one click.
+- If your system's TeX can't be changed from the app (pacman's TeX Live, MacTeX), it gives you
+  the command to install what's missing.
 
 ![Package manager in the project panel](docs/screenshots/en/paquetes.png)
 
@@ -88,6 +90,39 @@ and Italian translations are new: corrections are welcome.
 - **Windows 11 (x64):** installer in the releases, without administrator rights (see
   [Installing on Windows](#installing-on-windows)).
 
+## TeX distribution (optional)
+
+Compiling needs a TeX distribution, but you don't have to install it first. There are two
+ways, and if you have both, you choose which one to use in **Packages** or in **Settings**:
+
+- **JuTeX's TeX Live** (no administrator rights): in the **Packages** tab, “Install JuTeX's
+  TeX Live”. It downloads about 80 MB from CTAN, takes about 210 MB in JuTeX's data folder
+  (see [Where JuTeX keeps its files](#where-jutex-keeps-its-files)) and does not touch the
+  system. It brings what XeLaTeX needs in the six languages; other packages are installed,
+  updated and uninstalled from the app itself.
+- **Your system's TeX**: JuTeX uses it as it is. What you can do from the app depends on which
+  one it is:
+  - **TeX Live from pacman (Arch Linux):** its packages can't be installed from the app; when
+    one is missing, JuTeX tells you which pacman package has it. A reasonable set to start
+    with:
+
+    ```sh
+    sudo pacman -S --needed texlive-basic texlive-latex texlive-latexrecommended \
+      texlive-latexextra texlive-xetex texlive-langenglish texlive-binextra
+    ```
+
+    plus the group of each other language you write in (`texlive-langspanish`,
+    `texlive-langportuguese`, `texlive-langfrench`, `texlive-langgerman`,
+    `texlive-langitalian`).
+
+  - **MacTeX (macOS):** packages are installed with `sudo tlmgr install …`; JuTeX gives you
+    the command to copy (see [Installing on macOS](#installing-on-macos)).
+  - **MiKTeX (Windows):** JuTeX installs, updates and uninstalls its packages from the
+    **Packages** tab, without administrator rights (see
+    [Installing on Windows](#installing-on-windows)).
+  - **An official TeX Live you can write to** (for example in `C:\texlive` or a TeX Live
+    installed for your user): its packages are managed from the app with `tlmgr`.
+
 ## Requirements (Arch Linux)
 
 ```sh
@@ -96,28 +131,6 @@ sudo pacman -S --needed webkit2gtk-4.1 git
 
 `git` is used for the Git backup. To list your GitHub repositories and create a new one from
 the app you also need GitHub CLI (`sudo pacman -S github-cli`, then `gh auth login`).
-
-### TeX distribution (optional)
-
-Compiling needs a TeX distribution, but you don't have to install it first. There are two
-ways, and if you have both, you choose which one to use in **Packages** or in **Settings**:
-
-- **JuTeX's TeX Live** (no sudo): in the **Packages** tab, “Install JuTeX's TeX Live”. It
-  downloads about 80 MB from CTAN, takes about 210 MB in `~/.local/share/jutex/texlive` and
-  does not touch the system. It brings what XeLaTeX needs in the six languages; other packages
-  are installed, updated and uninstalled from the app itself.
-- **pacman's TeX Live**: JuTeX uses it as it is. Its packages can't be installed from the app;
-  when one is missing, JuTeX tells you which pacman package has it. A reasonable set to start
-  with:
-
-  ```sh
-  sudo pacman -S --needed texlive-basic texlive-latex texlive-latexrecommended \
-    texlive-latexextra texlive-xetex texlive-langenglish texlive-binextra
-  ```
-
-  plus the group of each other language you write in (`texlive-langspanish`,
-  `texlive-langportuguese`, `texlive-langfrench`, `texlive-langgerman`,
-  `texlive-langitalian`).
 
 ## Installing on macOS
 
