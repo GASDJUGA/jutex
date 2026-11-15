@@ -25,7 +25,8 @@ function Field({ label, hint, children }: { label: string; hint?: string; childr
 }
 
 // As wide as its longest option (longer in French or German), between 14 and 24 rem.
-const control = "h-8 w-auto min-w-56 max-w-sm rounded border border-line bg-panel px-2 text-sm text-fg";
+const control =
+  "h-8 w-auto min-w-56 max-w-sm rounded border border-line bg-panel px-2 text-sm text-fg";
 
 /** Colors of each theme's sample: bar, panel, accent (the same as styles/index.css). */
 const THEME_SAMPLES: Record<UiTheme, [string, string, string]> = {

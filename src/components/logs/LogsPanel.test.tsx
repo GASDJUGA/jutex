@@ -3,6 +3,7 @@ import { forEachDiagnostic } from "@codemirror/lint";
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it } from "vitest";
 import { Project } from "../../app/Project";
+import { offersInstall } from "../../lib/latexLog/install";
 import { useCompile } from "../../store/compile";
 import { useProjectView } from "../../store/project";
 import { resetApp } from "../../test/reset";
@@ -59,5 +60,22 @@ describe("Registros y diagnósticos", () => {
     useProjectView.getState().toggleSidePanel("logs");
     fireEvent.click(await screen.findByRole("tab", { name: "Log completo" }));
     expect(screen.getByText(/This is XeTeX/)).toBeInTheDocument();
+  });
+});
+
+describe("qué archivo faltante se puede instalar", () => {
+  it("un .sty o el .ldf de un idioma de babel; no una imagen", () => {
+    const entry = (missingFile: string) => ({
+      severity: "error" as const,
+      message: "",
+      file: null,
+      line: null,
+      context: [],
+      kind: "missingFile" as const,
+      missingFile,
+    });
+    expect(offersInstall(entry("physics.sty"))).toBe(true);
+    expect(offersInstall(entry("ngerman.ldf"))).toBe(true);
+    expect(offersInstall(entry("figura.png"))).toBe(false);
   });
 });
