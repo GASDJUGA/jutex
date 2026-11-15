@@ -41,6 +41,39 @@ describe("verificador ortográfico", () => {
     expect(checker.known("Kirchhoffnn")).toBeUndefined();
   });
 
+  it("la lista confirmada del diccionario personal vuelve a preguntar aunque no cambie", async () => {
+    // As «Agregar al diccionario»: the optimistic list, a check that the backend answers
+    // before saving the word, then the same list confirmed.
+    let saved = false;
+    const checker = makeChecker({
+      request: async (type, payload) =>
+        type === "wrong" ? (payload as string[]).filter((w) => w === "Feler" && !saved) : [],
+      dispose() {},
+    });
+    checker.setPersonal(["Feler"]);
+    expect(await checker.wrong(["Feler"])).toEqual(["Feler"]);
+    saved = true;
+    checker.setPersonal(["Feler"]);
+    expect(await checker.wrong(["Feler"])).toEqual([]);
+  });
+
+  it("un archivo con muchas palabras se pregunta en partes", async () => {
+    const sizes: number[] = [];
+    const checker = makeChecker({
+      request: async (type, payload) => {
+        const words = payload as string[];
+        if (type === "wrong") sizes.push(words.length);
+        return type === "wrong" ? words.filter((w) => w.endsWith("7")) : [];
+      },
+      dispose() {},
+    });
+    const words = Array.from({ length: 12_000 }, (_, i) => `w${i}`);
+    const wrong = await checker.wrong(words);
+    expect(Math.max(...sizes)).toBeLessThanOrEqual(5000);
+    expect(sizes.reduce((a, b) => a + b, 0)).toBe(12_000);
+    expect(wrong).toHaveLength(1200);
+  });
+
   it("makeChecker con un backend propio", async () => {
     const checker = makeChecker({ request: async () => ["x"], dispose() {} });
     expect(await checker.wrong(["x", "y"])).toEqual(["x"]);

@@ -116,8 +116,9 @@ pub enum DetectedLanguage {
     Unknown,
 }
 
-/// Options of babel that are not languages.
-const BABEL_FLAGS: [&str; 12] = [
+/// Options of babel that are not languages (also those of a language, like Spanish's
+/// `mexico`).
+const BABEL_FLAGS: [&str; 13] = [
     "activeacute",
     "activegrave",
     "base",
@@ -130,6 +131,7 @@ const BABEL_FLAGS: [&str; 12] = [
     "silent",
     "strings",
     "hyphenmap",
+    "mexico",
 ];
 
 fn options(list: &str) -> impl Iterator<Item = &str> {
@@ -328,6 +330,11 @@ mod tests {
         assert_eq!(
             detect_language("\\begin{document}\n\\usepackage[french]{babel}"),
             Unknown
+        );
+        // A dialect option of babel-spanish is not a language.
+        assert_eq!(
+            detect_language("\\usepackage[spanish,mexico]{babel}"),
+            Supported("es")
         );
         // Options with spaces and line breaks.
         assert_eq!(

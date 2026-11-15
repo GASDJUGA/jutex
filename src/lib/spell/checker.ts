@@ -19,6 +19,9 @@ export type SpellChecker = {
   dispose(): void;
 };
 
+/** Most words asked in one request (the backend refuses more than 20 000). */
+const WORDS_PER_REQUEST = 5000;
+
 type Backend = {
   request(
     type: "wrong" | "suggest" | "add" | "remove",
@@ -34,9 +37,11 @@ export function makeChecker(backend: Backend): SpellChecker {
   return {
     async wrong(words) {
       const unknown = [...new Set(words.filter((w) => !answers.has(w)))];
-      if (unknown.length > 0) {
-        const wrong = new Set(await backend.request("wrong", unknown));
-        for (const w of unknown) answers.set(w, !wrong.has(w));
+      // In pieces: a long file has tens of thousands of distinct words.
+      for (let i = 0; i < unknown.length; i += WORDS_PER_REQUEST) {
+        const piece = unknown.slice(i, i + WORDS_PER_REQUEST);
+        const wrong = new Set(await backend.request("wrong", piece));
+        for (const w of piece) answers.set(w, !wrong.has(w));
       }
       return words.filter((w) => answers.get(w) === false);
     },
@@ -48,8 +53,10 @@ export function makeChecker(backend: Backend): SpellChecker {
       personal = next;
       if (added.length > 0) void backend.request("add", added);
       if (removed.length > 0) void backend.request("remove", removed);
-      // Answers may change for these words and their forms (capitalized…).
-      if (added.length > 0 || removed.length > 0) answers.clear();
+      // Answers may change for these words and their forms (capitalized…). Also when the
+      // list is the same: the confirmed list comes after the optimistic one, and a check in
+      // between may have been answered before the backend had the new word.
+      answers.clear();
     },
     known: (word) => answers.get(word),
     dispose: () => backend.dispose(),

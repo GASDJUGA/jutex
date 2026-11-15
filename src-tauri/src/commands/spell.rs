@@ -30,7 +30,7 @@ where
     Ok(words)
 }
 
-/// Most words checked in one call (the editor sends what is visible, in pieces).
+/// Most words checked in one call (the editor sends a file's words in pieces of 5000).
 const MAX_WORDS: usize = 20_000;
 
 /// The personal dictionary's words, read from its file the first time.
