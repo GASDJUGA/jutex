@@ -153,9 +153,14 @@ describe("pantalla de Ajustes", () => {
         pdfDarkMode: true,
       }),
     );
-    // A new blank project gets the defaults.
+    // A new project gets the defaults (the dialog starts with them).
     const info = await backend.getSettings();
-    const project = await backend.createProject("Nuevo", null, info.effectiveDocumentLanguage);
+    const project = await backend.createProject(
+      "Nuevo",
+      null,
+      info.effectiveDocumentLanguage,
+      info.settings.defaultCompiler,
+    );
     expect([project.compiler, project.spellLang]).toEqual(["lualatex", "en"]);
   });
 

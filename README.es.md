@@ -21,8 +21,8 @@ de LibreTeX, mira [Pasar de LibreTeX a JuTeX](#pasar-de-libretex-a-jutex).
 
 - Lista de proyectos con búsqueda y orden; varios proyectos abiertos a la vez en pestañas, y
   en varias ventanas: arrastra una pestaña fuera para verla en otra ventana.
-- Crear desde plantillas (artículo XeLaTeX, apuntes, tarea, Beamer) en cualquiera de los seis
-  idiomas, abrir una carpeta, importar un ZIP (también los de Overleaf) o traer un proyecto
+- Crear desde plantillas (artículo, apuntes, tarea, Beamer) en cualquiera de los seis
+  idiomas y con pdfLaTeX, XeLaTeX o LuaLaTeX, abrir una carpeta, importar un ZIP (también los de Overleaf) o traer un proyecto
   desde GitHub.
 - Papelera propia (es la del sistema): restaurar o eliminar definitivamente.
 

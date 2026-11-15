@@ -5,7 +5,7 @@ use crate::error::{AppError, AppResult};
 use crate::projects::detect::{
     DetectedLanguage, detect_compiler, detect_language, main_file_candidates,
 };
-use crate::projects::meta::{META_DIR, ProjectMeta, read_meta, write_meta};
+use crate::projects::meta::{Compiler, META_DIR, ProjectMeta, read_meta, write_meta};
 use crate::projects::registry::{Entry, Registry, now_ms};
 use crate::projects::trash::{LogEntry, TrashBin, read_log, write_log};
 use crate::projects::{templates, zip_import};
@@ -58,6 +58,29 @@ fn latex_text(text: &str) -> String {
         }
     }
     out
+}
+
+/// The main file of a new project (written for XeLaTeX, like every template) made to
+/// compile with `compiler`: with pdfLaTeX `fontspec` (XeLaTeX and LuaLaTeX only) becomes
+/// `fontenc` + `lmodern`, and the engine named in it is the chosen one.
+fn for_compiler(text: &str, compiler: Compiler) -> String {
+    let name = match compiler {
+        Compiler::Xelatex => return text.to_owned(),
+        Compiler::Lualatex => "LuaLaTeX",
+        Compiler::Pdflatex => "pdfLaTeX",
+    };
+    let text = text.replace("XeLaTeX", name);
+    if compiler != Compiler::Pdflatex {
+        return text;
+    }
+    text.split_inclusive('\n')
+        .map(|line| match line.trim_end() {
+            "\\usepackage{fontspec}" => {
+                "\\usepackage[T1]{fontenc}\n\\usepackage{lmodern}\n".to_owned()
+            }
+            _ => line.to_owned(),
+        })
+        .collect()
 }
 
 /// Locations and services used by the operations.
@@ -225,6 +248,7 @@ impl Ctx {
         name: &str,
         template: Option<&str>,
         language: Option<&str>,
+        compiler: Option<crate::projects::meta::Compiler>,
     ) -> AppResult<ProjectSummary> {
         validate_name(name)?;
         let code = language.unwrap_or(&self.new_project.language);
@@ -255,18 +279,27 @@ impl Ctx {
             let meta = match template {
                 Some(id) => {
                     let info = templates::copy_into(&self.templates_dir, id, &lang.code, &dest)?;
+                    let compiler = compiler.unwrap_or(info.compiler);
+                    if compiler != info.compiler {
+                        let main = dest.join(&info.main_file);
+                        let text = fs::read_to_string(&main).map_err(|e| AppError::io(&main, e))?;
+                        fs::write(&main, for_compiler(&text, compiler))
+                            .map_err(|e| AppError::io(&main, e))?;
+                    }
                     ProjectMeta {
                         main_file: info.main_file,
-                        compiler: info.compiler,
+                        compiler,
                         spell_lang: spell_lang.clone(),
                         ..Default::default()
                     }
                 }
                 None => {
+                    let compiler = compiler.unwrap_or(self.new_project.compiler);
                     let main = dest.join("main.tex");
-                    fs::write(&main, blank_main(name, lang)).map_err(|e| AppError::io(&main, e))?;
+                    fs::write(&main, for_compiler(&blank_main(name, lang), compiler))
+                        .map_err(|e| AppError::io(&main, e))?;
                     ProjectMeta {
-                        compiler: self.new_project.compiler,
+                        compiler,
                         spell_lang: spell_lang.clone(),
                         ..Default::default()
                     }
@@ -706,7 +739,7 @@ mod tests {
     #[test]
     fn crea_desde_plantilla_y_lo_lista() {
         let f = fixture();
-        let p = f.ctx.create("Tesis", Some("articulo"), None).unwrap();
+        let p = f.ctx.create("Tesis", Some("articulo"), None, None).unwrap();
         assert_eq!(p.name, "Tesis");
         assert_eq!(p.display_path, crate::util::paths::native("~/JuTeX/Tesis"));
         assert_eq!(p.compiler, Compiler::Xelatex);
@@ -724,7 +757,7 @@ mod tests {
     #[test]
     fn crea_proyecto_vacio_con_main_minimo() {
         let f = fixture();
-        f.ctx.create("Vacío", None, None).unwrap();
+        f.ctx.create("Vacío", None, None, None).unwrap();
         let main = fs::read_to_string(f.ctx.projects_dir.join("Vacío/main.tex")).unwrap();
         assert!(main.contains("\\documentclass") && main.contains("{babel}"));
         // Starts with the project's name as the title, already typeset.
@@ -755,7 +788,7 @@ mod tests {
     #[test]
     fn la_carpeta_de_imagenes_es_una_carpeta_del_proyecto() {
         let f = fixture();
-        let p = f.ctx.create("X", None, None).unwrap();
+        let p = f.ctx.create("X", None, None, None).unwrap();
         assert_eq!(p.figures_dir, "");
         let root = f.ctx.path_of(&p.id).unwrap();
         fs::create_dir_all(root.join("img/cap1")).unwrap();
@@ -791,17 +824,17 @@ mod tests {
     #[test]
     fn crear_valida_nombre_duplicados_y_plantilla() {
         let f = fixture();
-        f.ctx.create("A", None, None).unwrap();
+        f.ctx.create("A", None, None, None).unwrap();
         assert!(matches!(
-            f.ctx.create("A", None, None),
+            f.ctx.create("A", None, None, None),
             Err(AppError::AlreadyExists(_))
         ));
         assert!(matches!(
-            f.ctx.create("../fuera", None, None),
+            f.ctx.create("../fuera", None, None, None),
             Err(AppError::InvalidName { .. })
         ));
         assert!(matches!(
-            f.ctx.create("B", Some("nada"), None),
+            f.ctx.create("B", Some("nada"), None, None),
             Err(AppError::UnknownTemplate(_))
         ));
         assert!(!f.ctx.projects_dir.join("B").exists());
@@ -811,7 +844,7 @@ mod tests {
     #[test]
     fn solo_los_proyectos_creados_aqui_son_de_confianza() {
         let f = fixture();
-        let mine = f.ctx.create("Mío", None, None).unwrap();
+        let mine = f.ctx.create("Mío", None, None, None).unwrap();
         assert!(mine.trusted && f.ctx.is_trusted(&mine.id));
         // A copy is as trusted as the original.
         assert!(f.ctx.duplicate(&mine.id).unwrap().trusted);
@@ -924,7 +957,10 @@ mod tests {
     #[test]
     fn renombra_duplica_y_olvida() {
         let f = fixture();
-        let p = f.ctx.create("Original", Some("apuntes"), None).unwrap();
+        let p = f
+            .ctx
+            .create("Original", Some("apuntes"), None, None)
+            .unwrap();
         fs::create_dir_all(f.ctx.projects_dir.join("Original/.jutex/build")).unwrap();
         fs::write(
             f.ctx.projects_dir.join("Original/.jutex/build/main.pdf"),
@@ -937,7 +973,7 @@ mod tests {
         assert_eq!(renamed.name, "Apuntes de física");
         assert!(!f.ctx.projects_dir.join("Original").exists());
 
-        f.ctx.create("Otro", None, None).unwrap();
+        f.ctx.create("Otro", None, None, None).unwrap();
         assert!(matches!(
             f.ctx.rename(&p.id, "Otro"),
             Err(AppError::AlreadyExists(_))
@@ -968,7 +1004,7 @@ mod tests {
     fn la_copia_queda_primera_entre_los_recientes() {
         // Pedido del usuario: una copia aparecía al final de «Abiertos recientemente».
         let f = fixture();
-        let p = f.ctx.create("Original", None, None).unwrap();
+        let p = f.ctx.create("Original", None, None, None).unwrap();
         let opened = f.ctx.open(&p.id).unwrap();
         let copy = f.ctx.duplicate(&p.id).unwrap();
         assert!(copy.opened_at >= opened.opened_at && copy.opened_at.is_some());
@@ -980,7 +1016,7 @@ mod tests {
     #[test]
     fn abrir_actualiza_la_fecha_y_detecta_carpetas_borradas() {
         let f = fixture();
-        let p = f.ctx.create("X", None, None).unwrap();
+        let p = f.ctx.create("X", None, None, None).unwrap();
         let opened = f.ctx.open(&p.id).unwrap();
         assert!(opened.opened_at.is_some());
 
@@ -996,8 +1032,8 @@ mod tests {
     #[test]
     fn papelera_listar_restaurar_y_eliminar_definitivamente() {
         let f = fixture();
-        let a = f.ctx.create("A", None, None).unwrap();
-        let b = f.ctx.create("B", Some("tarea"), None).unwrap();
+        let a = f.ctx.create("A", None, None, None).unwrap();
+        let b = f.ctx.create("B", Some("tarea"), None, None).unwrap();
         let dir_a = f.ctx.projects_dir.join("A");
 
         f.ctx.trash(&a.id).unwrap();
@@ -1027,9 +1063,9 @@ mod tests {
     #[test]
     fn restaurar_no_pisa_una_carpeta_nueva_con_el_mismo_nombre() {
         let f = fixture();
-        let a = f.ctx.create("A", None, None).unwrap();
+        let a = f.ctx.create("A", None, None, None).unwrap();
         f.ctx.trash(&a.id).unwrap();
-        f.ctx.create("A", None, None).unwrap();
+        f.ctx.create("A", None, None, None).unwrap();
         let id = f.ctx.list_trashed().unwrap()[0].trash_id.clone();
         assert!(matches!(
             f.ctx.restore_trashed(&id),
@@ -1069,7 +1105,7 @@ mod tests {
             trash: fake.clone(),
             new_project: NewProjectDefaults::default(),
         };
-        let a = ctx.create("A", None, None).unwrap();
+        let a = ctx.create("A", None, None, None).unwrap();
         ctx.trash(&a.id).unwrap();
         assert_eq!(ctx.list_trashed().unwrap().len(), 1);
         fake.empty();
@@ -1080,7 +1116,7 @@ mod tests {
     #[test]
     fn actualiza_el_compilador() {
         let f = fixture();
-        let p = f.ctx.create("X", None, None).unwrap();
+        let p = f.ctx.create("X", None, None, None).unwrap();
         let changes = MetaChanges {
             compiler: Some(Compiler::Lualatex),
             ..Default::default()
@@ -1094,7 +1130,7 @@ mod tests {
     #[test]
     fn cambia_el_idioma_de_la_ortografia() {
         let f = fixture();
-        let p = f.ctx.create("X", None, None).unwrap();
+        let p = f.ctx.create("X", None, None, None).unwrap();
         assert_eq!(p.spell_lang, "es");
         let english = MetaChanges {
             spell_lang: Some("en".into()),
@@ -1135,32 +1171,86 @@ mod tests {
             spell_lang: "en".into(),
             language: "en".into(),
         };
-        let blank = f.ctx.create("Vacio", None, None).unwrap();
+        let blank = f.ctx.create("Vacio", None, None, None).unwrap();
         assert_eq!(
             (blank.compiler, blank.spell_lang.as_str()),
             (Compiler::Lualatex, "en")
         );
         // A template keeps its compiler; the spelling language is the default one.
-        let article = f.ctx.create("Articulo", Some("articulo"), None).unwrap();
+        let article = f
+            .ctx
+            .create("Articulo", Some("articulo"), None, None)
+            .unwrap();
         assert_eq!(
             (article.compiler, article.spell_lang.as_str()),
             (Compiler::Xelatex, "en")
         );
     }
     #[test]
+    fn con_pdflatex_el_preambulo_no_usa_fontspec() {
+        let f = fixture();
+        for (name, template) in [("Articulo", Some("articulo")), ("Vacio", None)] {
+            let p = f
+                .ctx
+                .create(name, template, Some("es"), Some(Compiler::Pdflatex))
+                .unwrap();
+            assert_eq!(p.compiler, Compiler::Pdflatex);
+            let main = fs::read_to_string(Path::new(&p.path).join("main.tex")).unwrap();
+            assert!(!main.contains("fontspec"), "{name}: {main}");
+            assert!(main.contains("\\usepackage[T1]{fontenc}\n\\usepackage{lmodern}\n"));
+            assert!(main.contains("% Idioma y fuentes (compilar con pdfLaTeX)"));
+            assert!(!main.contains("XeLaTeX"), "{name}: {main}");
+            assert!(main.contains("\\usepackage[spanish]{babel}"));
+        }
+    }
+
+    #[test]
+    fn con_lualatex_el_preambulo_conserva_fontspec() {
+        let f = fixture();
+        for (name, template) in [("Tarea", Some("tarea")), ("Vacio", None)] {
+            let p = f
+                .ctx
+                .create(name, template, Some("en"), Some(Compiler::Lualatex))
+                .unwrap();
+            assert_eq!(p.compiler, Compiler::Lualatex);
+            let main = fs::read_to_string(Path::new(&p.path).join("main.tex")).unwrap();
+            assert!(main.contains("\\usepackage{fontspec}"));
+            assert!(main.contains("% Language and fonts (compile with LuaLaTeX)"));
+            assert!(!main.contains("XeLaTeX"), "{name}: {main}");
+        }
+    }
+
+    #[test]
+    fn con_xelatex_la_plantilla_queda_igual() {
+        let f = fixture();
+        let p = f
+            .ctx
+            .create(
+                "Beamer",
+                Some("beamer"),
+                Some("fr"),
+                Some(Compiler::Xelatex),
+            )
+            .unwrap();
+        let main = fs::read_to_string(Path::new(&p.path).join("main.tex")).unwrap();
+        let original = fs::read_to_string(f.ctx.templates_dir.join("beamer/fr/main.tex")).unwrap();
+        assert_eq!(main, original);
+    }
+
+    #[test]
     fn proyecto_en_blanco_en_el_idioma_elegido() {
         let f = fixture();
-        let p = f.ctx.create("Thesis", None, Some("en")).unwrap();
+        let p = f.ctx.create("Thesis", None, Some("en"), None).unwrap();
         let main = fs::read_to_string(Path::new(&p.path).join("main.tex")).unwrap();
         assert!(main.contains("\\usepackage[english]{babel}"));
         assert!(main.contains("% Language and fonts"));
         assert_eq!(p.spell_lang, "en");
-        let p = f.ctx.create("Arbeit", None, Some("de")).unwrap();
+        let p = f.ctx.create("Arbeit", None, Some("de"), None).unwrap();
         let main = fs::read_to_string(Path::new(&p.path).join("main.tex")).unwrap();
         assert!(main.contains("\\usepackage[ngerman]{babel}"));
         assert_eq!(p.spell_lang, "de");
         assert!(matches!(
-            f.ctx.create("X", None, Some("ru")),
+            f.ctx.create("X", None, Some("ru"), None),
             Err(AppError::Forbidden(_))
         ));
     }
@@ -1168,58 +1258,71 @@ mod tests {
     #[test]
     fn plantilla_en_el_idioma_elegido() {
         let f = fixture();
-        let p = f.ctx.create("Notes", Some("apuntes"), Some("en")).unwrap();
+        let p = f
+            .ctx
+            .create("Notes", Some("apuntes"), Some("en"), None)
+            .unwrap();
         let main = fs::read_to_string(Path::new(&p.path).join("main.tex")).unwrap();
         assert!(main.contains("[english]{babel}"));
         assert_eq!(p.spell_lang, "en");
         // Without a language: the one of new documents (the fixture's, «es»).
-        let p = f.ctx.create("Apuntes", Some("apuntes"), None).unwrap();
+        let p = f
+            .ctx
+            .create("Apuntes", Some("apuntes"), None, None)
+            .unwrap();
         let main = fs::read_to_string(Path::new(&p.path).join("main.tex")).unwrap();
         assert!(main.contains("[spanish]{babel}"));
     }
     /// Every template in each of its languages, and a blank project in each of those
-    /// languages, compiles with XeLaTeX (with the TeX of the PATH; skipped without it).
+    /// languages, compiles with each compiler (with the TeX of the PATH; skipped without it).
     #[test]
-    #[ignore = "compila decenas de documentos con XeLaTeX (más de un minuto)"]
+    #[ignore = "compila decenas de documentos con los tres motores (varios minutos)"]
     fn todas_las_plantillas_compilan() {
         use crate::tex::latexmk::{CompileOptions, start};
         let path = crate::tex::detect::search_path(&[], std::env::var_os("PATH").as_deref());
-        if crate::tex::detect::find_in_path("latexmk", &path).is_none()
-            || crate::tex::detect::find_in_path("xelatex", &path).is_none()
+        if ["latexmk", "xelatex", "pdflatex", "lualatex"]
+            .iter()
+            .any(|p| crate::tex::detect::find_in_path(p, &path).is_none())
         {
             return;
         }
         let f = fixture();
-        let options = CompileOptions {
-            compiler: Compiler::Xelatex,
-            draft: false,
-            halt_on_error: true,
-            shell_escape: false,
-            force: false,
-            rc_files: None,
-            kpsewhich_cache: None,
-        };
+        let compilers = [
+            ("xe", Compiler::Xelatex),
+            ("pdf", Compiler::Pdflatex),
+            ("lua", Compiler::Lualatex),
+        ];
         let templates = templates::list(&f.ctx.templates_dir).unwrap();
         let mut languages: Vec<String> = Vec::new();
         let mut projects: Vec<(String, ProjectSummary)> = Vec::new();
-        for t in &templates {
-            for code in &t.languages {
-                if !languages.contains(code) {
-                    languages.push(code.clone());
+        for (engine, compiler) in compilers {
+            for t in &templates {
+                for code in &t.languages {
+                    if !languages.contains(code) {
+                        languages.push(code.clone());
+                    }
+                    let name = format!("{}-{code}-{engine}", t.id);
+                    let p = f.ctx.create(&name, Some(&t.id), Some(code), Some(compiler));
+                    projects.push((name, p.unwrap()));
                 }
-                let name = format!("{}-{code}", t.id);
-                projects.push((
-                    name.clone(),
-                    f.ctx.create(&name, Some(&t.id), Some(code)).unwrap(),
-                ));
             }
-        }
-        for code in &languages {
-            let name = format!("blanco-{code}");
-            projects.push((name.clone(), f.ctx.create(&name, None, Some(code)).unwrap()));
+            for code in &languages {
+                let name = format!("blanco-{code}-{engine}");
+                let p = f.ctx.create(&name, None, Some(code), Some(compiler));
+                projects.push((name, p.unwrap()));
+            }
         }
         let mut failed = Vec::new();
         for (name, p) in &projects {
+            let options = CompileOptions {
+                compiler: p.compiler,
+                draft: false,
+                halt_on_error: true,
+                shell_escape: false,
+                force: false,
+                rc_files: None,
+                kpsewhich_cache: None,
+            };
             let run = start(Path::new(&p.path), &path, &p.main_file, &options).unwrap();
             let mut out = Vec::new();
             let pdf = Path::new(&p.path).join(".jutex/build/main.pdf");
@@ -1228,8 +1331,9 @@ mod tests {
             }
         }
         assert!(failed.is_empty(), "{}", failed.join("\n\n"));
-        assert!(projects.len() >= 10, "{}", projects.len());
+        assert!(projects.len() >= 30, "{}", projects.len());
     }
+
     #[test]
     fn abrir_una_carpeta_toma_el_idioma_del_documento() {
         let f = fixture();

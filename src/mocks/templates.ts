@@ -5,12 +5,12 @@ export const mockTemplates: TemplateInfo[] = [
   {
     id: "articulo",
     name: {
-      es: "Artículo XeLaTeX",
-      en: "XeLaTeX article",
-      pt: "Artigo XeLaTeX",
-      fr: "Article XeLaTeX",
-      de: "XeLaTeX-Artikel",
-      it: "Articolo XeLaTeX",
+      es: "Artículo",
+      en: "Article",
+      pt: "Artigo",
+      fr: "Article",
+      de: "Artikel",
+      it: "Articolo",
     },
     description: {
       es: "Artículo con XeLaTeX, babel, AMS y bibliografía.",

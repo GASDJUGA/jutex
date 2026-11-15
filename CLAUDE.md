@@ -187,8 +187,10 @@ Cualquier dependencia nueva fuera de esta tabla debe justificarse en la sección
   - Lista/tarjetas con nombre, ruta, última modificación y compilador; búsqueda y orden
     (recientes, nombre, fecha). Miniatura opcional de la primera página del último PDF.
   - **Nuevo proyecto:** vacío o desde plantilla (ver `templates/<id>/<idioma>/`, una copia por
-    idioma): *Artículo XeLaTeX* (por defecto), *Apuntes de curso*, *Tarea / informe*,
-    *Presentación Beamer*, en el idioma elegido (el de los documentos nuevos por defecto).
+    idioma): *Artículo* (por defecto), *Apuntes de curso*, *Tarea / informe*,
+    *Presentación Beamer*, en el idioma elegido (el de los documentos nuevos por defecto) y
+    con el compilador elegido (el por defecto de Ajustes); las plantillas están escritas para
+    XeLaTeX y con pdfLaTeX su `fontspec` pasa a `fontenc` + `lmodern`.
   - **Abrir carpeta existente:** detectar el archivo principal (el `.tex` con
     `\documentclass`); si hay varios, preguntar.
   - **Importar ZIP** (incluidos ZIPs exportados desde Overleaf).
@@ -891,6 +893,19 @@ confírmalo con `grep -rnE 'cfg\((not\()?(target_os|unix|windows)' src-tauri/src
 
 ## 11. Estado actual
 
+- Linux: **compilador al crear un proyecto** (pedido del usuario el 2026-11-15, antes de
+  publicar la 2.1.0; rama `compilador-al-crear`, tras fusionar el PR #26). El diálogo «Nuevo
+  proyecto» tiene un selector «Compilador» (pdfLaTeX, XeLaTeX, LuaLaTeX) que empieza en el
+  compilador por defecto de Ajustes, ahora también para las plantillas (antes solo para los
+  proyectos en blanco). `Ctx::create` recibe `compiler: Option<Compiler>` (`None`: el de la
+  plantilla o el por defecto) y `for_compiler` adapta el archivo principal: con LuaLaTeX solo
+  cambia «XeLaTeX» por «LuaLaTeX»; con pdfLaTeX, además, `\usepackage{fontspec}` →
+  `\usepackage[T1]{fontenc}` + `\usepackage{lmodern}`. La descripción de la plantilla en el
+  diálogo nombra el compilador elegido; «Artículo XeLaTeX» pasa a llamarse «Artículo».
+  Probado: tests (Rust: pdfLaTeX, LuaLaTeX y XeLaTeX sin cambios; interfaz: selector, valor
+  inicial y proyecto creado) y el test ignorado `todas_las_plantillas_compilan`, ahora con los
+  tres motores: los 90 proyectos (24 plantillas y 6 en blanco × 3) compilan con un TeX Live de
+  JuTeX temporal (con beamer y enumitem).
 - Linux: **más idiomas** (pedido del usuario el 2026-11-14: «que la app tenga más alcance»;
   rama `mas-idiomas`, diseño `docs/superpowers/specs/2026-11-14-mas-idiomas-design.md`, plan
   `docs/superpowers/plans/2026-11-14-mas-idiomas.md`). Seis idiomas (es, en, pt de Brasil, fr,
@@ -2856,3 +2871,4 @@ confírmalo con `grep -rnE 'cfg\((not\()?(target_os|unix|windows)' src-tauri/src
 | 2026-11-14 | Plantillas con una copia completa por idioma (`templates/<id>/<idioma>/`) | Elegido por el usuario (enfoque A): cada copia compila y se revisa sola; un test vigila que tengan la misma estructura |
 | 2026-11-14 | Ortografía en Rust con el crate `spellbook` 0.4 (MPL-2.0); diccionarios `dictionary-pt` 4 (LGPL-3.0 o MPL-2.0), `dictionary-fr` 3 (MPL-2.0), `dictionary-de` 3 (GPL-2.0 o GPL-3.0), `dictionary-it` 2 (GPL-3.0) como recursos de Tauri desde `node_modules` | Decidido por el usuario: nspell no cargaba pt ni it («Too many properties to enumerate») y el francés tardaba 2,6 s y 310 MB; spellbook carga los seis en 0,01–0,08 s y 2–23 MB. El CI de Rust instala `node_modules` para los recursos |
 | 2026-11-14 | Al abrir un proyecto sin `project.json`, su babel o polyglossia decide la ortografía; un idioma sin diccionario la apaga | Que un documento ajeno se revise en su idioma sin configurar nada, y no quede todo en rojo |
+| 2026-11-15 | El compilador se elige al crear el proyecto y las plantillas (escritas para XeLaTeX) se adaptan al elegido; con pdfLaTeX, `fontenc` + `lmodern` en vez de `fontspec` | Pedido del usuario. Una copia por compilador triplicaría las 24 plantillas; la diferencia es una línea del preámbulo. `lmodern` (paquete `lm`, ya en el TeX Live de JuTeX) da fuentes vectoriales con T1 |

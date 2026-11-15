@@ -2,7 +2,13 @@ import { create } from "zustand";
 import type { Locale } from "../lib/languages";
 import { getBackend } from "../lib/tauri";
 import { useBuffers } from "./buffers";
-import type { OpenFolderResult, ProjectSummary, TemplateInfo, TrashedProject } from "./types";
+import type {
+  Compiler,
+  OpenFolderResult,
+  ProjectSummary,
+  TemplateInfo,
+  TrashedProject,
+} from "./types";
 
 type Status = "idle" | "loading" | "ready" | "error";
 
@@ -17,7 +23,12 @@ type ProjectsState = {
 
   /** Reloads projects and templates. Errors are rethrown after setting `status`. */
   load: () => Promise<void>;
-  create: (name: string, template: string | null, language: Locale) => Promise<ProjectSummary>;
+  create: (
+    name: string,
+    template: string | null,
+    language: Locale,
+    compiler: Compiler,
+  ) => Promise<ProjectSummary>;
   openFolder: (title: string) => Promise<OpenFolderResult | null>;
   importZip: (title: string, filterName: string) => Promise<OpenFolderResult | null>;
   /** «Desde GitHub»: clones a repository as a new project (network). */
@@ -90,8 +101,8 @@ export const useProjects = create<ProjectsState>()((set) => {
         throw error;
       }
     },
-    create: async (name, template, language) =>
-      store(await getBackend().createProject(name, template, language)),
+    create: async (name, template, language, compiler) =>
+      store(await getBackend().createProject(name, template, language, compiler)),
     openFolder: async (title) => storeResult(await getBackend().openFolderDialog(title)),
     importZip: async (title, filterName) =>
       storeResult(await getBackend().importZipDialog(title, filterName)),

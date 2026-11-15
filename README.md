@@ -21,8 +21,8 @@ you come from LibreTeX, see [Moving from LibreTeX to JuTeX](#moving-from-librete
 
 - Project list with search and sorting; several projects open at once in tabs, and in several
   windows: drag a tab out to see it in another window.
-- Create from templates (XeLaTeX article, course notes, homework, Beamer) in any of the six
-  languages, open a folder, import a ZIP (Overleaf's too) or bring a project from GitHub.
+- Create from templates (article, course notes, homework, Beamer) in any of the six
+  languages and with pdfLaTeX, XeLaTeX or LuaLaTeX, open a folder, import a ZIP (Overleaf's too) or bring a project from GitHub.
 - Its own trash (the system's): restore or delete permanently.
 
 **Editor**

@@ -4,7 +4,13 @@ import { useSettings } from "../../store/settings";
 import { useI18n, useT } from "../../i18n";
 import { errorText } from "../../lib/errors";
 import { useProjects } from "../../store/projects";
-import { localized, type OpenFolderResult, type ProjectSummary } from "../../store/types";
+import { compilerLabels } from "../../mocks/projects";
+import {
+  localized,
+  type Compiler,
+  type OpenFolderResult,
+  type ProjectSummary,
+} from "../../store/types";
 import { Dialog, inputClass } from "../common/Dialog";
 
 /** Runs an async action, exposing `pending` and a translated `error` for the dialog. */
@@ -42,6 +48,7 @@ export function NewProjectDialog({
   const [language, setLanguage] = useState<Locale>(
     () => useSettings.getState().effectiveDocumentLanguage,
   );
+  const [compiler, setCompiler] = useState<Compiler>(() => useSettings.getState().defaultCompiler);
   const { pending, error, run } = useAction();
   // The languages the chosen template comes in (a blank project, any).
   const languages = template
@@ -56,7 +63,7 @@ export function NewProjectDialog({
       submitDisabled={pending || name.trim() === ""}
       error={error}
       onClose={onClose}
-      onSubmit={() => run(() => create(name.trim(), template || null, chosen), onCreated)}
+      onSubmit={() => run(() => create(name.trim(), template || null, chosen, compiler), onCreated)}
     >
       <label className="flex flex-col gap-1">
         {t("projects.newDialog.name")}
@@ -97,12 +104,29 @@ export function NewProjectDialog({
           ))}
         </select>
       </label>
+      <label className="flex flex-col gap-1">
+        {t("compile.compiler")}
+        <select
+          value={compiler}
+          onChange={(e) => setCompiler(e.target.value as Compiler)}
+          className={inputClass}
+        >
+          {(Object.keys(compilerLabels) as Compiler[]).map((c) => (
+            <option key={c} value={c}>
+              {compilerLabels[c]}
+            </option>
+          ))}
+        </select>
+      </label>
       <p className="text-xs text-fg-muted">
+        {/* Templates are written for XeLaTeX and adapted to the chosen compiler. */}
         {template
           ? templates
               .filter((tpl) => tpl.id === template)
-              .map((tpl) => localized(tpl.description, locale))[0]
-          : "main.tex · XeLaTeX"}
+              .map((tpl) =>
+                localized(tpl.description, locale).replace("XeLaTeX", compilerLabels[compiler]),
+              )[0]
+          : `main.tex · ${compilerLabels[compiler]}`}
       </p>
     </Dialog>
   );

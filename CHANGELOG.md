@@ -12,7 +12,10 @@ Hasta la 1.2.2 se llamó LibreTeX.
   italiano. Por defecto, el del sistema (inglés si no es uno de esos); quien ya usaba JuTeX
   sigue en español.
 - Plantillas en los seis idiomas y el idioma de los documentos nuevos (Ajustes y el diálogo
-  «Nuevo proyecto»); la plantilla del artículo se llama «Artículo XeLaTeX».
+  «Nuevo proyecto»); la plantilla del artículo se llama «Artículo».
+- El compilador se elige al crear un proyecto (pdfLaTeX, XeLaTeX o LuaLaTeX; por defecto, el de
+  Ajustes, también para las plantillas); con pdfLaTeX el preámbulo usa `fontenc` y `lmodern`
+  en vez de `fontspec`.
 - Ortografía en los seis idiomas con `spellbook` (Rust), mucho más rápida y liviana que nspell.
 - Al abrir, importar o clonar un proyecto, su idioma (babel o polyglossia) decide la
   ortografía.

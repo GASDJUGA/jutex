@@ -635,7 +635,7 @@
     "newProjectSpellcheckHint": "El idioma de cada proyecto se cambia en Ver → Ortografía del proyecto.",
     "pdf": "Visor PDF",
     "pdfDarkMode": "Páginas en modo oscuro (colores invertidos)",
-    "defaultCompilerHint": "Para proyectos nuevos en blanco; las plantillas traen el suyo.",
+    "defaultCompilerHint": "El que viene elegido al crear un proyecto.",
     "change": "Cambiar…",
     "chooseProjectsDir": "Carpeta para los proyectos nuevos",
     "projectsDirHint": "Ahí se crean e importan los proyectos nuevos; los que ya existen siguen donde están.",
