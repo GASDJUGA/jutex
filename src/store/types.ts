@@ -26,7 +26,7 @@ export type Settings = {
   mathPreview: boolean;
   mathPreviewHover: boolean;
   pdfDarkMode: boolean;
-  /** Compiler of new blank projects. */
+  /** Compiler chosen by default when creating a project. */
   defaultCompiler: Compiler;
   /** Language of new documents (`interface`: the interface's). */
   documentLanguage: Locale | "interface";

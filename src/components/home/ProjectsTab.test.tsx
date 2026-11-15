@@ -6,6 +6,7 @@ import { createMockBackend } from "../../lib/mockBackend";
 import { setBackend } from "../../lib/tauri";
 import { useAppStore } from "../../store/app";
 import { useProjects } from "../../store/projects";
+import { useSettings } from "../../store/settings";
 import { resetApp } from "../../test/reset";
 
 async function renderHome() {
@@ -169,6 +170,37 @@ describe("Proyectos", () => {
       expect((await backend.listProjects()).find((p) => p.name === "Thesis")?.spellLang).toBe("en"),
     );
   });
+
+  it("el proyecto nuevo usa el compilador elegido (por defecto, el de Ajustes)", async () => {
+    const backend = createMockBackend([]);
+    setBackend(backend);
+    render(<App />);
+    await screen.findByRole("heading", { name: "Todavía no hay proyectos" });
+    useSettings.setState({ defaultCompiler: "lualatex" });
+    const buttons = screen.getAllByRole("button", { name: /Nuevo proyecto/ });
+    fireEvent.click(buttons[buttons.length - 1]);
+    const dialog = screen.getByRole("dialog", { name: "Nuevo proyecto" });
+    const compiler = within(dialog).getByRole("combobox", { name: "Compilador" });
+    expect(compiler).toHaveValue("lualatex");
+    expect([...compiler.querySelectorAll("option")].map((o) => o.textContent)).toEqual([
+      "pdfLaTeX",
+      "XeLaTeX",
+      "LuaLaTeX",
+    ]);
+    // The template's description names the chosen compiler.
+    expect(within(dialog).getByText(/Artículo con LuaLaTeX/)).toBeInTheDocument();
+    fireEvent.change(compiler, { target: { value: "pdflatex" } });
+    expect(within(dialog).getByText(/Artículo con pdfLaTeX/)).toBeInTheDocument();
+    fireEvent.change(within(dialog).getByRole("textbox", { name: "Nombre del proyecto" }), {
+      target: { value: "Informe" },
+    });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Crear proyecto" }));
+    await waitFor(async () =>
+      expect((await backend.listProjects()).find((p) => p.name === "Informe")?.compiler).toBe(
+        "pdflatex",
+      ),
+    );
+  });
 });
 
 describe("Papelera", () => {
@@ -213,7 +245,7 @@ describe("Papelera", () => {
 
   it("restaurar con una carpeta del mismo nombre muestra el error", async () => {
     await trashTesis();
-    await useProjects.getState().create("Tesis de magíster", null, "es");
+    await useProjects.getState().create("Tesis de magíster", null, "es", "xelatex");
     fireEvent.click(await screen.findByRole("button", { name: "Restaurar: Tesis de magíster" }));
     expect(await screen.findByRole("alert")).toHaveTextContent(
       "Ya existe un proyecto o una carpeta con ese nombre.",

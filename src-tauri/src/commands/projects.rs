@@ -2,6 +2,7 @@
 //! system work runs on the blocking thread pool so the UI never freezes.
 
 use crate::error::{AppError, AppResult};
+use crate::projects::meta::Compiler;
 use crate::projects::ops::{Ctx, OpenFolderResult, ProjectSummary, TrashedProject};
 use crate::projects::templates::TemplateInfo;
 use crate::state::AppState;
@@ -42,9 +43,10 @@ pub async fn create_project(
     name: String,
     template: Option<String>,
     language: Option<String>,
+    compiler: Option<Compiler>,
 ) -> AppResult<ProjectSummary> {
     with_ctx(&state, move |ctx| {
-        ctx.create(&name, template.as_deref(), language.as_deref())
+        ctx.create(&name, template.as_deref(), language.as_deref(), compiler)
     })
     .await
 }

@@ -22,20 +22,22 @@ describe("useProjects", () => {
   });
 
   it("crear agrega el proyecto y respeta la plantilla", async () => {
-    const p = await useProjects.getState().create("Nuevo", "beamer", "es");
+    const p = await useProjects.getState().create("Nuevo", "beamer", "es", "xelatex");
     expect(p.compiler).toBe("xelatex");
     expect(names()).toContain("Nuevo");
   });
 
   it("los errores del backend se propagan con su código", async () => {
     await expect(
-      useProjects.getState().create("Tesis de magíster", null, "es"),
+      useProjects.getState().create("Tesis de magíster", null, "es", "xelatex"),
     ).rejects.toMatchObject({
       code: "alreadyExists",
     });
-    await expect(useProjects.getState().create("a/b", null, "es")).rejects.toMatchObject({
-      code: "invalidName",
-    });
+    await expect(useProjects.getState().create("a/b", null, "es", "xelatex")).rejects.toMatchObject(
+      {
+        code: "invalidName",
+      },
+    );
   });
 
   it("abrir marca el proyecto como actual y actualiza su fecha", async () => {

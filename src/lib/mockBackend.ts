@@ -282,7 +282,7 @@ export function createMockBackend(
   return {
     listProjects: async () => projects.map((p) => ({ ...p })),
     listTemplates: async () => mockTemplates.map((t) => ({ ...t })),
-    createProject: async (name, template, language) => {
+    createProject: async (name, template, language, compiler) => {
       validName(name);
       if (nameTaken(name)) fail("alreadyExists", `ya existe: ${name}`);
       const info = template ? mockTemplates.find((t) => t.id === template) : undefined;
@@ -290,7 +290,7 @@ export function createMockBackend(
         fail("unknownTemplate", `plantilla desconocida: ${template} (${language})`);
       return add(
         make(name, {
-          compiler: info?.compiler ?? settings.defaultCompiler,
+          compiler,
           mainFile: info?.mainFile ?? "main.tex",
           spellLang: settings.newProjectSpellcheck ? language : "off",
         }),

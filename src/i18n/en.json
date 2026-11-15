@@ -635,7 +635,7 @@
     "newProjectSpellcheckHint": "Each project's language is changed in View → Project spelling.",
     "pdf": "PDF viewer",
     "pdfDarkMode": "Dark pages (inverted colors)",
-    "defaultCompilerHint": "For new blank projects; templates bring their own.",
+    "defaultCompilerHint": "The one chosen by default when creating a project.",
     "change": "Change…",
     "chooseProjectsDir": "Folder for new projects",
     "projectsDirHint": "New and imported projects are created there; existing ones stay where they are.",

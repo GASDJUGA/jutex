@@ -635,7 +635,7 @@
     "newProjectSpellcheckHint": "Die Sprache jedes Projekts ändern Sie unter Ansicht → Rechtschreibung des Projekts.",
     "pdf": "PDF-Betrachter",
     "pdfDarkMode": "Dunkle Seiten (invertierte Farben)",
-    "defaultCompilerHint": "Für neue leere Projekte; Vorlagen bringen ihren eigenen mit.",
+    "defaultCompilerHint": "Der beim Anlegen eines Projekts vorausgewählte.",
     "change": "Ändern …",
     "chooseProjectsDir": "Ordner für neue Projekte",
     "projectsDirHint": "Neue und importierte Projekte werden dort erstellt; vorhandene bleiben, wo sie sind.",

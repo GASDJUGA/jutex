@@ -635,7 +635,7 @@
     "newProjectSpellcheckHint": "La lingua di ogni progetto si cambia in Visualizza → Ortografia del progetto.",
     "pdf": "Visualizzatore PDF",
     "pdfDarkMode": "Pagine scure (colori invertiti)",
-    "defaultCompilerHint": "Per i nuovi progetti vuoti; i modelli hanno il proprio.",
+    "defaultCompilerHint": "Quello scelto in partenza quando si crea un progetto.",
     "change": "Cambia…",
     "chooseProjectsDir": "Cartella per i nuovi progetti",
     "projectsDirHint": "I progetti nuovi e importati vengono creati lì; quelli esistenti restano dove sono.",
