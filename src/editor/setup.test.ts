@@ -33,3 +33,17 @@ describe("cierre automático", () => {
     expect(typed('"')).toBeNull();
   });
 });
+
+describe("rendimiento al escribir", () => {
+  it("el área de desplazamiento del editor contiene su maquetación", async () => {
+    const { EditorView } = await import("@codemirror/view");
+    const view = new EditorView({
+      state: EditorState.create({ doc: "x", extensions: editorExtensions(noop) }),
+      parent: document.body,
+    });
+    // Without it, each key made WebKit lay out the whole window again (WebKitGTK: the delay
+    // when several keys were pressed at once, in a long document).
+    expect(getComputedStyle(view.scrollDOM).contain).toBe("strict");
+    view.destroy();
+  });
+});

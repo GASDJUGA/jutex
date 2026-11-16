@@ -4,6 +4,20 @@ What's new in each version compared with the previous one, from newest to oldest
 of each release (with how to install it) are in `docs/releases/<version>.md`.
 Up to 1.2.2 it was called LibreTeX.
 
+## Unreleased
+
+### Fixes
+
+- Linux: typing several keys at once in a long document no longer lags. Each key cost the
+  editor up to ~14 ms (a scan of the whole paragraph, the formula preview redrawn, a forced
+  layout of the window), and keys pressed together queued up in WebKitGTK for up to a fifth
+  of a second. In the user's 1055-line document, bursts of keys now show in 14 ms (median)
+  in text and 21 ms in a formula, from 59 and 95 ms.
+- Linux on Wayland: keys go straight to the editor through GTK's own input module, without
+  waiting for the compositor's text-input, unless an input method (IBus, fcitx, a virtual
+  keyboard) is in use or `GTK_IM_MODULE` is set; dead keys and the Compose key still work.
+  `JUTEX_SYSTEM_IM=1` brings back the system's.
+
 ## 2.1.0 — 2026-11-15
 
 ### New

@@ -55,7 +55,10 @@ export function deadCircumflexInMath(text: string): string | null {
 export const deadKeyInput = EditorView.inputHandler.of((view, from, to, text) => {
   const { state } = view;
   if (state.readOnly || state.selection.ranges.length > 1) return false;
-  const meant = mathRegionInState(state, from) ? deadCircumflexInMath(text) : null;
+  // Whether the cursor is in math only matters for what the dead key composed (and is not
+  // free in a long paragraph): a plain letter does not ask.
+  const composed = deadCircumflexInMath(text);
+  const meant = composed && mathRegionInState(state, from) ? composed : null;
   const typed = meant ?? text;
   const open = typed[typed.length - 1];
   const closes = typed.length >= 2 && LATEX_CLOSE_BRACKETS.includes(open);

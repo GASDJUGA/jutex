@@ -70,6 +70,20 @@ describe("mathPreview", () => {
     expect(tooltip(v)!.classList.contains("jt-math-error")).toBe(false);
   });
 
+  it("al escribir en la fórmula no rehace el SVG hasta que llega el nuevo", async () => {
+    const doc = "Sea $x+y$ fin";
+    const v = view(doc, doc.indexOf("+y"));
+    await waitFor(() => expect(v.dom.querySelector(".jt-math-preview svg")).not.toBeNull(), {
+      timeout: 3000,
+    });
+    const shown = v.dom.querySelector(".jt-math-preview svg");
+    // A key: the preview moves with the text, its content is still the old one. Rebuilding
+    // it (parsing the SVG again) cost ~4 ms per key with a long formula.
+    const at = doc.indexOf("+y");
+    v.dispatch({ changes: { from: at, insert: "z" }, selection: { anchor: at + 1 } });
+    expect(v.dom.querySelector(".jt-math-preview svg")).toBe(shown);
+  });
+
   it("Esc lo cierra y fuera de la fórmula no aparece", async () => {
     const doc = "Texto $a+b$ y $c$ fin";
     const v = view(doc, doc.indexOf("a+b") + 1);
