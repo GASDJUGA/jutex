@@ -90,6 +90,28 @@ function restoreScroll(view: EditorView, path: string): PendingScroll | null {
   return { path, pos, offset, until: performance.now() + RESTORE_SCROLL_MS };
 }
 
+/**
+ * Records the cursor of `path` and keeps the first visible line already known (the scroll
+ * handler records it). Reading the scroll position here, on every key, made WebKit lay the
+ * page out in the middle of the update: ~3 ms per key in a long formula.
+ */
+function rememberCursor(view: EditorView, path: string) {
+  const projectId = currentProject();
+  if (!projectId) return;
+  const known = filePosition(projectId, path);
+  if (!known) {
+    rememberPlace(view, path);
+    return;
+  }
+  const { doc } = view.state;
+  const line = doc.lineAt(view.state.selection.main.head);
+  rememberFile(projectId, path, {
+    ...known,
+    line: line.number,
+    column: view.state.selection.main.head - line.from,
+  });
+}
+
 /** Records the cursor and the first visible line of `path`, for the next session. */
 function rememberPlace(view: EditorView, path: string) {
   const projectId = currentProject();
@@ -181,7 +203,7 @@ export function CodeEditor({ path, content }: CodeEditorProps) {
             }
           });
         }
-        if (update.selectionSet && pathRef.current === file) rememberPlace(update.view, file);
+        if (update.selectionSet && pathRef.current === file) rememberCursor(update.view, file);
       }),
       EditorView.domEventObservers({
         scroll: (_event, view) => {

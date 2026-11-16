@@ -67,6 +67,31 @@ describe("CodeEditor", () => {
     });
   });
 
+  it("recordar el cursor al escribir no lee el desplazamiento (obligaría a WebKit a maquetar)", async () => {
+    rememberFile("tesis", "main.tex", { line: 2, column: 0, topLine: 1 });
+    flushSessions();
+    resetSessions();
+    await renderEditor();
+    const view = editorView();
+    let reads = 0;
+    const scroller = view.scrollDOM;
+    const real = Object.getOwnPropertyDescriptor(Element.prototype, "scrollTop")!;
+    Object.defineProperty(scroller, "scrollTop", {
+      configurable: true,
+      get() {
+        reads++;
+        return real.get!.call(scroller);
+      },
+      set(value: number) {
+        real.set!.call(scroller, value);
+      },
+    });
+    act(() => view.dispatch({ selection: { anchor: view.state.doc.line(3).from + 2 } }));
+    expect(reads).toBe(0);
+    // The cursor is remembered at once, the top line stays the one known.
+    expect(filePosition("tesis", "main.tex")).toMatchObject({ line: 3, column: 2, topLine: 1 });
+  });
+
   it("un cambio hecho fuera del editor solo toca lo que difiere: el cursor sigue en su texto", async () => {
     await renderEditor();
     const view = editorView();
