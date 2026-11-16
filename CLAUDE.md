@@ -921,7 +921,12 @@ confírmalo con `grep -rnE 'cfg\((not\()?(target_os|unix|windows)' src-tauri/src
   fórmula 95/230 → 21/74 ms. En Windows el mismo JavaScript corre 3–4 veces más rápido (V8)
   y no se encolaba. Probado: tests (cada uno falla sin su arreglo; 685 en total), la vista
   previa y WebKitGTK con su documento (editor, vista previa y autocompletado se ven bien).
-  Sin probar por el usuario. Aparte, sin resolver: el **parpadeo** de una línea recién
+  El usuario lo probó: «menos retardo», y con `GTK_IM_MODULE=gtk-im-context-simple` «casi
+  instantáneo». Así que en Wayland JuTeX pone ese módulo (`main.rs`, `input_vars`) salvo que
+  el usuario haya elegido `GTK_IM_MODULE` o haya un método de entrada (`QT_IM_MODULE`,
+  `XMODIFIERS=@im=…`, `InputMethod` en `[Wayland]` de `kwinrc`, o fcitx/ibus/maliit
+  corriendo); `JUTEX_SYSTEM_IM=1` lo evita. GTK 3 en Wayland pasa cada tecla por el
+  text-input de KWin; el módulo simple conserva las teclas muertas y Compose. Aparte, sin resolver: el **parpadeo** de una línea recién
   escrita (~0,2 s, la línea alterna con un cuadro anterior), WebKitGTK 2.54 + NVIDIA; no lo
   arreglan `UseSkiaForComposition=0`, `__NV_DISABLE_EXPLICIT_SYNC=0` (con el driver 620 ya
   no hace falta para evitar el «Error 71») ni `WEBKIT_SKIA_ENABLE_CPU_RENDERING=1`.
@@ -2943,3 +2948,4 @@ confírmalo con `grep -rnE 'cfg\((not\()?(target_os|unix|windows)' src-tauri/src
 | 2026-11-15 | Todo lo que se ve en GitHub en inglés (commits, PR, releases, CHANGELOG, README, CONTRIBUTING, SECURITY, descripción); `README.es.md`, `CLAUDE.md` y los planes internos en español | Pedido del usuario (más alcance, como el README en inglés). Lo interno lo leen el usuario y las tres líneas en español; los commits y PR viejos no se reescriben (prohibido reescribir lo subido) |
 | 2026-11-15 | El compilador se elige al crear el proyecto y las plantillas (escritas para XeLaTeX) se adaptan al elegido; con pdfLaTeX, `fontenc` + `lmodern` en vez de `fontspec` | Pedido del usuario. Una copia por compilador triplicaría las 24 plantillas; la diferencia es una línea del preámbulo. `lmodern` (paquete `lm`, ya en el TeX Live de JuTeX) da fuentes vectoriales con T1 |
 | 2026-11-16 | Lo que corre en cada tecla no recorre el documento ni lee la maquetación; `contain: strict` en el área de desplazamiento del editor principal | En WebKitGTK cada tecla costaba hasta ~14 ms en un documento largo y las teclas pulsadas juntas se encolaban; WebKit no puede maquetar solo el editor sin la contención. Solo en el editor principal: los del historial toman la altura de su contenido |
+| 2026-11-16 | En Wayland, módulo de entrada simple de GTK salvo que haya un método de entrada o el usuario elija otro | Con el text-input de KWin las teclas llegaban tarde a WebKitGTK; el simple conserva teclas muertas y Compose. Con IBus/fcitx/teclado virtual hace falta el de la sesión: se detecta y se deja; `JUTEX_SYSTEM_IM=1` lo fuerza |
