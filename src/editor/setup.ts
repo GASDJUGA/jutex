@@ -155,6 +155,11 @@ export function editorExtensions(
     // Case-sensitive by default, like the project search (pedido del usuario).
     search({ top: true, createPanel: callbacks.searchPanel, literal: true, caseSensitive: true }),
     EditorView.lineWrapping,
+    // What changes inside the scroll area does not move anything outside it (its size comes
+    // from the panel): WebKit then lays out only the editor on each key, not the whole window.
+    // With a long document that halved the delay of several keys pressed at once. Only here:
+    // the history's editors have their content's height, which this would squash.
+    EditorView.theme({ ".cm-scroller": { contain: "strict" } }),
     latex({
       autoCloseTags: true,
       autoCloseBrackets: false,
