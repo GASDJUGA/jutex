@@ -103,8 +103,10 @@ function makeTooltip(pos: number): Tooltip {
     create: (view) => {
       const dom = document.createElement("div");
       let shown: Preview | null = null;
+      // Typing moves the preview with the text (a new object, same content): only a new
+      // content is drawn again (parsing the SVG cost ~4 ms per key with a long formula).
       const render = (preview: Preview | null) => {
-        if (!preview || preview === shown) return;
+        if (!preview || preview.content === shown?.content) return;
         shown = preview;
         fillPreview(dom, preview);
       };
