@@ -93,13 +93,27 @@ export function mathRegionInState(state: EditorState, pos: number): MathRegion |
   return region ?? paragraphRegion(state, pos);
 }
 
+/**
+ * How many lines around `pos` the paragraph scan looks at, at most. Many documents have
+ * hundreds of lines without a blank one (the user's: 866), and scanning them all took ~5 ms
+ * each time, on every key; no inline formula spans this many lines.
+ */
+const PARAGRAPH_SCAN_LINES = 40;
+
 /** The scanner's math region at `pos`, looking only at the paragraph around it. */
 function paragraphRegion(state: EditorState, pos: number): MathRegion | null {
   const { doc } = state;
-  let first = doc.lineAt(pos).number;
-  let last = first;
-  while (first > 1 && doc.line(first - 1).text.trim() !== "") first--;
-  while (last < doc.lines && doc.line(last + 1).text.trim() !== "") last++;
+  const at = doc.lineAt(pos).number;
+  let first = at;
+  let last = at;
+  while (first > 1 && at - first < PARAGRAPH_SCAN_LINES && doc.line(first - 1).text.trim() !== "")
+    first--;
+  while (
+    last < doc.lines &&
+    last - at < PARAGRAPH_SCAN_LINES &&
+    doc.line(last + 1).text.trim() !== ""
+  )
+    last++;
   const from = doc.line(first).from;
   const region = mathRegionAt(state.sliceDoc(from, doc.line(last).to), pos - from);
   // Environments are the tree's business (they may hold blank lines).
