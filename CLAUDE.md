@@ -899,6 +899,32 @@ confírmalo con `grep -rnE 'cfg\((not\()?(target_os|unix|windows)' src-tauri/src
 
 ## 11. Estado actual
 
+- Linux: **retardo al escribir varias teclas a la vez** (pedido del usuario el 2026-11-16, en
+  la 2.0.0 y la 2.1.0, solo Linux, en su documento más grande; rama `escritura-rapida`).
+  Hallado con una versión de diagnóstico (rama local `diag-webkit-features`: `JUTEX_DIAG=1`
+  registra en `~/.cache/jutex/diag.log` la latencia de cada tecla y, si el hilo principal
+  de GTK se bloquea más de 100 ms, su pila con `eu-stack`; `JUTEX_WEBKIT_FEATURES` cambia
+  funciones de WebKit) y midiendo en WebKitGTK (Xvfb) con su documento real y teclas reales
+  casi simultáneas (3 ms entre ellas: con 35 ms, como medía antes, no se ve). Las teclas
+  llegan juntas y la página procesa una cada ~13 ms: se encolan (hasta 150–230 ms). El hilo
+  de GTK no era (0 bloqueos en una sesión con retardo). Costo por tecla, separado
+  extensión por extensión: (1) `deadKeyInput` preguntaba en cada letra si el cursor estaba en
+  matemáticas, y `paragraphRegion` recorría todo el «párrafo» (líneas 1–866 de
+  `Sistemas en 3D.tex`, sin líneas en blanco): ~5 ms; ahora solo pregunta lo compuesto con
+  la tecla muerta y el recorrido mira 40 líneas a cada lado. (2) En una fórmula, la vista
+  previa reconstruía su SVG en cada tecla (`sanitizeSvg`): ~4 ms; ahora solo si cambia el
+  contenido. (3) `rememberPlace` leía `scrollTop` en cada cambio de selección y obligaba a
+  WebKit a maquetar a mitad de la actualización: ~3 ms; ahora el cursor se guarda sin leer el
+  desplazamiento (la primera línea visible la sigue guardando el evento `scroll`). (4)
+  `contain: strict` en `.cm-scroller` del editor principal: WebKit maqueta solo el editor.
+  Resultado (ráfagas de 10 teclas a 3 ms; mediana/máximo): texto 59/145 → 14/54 ms,
+  fórmula 95/230 → 21/74 ms. En Windows el mismo JavaScript corre 3–4 veces más rápido (V8)
+  y no se encolaba. Probado: tests (cada uno falla sin su arreglo; 685 en total), la vista
+  previa y WebKitGTK con su documento (editor, vista previa y autocompletado se ven bien).
+  Sin probar por el usuario. Aparte, sin resolver: el **parpadeo** de una línea recién
+  escrita (~0,2 s, la línea alterna con un cuadro anterior), WebKitGTK 2.54 + NVIDIA; no lo
+  arreglan `UseSkiaForComposition=0`, `__NV_DISABLE_EXPLICIT_SYNC=0` (con el driver 620 ya
+  no hace falta para evitar el «Error 71») ni `WEBKIT_SKIA_ENABLE_CPU_RENDERING=1`.
 - Linux: **release 2.1.0 publicado** (2026-11-15, confirmado por el usuario tras probarlo en
   Windows): https://github.com/GASDJUGA/jutex/releases/tag/v2.1.0, tag `v2.1.0` en `61ada53`
   (PR #28, solo `CLAUDE.md` desde `91ef03d`, de donde salieron los cuatro archivos).
@@ -2916,3 +2942,4 @@ confírmalo con `grep -rnE 'cfg\((not\()?(target_os|unix|windows)' src-tauri/src
 | 2026-11-14 | Al abrir un proyecto sin `project.json`, su babel o polyglossia decide la ortografía; un idioma sin diccionario la apaga | Que un documento ajeno se revise en su idioma sin configurar nada, y no quede todo en rojo |
 | 2026-11-15 | Todo lo que se ve en GitHub en inglés (commits, PR, releases, CHANGELOG, README, CONTRIBUTING, SECURITY, descripción); `README.es.md`, `CLAUDE.md` y los planes internos en español | Pedido del usuario (más alcance, como el README en inglés). Lo interno lo leen el usuario y las tres líneas en español; los commits y PR viejos no se reescriben (prohibido reescribir lo subido) |
 | 2026-11-15 | El compilador se elige al crear el proyecto y las plantillas (escritas para XeLaTeX) se adaptan al elegido; con pdfLaTeX, `fontenc` + `lmodern` en vez de `fontspec` | Pedido del usuario. Una copia por compilador triplicaría las 24 plantillas; la diferencia es una línea del preámbulo. `lmodern` (paquete `lm`, ya en el TeX Live de JuTeX) da fuentes vectoriales con T1 |
+| 2026-11-16 | Lo que corre en cada tecla no recorre el documento ni lee la maquetación; `contain: strict` en el área de desplazamiento del editor principal | En WebKitGTK cada tecla costaba hasta ~14 ms en un documento largo y las teclas pulsadas juntas se encolaban; WebKit no puede maquetar solo el editor sin la contención. Solo en el editor principal: los del historial toman la altura de su contenido |
