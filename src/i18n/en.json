@@ -684,9 +684,10 @@
     "needsIdentity": "The author of the backups (name and e-mail) is missing.",
     "missingTool": "A required program (git, gh or gpg) was not found.",
     "notSignedIn": "GitHub did not accept the access. Sign in with «gh auth login» and, for https addresses, also run «gh auth setup-git» (or use an SSH key).",
-    "diverged": "There are new backups here and also in the remote. JuTeX does not mix them automatically so nothing is lost: join them with git in a terminal (git pull) and try again.",
+    "diverged": "GitHub has backups that aren’t here: pull the changes before pushing.",
     "localChanges": "There are changes not backed up in files that also changed in the remote, and bringing them would overwrite them. Keep those changes aside, restore those files to the last backup and try again.",
-    "remoteNotFound": "The remote repository was not found. Check the address and that your account has access."
+    "remoteNotFound": "The remote repository was not found. Check the address and that your account has access.",
+    "mergeInProgress": "A merge with GitHub is in progress: finish or cancel it first, in the backup panel."
   },
   "trash": {
     "title": "Trash",
@@ -878,7 +879,39 @@
       "resolving": "Resolving changes",
       "other": "Working"
     },
-    "details": "Details"
+    "details": "Details",
+    "beforePull": "Before pulling changes",
+    "mergeMessage": "Merge with GitHub",
+    "mergeTitle": "Merge with GitHub in progress",
+    "mergeIntro": "The same parts changed here and on GitHub. Resolve each conflict in the editor (or pick a version) and finish the merge. Your changes are already backed up.",
+    "remainingCount": {
+      "one": "{count} to resolve",
+      "other": "{count} to resolve"
+    },
+    "resolved": "Resolved",
+    "kindDeleted": "Deleted on one side and changed on the other: pick a version.",
+    "kindBinary": "It can’t be combined: pick a version.",
+    "finishMerge": "Finish merge",
+    "abortMerge": "Cancel merge",
+    "abortTitle": "Cancel the merge?",
+    "abortConfirm": "The files go back to how they were before pulling. Whatever you edited during the merge is discarded.",
+    "keepOurs": "Keep mine",
+    "keepTheirs": "Keep GitHub’s",
+    "keepBoth": "Both",
+    "ours": "Mine",
+    "theirs": "GitHub’s",
+    "mergedDone": {
+      "one": "Merged {count} change from GitHub.",
+      "other": "Merged {count} changes from GitHub."
+    },
+    "mergeConflicts": "There are conflicts: resolve them and finish the merge.",
+    "mergeFinished": "Merge finished. Push it with Push.",
+    "mergeBusy": "Finish or cancel the merge first.",
+    "changeRepo": "Change repository",
+    "connectOther": "Connect another…",
+    "disconnect": "Disconnect",
+    "disconnectTitle": "Disconnect this project from its repository?",
+    "disconnectConfirm": "Nothing is deleted on GitHub. Your backups stay here and you can connect it again whenever you want."
   },
   "clone": {
     "title": "Import from GitHub",

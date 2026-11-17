@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { translate, useI18n, type TranslationKey } from "../i18n";
 import { getBackend } from "../lib/tauri";
 import { useBuffers } from "./buffers";
 import { reloadChangedFiles, useHistory } from "./history";
@@ -23,7 +24,7 @@ type BackupState = {
   backups: Backup[];
   loading: boolean;
   /** What is running (one thing at a time). */
-  working: "enable" | "backup" | "connect" | "push" | "pull" | null;
+  working: "enable" | "backup" | "connect" | "push" | "pull" | "merge" | null;
   /** `git` and `gh` installed. */
   tools: BackupTools | null;
   /** Progress of the running push or pull. */
@@ -45,8 +46,19 @@ type BackupState = {
   /** Connects with a new private GitHub repository (`gh`) or an existing URL. */
   connect: (target: { create: string } | { url: string }) => Promise<void>;
   push: () => Promise<void>;
-  /** «Traer cambios»: brings remote backups if that is a fast-forward. */
+  /**
+   * «Traer cambios»: saves what is typed, backs up what is not backed up, and brings GitHub's
+   * backups (merging them; on conflicts the merge is left in progress).
+   */
   pull: () => Promise<Pulled | null>;
+  /** «Terminar fusión»: commits the merge (refused while conflicts are left). */
+  finishMerge: () => Promise<void>;
+  /** «Cancelar fusión»: everything back as before pulling; the open files are reloaded. */
+  abortMerge: () => Promise<void>;
+  /** Keeps one side of a binary or deleted-and-changed file in conflict. */
+  choose: (path: string, side: "ours" | "theirs") => Promise<void>;
+  /** «Desconectar»: the project stops pushing to its repository. */
+  disconnect: () => Promise<void>;
   cancel: () => Promise<void>;
   setPushAfterBackup: (value: boolean) => Promise<void>;
 };
@@ -95,6 +107,15 @@ export const useBackup = create<BackupState>()((set, get) => {
     }
   };
 
+  /** Commit messages JuTeX writes, in the interface's language. */
+  const message = (key: TranslationKey) => translate(useI18n.getState().locale, key);
+
+  /** The list of backups, if it is on screen. */
+  const reloadShownBackups = async (projectId: string) => {
+    const shown = useHistory.getState();
+    if (shown.projectId === projectId && shown.source === "backup") await shown.load(projectId);
+  };
+
   const read = async (projectId: string) => {
     const backend = getBackend();
     const status = await backend.backupStatus(projectId);
@@ -140,9 +161,7 @@ export const useBackup = create<BackupState>()((set, get) => {
         await useBuffers.getState().saveAll();
         const done = await getBackend().backupCreate(projectId, message);
         await read(projectId);
-        // The list of backups, if it is on screen.
-        const shown = useHistory.getState();
-        if (shown.projectId === projectId && shown.source === "backup") await shown.load(projectId);
+        await reloadShownBackups(projectId);
         return done;
       }).then(async (done) => {
         const { status } = get();
@@ -171,13 +190,65 @@ export const useBackup = create<BackupState>()((set, get) => {
 
     pull: async () =>
       await remoteWork("pull", async (projectId) => {
-        // Unsaved edits are written first, so git can tell whether they clash.
+        // Unsaved edits are written first, so they are backed up before merging.
         await useBuffers.getState().saveAll();
-        const pulled = await getBackend().backupPull(projectId);
+        const pulled = await getBackend().backupPull(
+          projectId,
+          message("backup.beforePull"),
+          message("backup.mergeMessage"),
+        );
         if (pulled.changed.length > 0) await reloadChangedFiles(projectId, pulled.changed);
         await read(projectId);
+        await reloadShownBackups(projectId);
+        return pulled;
+      }).then(async (pulled) => {
+        // A merge without conflicts is a backup like any other.
+        const { status } = get();
+        if (pulled?.merged && status?.pushAfterBackup && status.remote) await get().push();
         return pulled;
       }),
+
+    finishMerge: async () => {
+      await work("merge", async (projectId) => {
+        await useBuffers.getState().saveAll();
+        const status = await getBackend().backupFinishMerge(
+          projectId,
+          message("backup.mergeMessage"),
+        );
+        if (get().projectId === projectId) set({ status });
+        await read(projectId);
+        await reloadShownBackups(projectId);
+      });
+      const { status } = get();
+      if (status?.pushAfterBackup && status.remote && !status.merge) await get().push();
+    },
+
+    abortMerge: async () => {
+      await work("merge", async (projectId) => {
+        // Saved first, so the open files take what the cancel leaves on disk (hand edits
+        // inside the conflicts go away with the merge, as the confirmation says).
+        await useBuffers.getState().saveAll();
+        const changed = await getBackend().backupAbortMerge(projectId);
+        if (changed.length > 0) await reloadChangedFiles(projectId, changed);
+        await read(projectId);
+      });
+    },
+
+    choose: async (path, side) => {
+      await work("merge", async (projectId) => {
+        await useBuffers.getState().saveAll();
+        await getBackend().backupChoose(projectId, path, side);
+        await reloadChangedFiles(projectId, [path]);
+        await read(projectId);
+      });
+    },
+
+    disconnect: async () => {
+      await work("connect", async (projectId) => {
+        const status = await getBackend().backupDisconnect(projectId);
+        if (get().projectId === projectId) set({ status, remoteError: null });
+      });
+    },
 
     cancel: async () => {
       const projectId = get().projectId;

@@ -684,9 +684,10 @@
     "needsIdentity": "Manca l’autore dei backup (nome ed e-mail).",
     "missingTool": "Non è stato trovato un programma necessario (git, gh o gpg).",
     "notSignedIn": "GitHub non ha accettato l’accesso. Accedi con «gh auth login» e, per gli indirizzi https, esegui anche «gh auth setup-git» (o usa una chiave SSH).",
-    "diverged": "Ci sono nuovi backup qui e anche nel repository remoto. JuTeX non li unisce automaticamente per non perdere nulla: uniscili con git in un terminale (git pull) e riprova.",
+    "diverged": "GitHub ha backup che non sono qui: scarica le modifiche prima di inviare.",
     "localChanges": "Ci sono modifiche senza backup in file che sono cambiati anche nel repository remoto, e recuperarle le sovrascriverebbe. Metti da parte queste modifiche, ripristina quei file all’ultimo backup e riprova.",
-    "remoteNotFound": "Il repository remoto non è stato trovato. Controlla l’indirizzo e che il tuo account vi abbia accesso."
+    "remoteNotFound": "Il repository remoto non è stato trovato. Controlla l’indirizzo e che il tuo account vi abbia accesso.",
+    "mergeInProgress": "È in corso un’unione con GitHub: prima terminala o annullala, nel pannello di backup."
   },
   "trash": {
     "title": "Cestino",
@@ -878,7 +879,39 @@
       "resolving": "Risoluzione delle modifiche",
       "other": "In corso"
     },
-    "details": "Dettagli"
+    "details": "Dettagli",
+    "beforePull": "Prima di scaricare le modifiche",
+    "mergeMessage": "Unione con GitHub",
+    "mergeTitle": "Unione con GitHub in corso",
+    "mergeIntro": "Le stesse parti sono cambiate qui e su GitHub. Risolvi ogni conflitto nell’editor (o scegli una versione) e termina l’unione. Le tue modifiche sono già salvate nel backup.",
+    "remainingCount": {
+      "one": "{count} da risolvere",
+      "other": "{count} da risolvere"
+    },
+    "resolved": "Risolto",
+    "kindDeleted": "Eliminato da una parte e modificato dall’altra: scegli una versione.",
+    "kindBinary": "Non si può combinare: scegli una versione.",
+    "finishMerge": "Termina unione",
+    "abortMerge": "Annulla unione",
+    "abortTitle": "Annullare l’unione?",
+    "abortConfirm": "I file tornano com’erano prima di scaricare le modifiche. Quello che hai modificato durante l’unione viene scartato.",
+    "keepOurs": "Tieni la mia",
+    "keepTheirs": "Tieni quella di GitHub",
+    "keepBoth": "Entrambe",
+    "ours": "La mia",
+    "theirs": "Quella di GitHub",
+    "mergedDone": {
+      "one": "Unita {count} modifica da GitHub.",
+      "other": "Unite {count} modifiche da GitHub."
+    },
+    "mergeConflicts": "Ci sono conflitti: risolvili e termina l’unione.",
+    "mergeFinished": "Unione terminata. Inviala con Invia.",
+    "mergeBusy": "Prima termina o annulla l’unione.",
+    "changeRepo": "Cambia repository",
+    "connectOther": "Collega un altro…",
+    "disconnect": "Scollega",
+    "disconnectTitle": "Scollegare questo progetto dal suo repository?",
+    "disconnectConfirm": "Su GitHub non si elimina nulla. I tuoi backup restano qui e puoi ricollegarlo quando vuoi."
   },
   "clone": {
     "title": "Importa da GitHub",

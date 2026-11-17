@@ -4,7 +4,17 @@ What's new in each version compared with the previous one, from newest to oldest
 of each release (with how to install it) are in `docs/releases/<version>.md`.
 Up to 1.2.2 it was called LibreTeX.
 
-## Unreleased
+## 2.2.0 (unreleased)
+
+### New
+
+- Pulling changes when both sides have new backups no longer stops: JuTeX backs up what is
+  not backed up, merges, and, if the same lines changed on both sides, shows each conflict
+  in the editor with Keep mine, Keep GitHub's and Both (or edit it by hand), then Finish
+  merge; Cancel merge leaves everything as before pulling.
+- A duplicated project keeps its backups but is no longer connected to the original's
+  repository; the backup panel can change the repository (connect another, or create a new
+  private one on GitHub) or disconnect it.
 
 ### Fixes
 

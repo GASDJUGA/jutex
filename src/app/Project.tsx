@@ -28,6 +28,7 @@ import { flushSessions, loadSession, rememberView, restoredTabs } from "../lib/s
 import { getBackend } from "../lib/tauri";
 import { notifyInfo } from "../lib/errors";
 import { ConflictDialog } from "../components/editor/ConflictDialog";
+import { useBackup } from "../store/backup";
 import { useBuffers } from "../store/buffers";
 import { useCompile } from "../store/compile";
 import { useProjectFiles } from "../store/files";
@@ -48,6 +49,11 @@ type ProjectProps = {
  */
 function resumeWorkspace(projectId: string) {
   useProjectFiles.getState().loadTree(projectId).catch(notifyError);
+  // The backup store is not per tab: this project's status (and its merge in progress).
+  useBackup
+    .getState()
+    .load(projectId)
+    .catch(() => {});
   useProjectIndex
     .getState()
     .load(projectId)
@@ -177,6 +183,12 @@ export function Project({ projectId }: ProjectProps) {
         const treeLoaded = useProjectFiles.getState().loadTree(p.id);
         treeLoaded.catch(notifyError);
         useProjectIndex
+          .getState()
+          .load(p.id)
+          .catch(() => {});
+        // A merge with GitHub left in progress (JuTeX closed halfway) shows at once, in the
+        // editor and in the backup panel.
+        useBackup
           .getState()
           .load(p.id)
           .catch(() => {});

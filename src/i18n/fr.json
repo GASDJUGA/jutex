@@ -684,9 +684,10 @@
     "needsIdentity": "Il manque l’auteur des sauvegardes (nom et adresse e-mail).",
     "missingTool": "Un programme nécessaire (git, gh ou gpg) est introuvable.",
     "notSignedIn": "GitHub n’a pas accepté l’accès. Connectez-vous avec « gh auth login » et, pour les adresses https, exécutez aussi « gh auth setup-git » (ou utilisez une clé SSH).",
-    "diverged": "Il y a de nouvelles sauvegardes ici et aussi sur le dépôt distant. JuTeX ne les fusionne pas automatiquement pour ne rien perdre : réunissez-les avec git dans un terminal (git pull) et réessayez.",
+    "diverged": "GitHub a des sauvegardes qui ne sont pas ici : récupérez les modifications avant d’envoyer.",
     "localChanges": "Il y a des modifications non sauvegardées dans des fichiers qui ont aussi changé sur le dépôt distant, et les récupérer les écraserait. Mettez ces modifications de côté, restaurez ces fichiers à la dernière sauvegarde et réessayez.",
-    "remoteNotFound": "Le dépôt distant est introuvable. Vérifiez l’adresse et que votre compte y a accès."
+    "remoteNotFound": "Le dépôt distant est introuvable. Vérifiez l’adresse et que votre compte y a accès.",
+    "mergeInProgress": "Une fusion avec GitHub est en cours : terminez-la ou annulez-la d’abord, dans le panneau de sauvegarde."
   },
   "trash": {
     "title": "Corbeille",
@@ -878,7 +879,39 @@
       "resolving": "Résolution des modifications",
       "other": "Traitement"
     },
-    "details": "Détails"
+    "details": "Détails",
+    "beforePull": "Avant de récupérer les modifications",
+    "mergeMessage": "Fusion avec GitHub",
+    "mergeTitle": "Fusion avec GitHub en cours",
+    "mergeIntro": "Les mêmes parties ont changé ici et sur GitHub. Résolvez chaque conflit dans l’éditeur (ou choisissez une version) et terminez la fusion. Vos modifications sont déjà sauvegardées.",
+    "remainingCount": {
+      "one": "{count} à résoudre",
+      "other": "{count} à résoudre"
+    },
+    "resolved": "Résolu",
+    "kindDeleted": "Supprimé d’un côté et modifié de l’autre : choisissez une version.",
+    "kindBinary": "Impossible de combiner : choisissez une version.",
+    "finishMerge": "Terminer la fusion",
+    "abortMerge": "Annuler la fusion",
+    "abortTitle": "Annuler la fusion ?",
+    "abortConfirm": "Les fichiers reviennent à leur état d’avant la récupération. Ce que vous avez modifié pendant la fusion est abandonné.",
+    "keepOurs": "Garder la mienne",
+    "keepTheirs": "Garder celle de GitHub",
+    "keepBoth": "Les deux",
+    "ours": "La mienne",
+    "theirs": "Celle de GitHub",
+    "mergedDone": {
+      "one": "{count} modification de GitHub fusionnée.",
+      "other": "{count} modifications de GitHub fusionnées."
+    },
+    "mergeConflicts": "Il y a des conflits : résolvez-les et terminez la fusion.",
+    "mergeFinished": "Fusion terminée. Envoyez-la avec Envoyer.",
+    "mergeBusy": "Terminez ou annulez d’abord la fusion.",
+    "changeRepo": "Changer de dépôt",
+    "connectOther": "Connecter un autre…",
+    "disconnect": "Déconnecter",
+    "disconnectTitle": "Déconnecter ce projet de son dépôt ?",
+    "disconnectConfirm": "Rien n’est supprimé sur GitHub. Vos sauvegardes restent ici et vous pouvez le reconnecter quand vous voulez."
   },
   "clone": {
     "title": "Importer depuis GitHub",

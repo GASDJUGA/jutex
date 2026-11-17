@@ -684,9 +684,10 @@
     "needsIdentity": "Falta el autor de los respaldos (nombre y correo).",
     "missingTool": "No se encontró un programa necesario (git, gh o gpg).",
     "notSignedIn": "GitHub no aceptó el acceso. Inicia sesión con «gh auth login» y, para direcciones https, ejecuta también «gh auth setup-git» (o usa una clave SSH).",
-    "diverged": "Hay respaldos nuevos aquí y también en el remoto. JuTeX no los mezcla automáticamente para no perder nada: únelos con git en una terminal (git pull) y vuelve a intentarlo.",
+    "diverged": "GitHub tiene respaldos que no están aquí: trae los cambios antes de subir.",
     "localChanges": "Hay cambios sin respaldar en archivos que también cambiaron en el remoto, y traerlos los pisaría. Guarda aparte esos cambios, restaura esos archivos al último respaldo y vuelve a intentarlo.",
-    "remoteNotFound": "No se encontró el repositorio remoto. Revisa la dirección y que tu cuenta tenga acceso."
+    "remoteNotFound": "No se encontró el repositorio remoto. Revisa la dirección y que tu cuenta tenga acceso.",
+    "mergeInProgress": "Hay una fusión con GitHub en curso: termínala o cancélala primero, en el panel de respaldo."
   },
   "trash": {
     "title": "Papelera",
@@ -878,7 +879,39 @@
       "resolving": "Resolviendo cambios",
       "other": "Trabajando"
     },
-    "details": "Detalles"
+    "details": "Detalles",
+    "beforePull": "Antes de traer cambios",
+    "mergeMessage": "Fusión con GitHub",
+    "mergeTitle": "Fusión con GitHub en curso",
+    "mergeIntro": "Aquí y en GitHub cambiaron las mismas partes. Resuelve cada conflicto en el editor (o elige una versión) y termina la fusión. Tus cambios ya están respaldados.",
+    "remainingCount": {
+      "one": "{count} por resolver",
+      "other": "{count} por resolver"
+    },
+    "resolved": "Resuelto",
+    "kindDeleted": "Se borró en un lado y cambió en el otro: elige una versión.",
+    "kindBinary": "No se puede combinar: elige una versión.",
+    "finishMerge": "Terminar fusión",
+    "abortMerge": "Cancelar fusión",
+    "abortTitle": "¿Cancelar la fusión?",
+    "abortConfirm": "Los archivos vuelven a como estaban antes de traer los cambios. Lo que hayas editado durante la fusión se descarta.",
+    "keepOurs": "Quedarme con lo mío",
+    "keepTheirs": "Quedarme con lo de GitHub",
+    "keepBoth": "Ambos",
+    "ours": "Lo mío",
+    "theirs": "Lo de GitHub",
+    "mergedDone": {
+      "one": "Unido {count} cambio de GitHub.",
+      "other": "Unidos {count} cambios de GitHub."
+    },
+    "mergeConflicts": "Hay conflictos: resuélvelos y termina la fusión.",
+    "mergeFinished": "Fusión terminada. Súbela con Subir.",
+    "mergeBusy": "Termina o cancela la fusión primero.",
+    "changeRepo": "Cambiar repositorio",
+    "connectOther": "Conectar otro…",
+    "disconnect": "Desconectar",
+    "disconnectTitle": "¿Desconectar este proyecto de su repositorio?",
+    "disconnectConfirm": "No se borra nada en GitHub. Tus respaldos siguen aquí y puedes conectarlo de nuevo cuando quieras."
   },
   "clone": {
     "title": "Importar desde GitHub",

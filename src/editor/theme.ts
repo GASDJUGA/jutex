@@ -22,6 +22,37 @@ const theme = EditorView.theme({
     borderRight: "1px solid var(--jt-editor-line)",
   },
   ".cm-activeLine": { backgroundColor: "var(--jt-editor-active-line)" },
+  // Merge conflicts (conflictMarkers.ts): mine in violet, GitHub's in teal.
+  ".jt-conflict-ours": { backgroundColor: "rgb(107 92 231 / 0.10)" },
+  ".jt-conflict-theirs": { backgroundColor: "rgb(20 150 140 / 0.10)" },
+  ".jt-conflict": {
+    display: "flex",
+    alignItems: "center",
+    gap: "6px",
+    padding: "2px 6px",
+    fontFamily: "var(--font-sans, sans-serif)",
+    fontSize: "12px",
+    color: "var(--jt-editor-gutter-fg)",
+  },
+  ".jt-conflict-header": {
+    backgroundColor: "rgb(107 92 231 / 0.18)",
+    borderTop: "1px solid rgb(107 92 231 / 0.5)",
+  },
+  ".jt-conflict-separator": {
+    backgroundColor: "rgb(20 150 140 / 0.18)",
+    borderTop: "1px solid rgb(20 150 140 / 0.5)",
+  },
+  ".jt-conflict-footer": { padding: "0", borderTop: "1px solid rgb(20 150 140 / 0.5)" },
+  ".jt-conflict-label": { fontWeight: "600", marginRight: "auto" },
+  ".jt-conflict button": {
+    padding: "1px 8px",
+    borderRadius: "4px",
+    border: "1px solid var(--jt-editor-line)",
+    backgroundColor: "var(--jt-editor-bg)",
+    color: "var(--jt-editor-fg)",
+    cursor: "pointer",
+  },
+  ".jt-conflict button:hover": { borderColor: "var(--jt-editor-gutter-fg)" },
   ".cm-activeLineGutter": {
     backgroundColor: "var(--jt-editor-active-line)",
     color: "var(--jt-editor-fg)",

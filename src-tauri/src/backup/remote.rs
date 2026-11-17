@@ -71,7 +71,7 @@ pub struct Output {
 }
 
 impl Output {
-    fn text(&self) -> String {
+    pub(crate) fn text(&self) -> String {
         self.lines.join("\n")
     }
 }
@@ -283,27 +283,63 @@ pub fn clean_repo_name(name: &str) -> AppResult<String> {
 pub fn connect_url(root: &Path, url: &str) -> AppResult<String> {
     let url = clean_url(url)?;
     let repo = require(root)?;
-    if repo.find_remote("origin").is_ok() {
-        repo.remote_set_url("origin", &url).map_err(git_error)?;
-    } else {
-        repo.remote("origin", &url).map_err(git_error)?;
+    // Another repository: what was known of the old one (its branches, the tracking) goes.
+    let same = repo
+        .find_remote("origin")
+        .ok()
+        .is_some_and(|r| r.url().ok() == Some(url.as_str()));
+    if same {
+        return Ok(url);
     }
+    disconnect(root)?;
+    require(root)?.remote("origin", &url).map_err(git_error)?;
     Ok(url)
 }
 
-/// Creates a private GitHub repository called `name` with `gh` and makes it `origin`. Returns
-/// its URL. Nothing is pushed yet.
+/// «Desconectar»: removes `origin` (with its remote branches) and the current branch's
+/// tracking of it. Nothing is deleted on GitHub.
+pub fn disconnect(root: &Path) -> AppResult<()> {
+    let repo = require(root)?;
+    if repo.find_remote("origin").is_ok() {
+        repo.remote_delete("origin").map_err(git_error)?;
+    }
+    if let Some(branch) = branch_name(&repo) {
+        let mut config = repo.config().map_err(git_error)?;
+        for key in ["remote", "merge"] {
+            // Missing keys are fine.
+            let _ = config.remove(&format!("branch.{branch}.{key}"));
+        }
+    }
+    Ok(())
+}
+
+/// Creates a private GitHub repository called `name` with `gh` and makes it `origin` (in
+/// place of the one connected, if any). Returns its URL. Nothing is pushed yet.
 pub fn create_github_repo(
     root: &Path,
     name: &str,
     on_start: impl FnOnce(u32),
 ) -> AppResult<String> {
     let name = clean_repo_name(name)?;
-    let repo = require(root)?;
-    if repo.find_remote("origin").is_ok() {
-        return Err(AppError::AlreadyExists(PathBuf::from("origin")));
-    }
     let gh = tool("gh").ok_or(AppError::MissingTool("gh"))?;
+    let repo = require(root)?;
+    // «Conectar otro…» with a new repository: `gh` needs `origin` free. If it fails, the old
+    // one comes back.
+    let previous = repo
+        .find_remote("origin")
+        .ok()
+        .and_then(|r| r.url().ok().map(str::to_owned));
+    if previous.is_some() {
+        disconnect(root)?;
+    }
+    let restore = || {
+        if let Some(url) = &previous
+            && let Ok(repo) = require(root)
+            && repo.find_remote("origin").is_err()
+        {
+            let _ = repo.remote("origin", url);
+        }
+    };
     let out = run(
         &gh,
         &[
@@ -320,8 +356,10 @@ pub fn create_github_repo(
         GH_TIMEOUT,
         on_start,
         |_| {},
-    )?;
+    )
+    .inspect_err(|_| restore())?;
     if !out.success {
+        restore();
         return Err(gh_error(&out.text()));
     }
     let repo = require(root)?;
@@ -358,6 +396,14 @@ pub fn parse_progress(line: &str) -> Option<Progress> {
     })
 }
 
+/// Runs the system's `git` with `args` in `root`, for local work (no network), with
+/// [`GH_TIMEOUT`] as its limit.
+pub(crate) fn run_git(root: &Path, args: &[&str]) -> AppResult<Output> {
+    let git = git_tool()?;
+    let args: Vec<&OsStr> = args.iter().map(OsStr::new).collect();
+    run(&git, &args, Some(root), GH_TIMEOUT, |_| {}, |_| {})
+}
+
 fn git_tool() -> AppResult<PathBuf> {
     tool("git").ok_or(AppError::MissingTool("git"))
 }
@@ -392,6 +438,7 @@ pub fn push(
     let git = git_tool()?;
     let branch = {
         let repo = require(root)?;
+        super::merge::refuse_during(&repo)?;
         origin_url(&repo)?;
         pushable_branch(&repo)?
     };
@@ -461,23 +508,36 @@ pub struct Pulled {
     pub commits: usize,
     /// Paths of the project that changed.
     pub changed: Vec<String>,
+    /// Both sides had new backups and they were merged into a new backup.
+    pub merged: bool,
+    /// Files in conflict: not empty means the merge is in progress (see [`super::merge`]).
+    pub conflicts: Vec<super::merge::Conflict>,
 }
 
-/// After a fetch: brings the remote branch in if that is a fast-forward (`git merge
-/// --ff-only`, which refuses to overwrite unsaved local changes). If both sides have new
-/// backups, nothing is mixed: the error explains it.
-pub fn fast_forward(root: &Path) -> AppResult<Pulled> {
+/// After a fetch: brings the remote branch in. Only GitHub has new backups: a fast-forward
+/// (`git merge --ff-only`, which refuses to overwrite unsaved local changes). Both sides do:
+/// `git merge --no-commit`; without conflicts the merge is committed with `merged_message`,
+/// with conflicts it is left in progress with Git's marks in the files.
+pub fn bring_in(
+    root: &Path,
+    merged_message: &str,
+    author: Option<&super::Identity>,
+) -> AppResult<Pulled> {
     let git = git_tool()?;
     let repo = require(root)?;
+    super::merge::refuse_during(&repo)?;
     let branch = branch_name(&repo)
         .ok_or_else(|| AppError::Forbidden("no hay una rama actual (HEAD separado)".into()))?;
     let remote_ref = format!("refs/remotes/origin/{branch}");
+    let nothing = Pulled {
+        commits: 0,
+        changed: Vec::new(),
+        merged: false,
+        conflicts: Vec::new(),
+    };
     let Ok(remote) = repo.refname_to_id(&remote_ref) else {
         // GitHub has nothing on this branch yet.
-        return Ok(Pulled {
-            commits: 0,
-            changed: Vec::new(),
-        });
+        return Ok(nothing);
     };
     let head = repo.head().ok().and_then(|h| h.target());
     let (ahead, behind) = match head {
@@ -485,35 +545,53 @@ pub fn fast_forward(root: &Path) -> AppResult<Pulled> {
         None => (0, super::count_commits(&repo, remote)?),
     };
     if behind == 0 {
-        return Ok(Pulled {
-            commits: 0,
-            changed: Vec::new(),
-        });
+        return Ok(nothing);
     }
-    if ahead > 0 {
-        return Err(AppError::Diverged(format!(
-            "{ahead} respaldo(s) locales sin subir y {behind} en GitHub que no están aquí"
-        )));
-    }
-    let out = run(
-        &git,
+    let args: &[&str] = if ahead == 0 {
+        &["merge", "--ff-only", "--no-edit"]
+    } else {
         &[
-            OsStr::new("merge"),
-            OsStr::new("--ff-only"),
-            OsStr::new("--no-edit"),
-            OsStr::new(&remote_ref),
-        ],
-        Some(root),
-        NETWORK_TIMEOUT,
-        |_| {},
-        |_| {},
-    )?;
-    if !out.success {
+            "-c",
+            "merge.conflictStyle=merge",
+            "merge",
+            "--no-ff",
+            "--no-commit",
+            "--no-edit",
+        ]
+    };
+    let mut args: Vec<&OsStr> = args.iter().map(OsStr::new).collect();
+    args.push(OsStr::new(&remote_ref));
+    let out = run(&git, &args, Some(root), NETWORK_TIMEOUT, |_| {}, |_| {})?;
+    // Git reopened the repository: read the new state again.
+    let repo = require(root)?;
+    let in_merge = super::merge::in_progress(&repo);
+    if !out.success && !in_merge {
         return Err(git_cli_error(&out.text()));
     }
+    let changed = changed_between(&repo, head, remote)?;
+    if ahead == 0 {
+        return Ok(Pulled {
+            commits: behind,
+            changed,
+            merged: false,
+            conflicts: Vec::new(),
+        });
+    }
+    let has_conflicts = repo.index().map_err(git_error)?.has_conflicts();
+    if has_conflicts {
+        return Ok(Pulled {
+            commits: behind,
+            changed,
+            merged: false,
+            conflicts: super::merge::start(&repo, root)?,
+        });
+    }
+    super::commit_merge(&repo, root, merged_message, author)?;
     Ok(Pulled {
         commits: behind,
-        changed: changed_between(&repo, head, remote)?,
+        changed,
+        merged: true,
+        conflicts: Vec::new(),
     })
 }
 

@@ -8,10 +8,12 @@ import type {
   BackupPending,
   BackupProgress,
   BackupStatus,
+  Conflict,
   FileChange,
   Identity,
   Settings,
 } from "../store/types";
+import { findConflicts } from "./conflicts";
 import type { Backend } from "./tauri";
 import type { MockFiles } from "./mockFiles";
 import { repoKey, validRemoteUrl, validRepoName } from "./remote";
@@ -32,6 +34,8 @@ type Repo = {
   /** `git config` author (none by default, so JuTeX's is asked for). */
   identity: Identity | null;
   pushAfterBackup: boolean;
+  /** A merge in progress: the files that had conflicts and GitHub's backups being merged. */
+  merge?: { conflicts: Omit<Conflict, "remaining">[]; remote: Commit[]; chosen: string[] } | null;
 };
 
 const GITIGNORE = "# JuTeX: datos del editor y archivos que genera LaTeX\n.jutex/\n*.aux\n*.log\n";
@@ -72,6 +76,10 @@ type BackupMethods = Pick<
   | "backupCreateGithub"
   | "backupPush"
   | "backupPull"
+  | "backupFinishMerge"
+  | "backupAbortMerge"
+  | "backupChoose"
+  | "backupDisconnect"
   | "backupCancel"
   | "onBackupProgress"
 > & {
@@ -153,7 +161,37 @@ export function createMockBackup(
       ...(r ? aheadBehind(r) : { ahead: 0, behind: 0 }),
       pending: r ? diffSnapshots(head(r), snapshot(id)).length : 0,
       pushAfterBackup: r?.pushAfterBackup ?? false,
+      merge: r?.merge ? { conflicts: remaining(id, r.merge) } : null,
     };
+  };
+  /** What is left of each conflict, from the files (like `merge::state` in Rust). */
+  const remaining = (id: string, merge: NonNullable<Repo["merge"]>): Conflict[] => {
+    const now = snapshot(id);
+    return merge.conflicts.map((c) => ({
+      ...c,
+      remaining:
+        c.kind === "text"
+          ? findConflicts(now[c.path] ?? "").length
+          : Number(!merge.chosen.includes(c.path)),
+    }));
+  };
+  const refuseDuringMerge = (r: Repo) => {
+    if (r.merge) fail("mergeInProgress", "termina o cancela la fusión con GitHub");
+  };
+  /** The merge commit: this project as it is, after GitHub's backups. */
+  const commitMerge = (id: string, r: Repo, message: string, remote: Commit[]) => {
+    const local = ids(r.commits);
+    const brought = remote.filter((c) => !local.has(c.backup.id));
+    r.commits = [...r.commits, ...brought];
+    r.merge = null;
+    const backup: Backup = {
+      id: `b${++counter}`,
+      message: message.split("\n")[0],
+      author: author(r).name,
+      time: Date.now(),
+      pushed: null,
+    };
+    r.commits.unshift({ backup, contents: snapshot(id) });
   };
 
   return {
@@ -185,6 +223,7 @@ export function createMockBackup(
     }),
     backupCreate: async (id, message) => {
       const r = repo(id);
+      refuseDuringMerge(r);
       const text = message.trim();
       if (!text || [...text].length > 1000) fail("invalidName", "mensaje del respaldo");
       ensureGitignore(id);
@@ -210,6 +249,7 @@ export function createMockBackup(
     }),
     backupRestoreFile: async (id, version, path, before) => {
       const r = repo(id);
+      refuseDuringMerge(r);
       const content = find(r, version).contents[path];
       commit(id, r, before);
       if (content === undefined) files(id).delete(path);
@@ -224,18 +264,21 @@ export function createMockBackup(
       const r = repo(id);
       if (!validRemoteUrl(url))
         fail("invalidName", "la dirección debe empezar con https:// o git@");
+      if (r.remote !== url.trim()) r.remoteCommits = null;
       r.remote = url.trim();
       return status(id);
     },
     backupCreateGithub: async (id, name) => {
       const r = repo(id);
       if (!validRepoName(name)) fail("invalidName", "nombre del repositorio");
-      if (r.remote) fail("alreadyExists", "origin");
+      // «Conectar otro…»: the new repository replaces the connected one.
       r.remote = `https://github.com/ana/${name.trim()}.git`;
+      r.remoteCommits = null;
       return status(id);
     },
     backupPush: async (id) => {
       const r = repo(id);
+      refuseDuringMerge(r);
       requireRemote(r);
       if (r.commits.length === 0) fail("forbidden", "todavía no hay respaldos que subir");
       if (aheadBehind(r).behind > 0) fail("diverged", "[rejected] main -> main (fetch first)");
@@ -248,23 +291,86 @@ export function createMockBackup(
       r.remoteCommits = [...r.commits];
       return status(id);
     },
-    backupPull: async (id) => {
+    backupPull: async (id, before, merged) => {
       const r = repo(id);
+      refuseDuringMerge(r);
       requireRemote(r);
+      if (diffSnapshots(head(r), snapshot(id)).length > 0) commit(id, r, before);
       const { ahead, behind } = aheadBehind(r);
-      if (!r.remoteCommits || behind === 0) return { commits: 0, changed: [] };
-      if (ahead > 0) fail("diverged", `${ahead} locales y ${behind} remotos`);
+      const nothing = { commits: 0, changed: [], merged: false, conflicts: [] };
+      if (!r.remoteCommits || behind === 0) return nothing;
       const target = r.remoteCommits[0].contents;
       const changed = diffSnapshots(head(r), target).map((c) => c.path);
-      const unsaved = diffSnapshots(head(r), snapshot(id)).map((c) => c.path);
-      const clash = unsaved.filter((path) => changed.includes(path));
-      if (clash.length > 0) fail("localChanges", clash.join(", "));
+      if (ahead === 0) {
+        for (const path of changed) {
+          if (path in target) files(id).write(path, target[path]);
+          else files(id).delete(path);
+        }
+        r.commits = [...r.remoteCommits];
+        return { commits: behind, changed, merged: false, conflicts: [] };
+      }
+      // Both sides: per file, whole-file merge against the last backup both have.
+      const remoteIds = ids(r.remoteCommits);
+      const base = r.commits.find((c) => remoteIds.has(c.backup.id))?.contents ?? {};
+      const ours = head(r);
+      const conflicts: Omit<Conflict, "remaining">[] = [];
       for (const path of changed) {
-        if (path in target) files(id).write(path, target[path]);
+        const mine = ours[path];
+        const theirs = target[path];
+        if (mine === base[path]) {
+          if (theirs === undefined) files(id).delete(path);
+          else files(id).write(path, theirs);
+        } else if (theirs !== base[path] && theirs !== mine) {
+          if (mine === undefined || theirs === undefined) {
+            conflicts.push({ path, kind: "deleted" });
+          } else {
+            conflicts.push({ path, kind: "text" });
+            files(id).write(path, `<<<<<<< HEAD\n${mine}=======\n${theirs}>>>>>>> origin/main\n`);
+          }
+        }
+      }
+      if (conflicts.length > 0) {
+        r.merge = { conflicts, remote: [...r.remoteCommits], chosen: [] };
+        return { commits: behind, changed, merged: false, conflicts: remaining(id, r.merge) };
+      }
+      commitMerge(id, r, merged, r.remoteCommits);
+      return { commits: behind, changed, merged: true, conflicts: [] };
+    },
+    backupFinishMerge: async (id, message) => {
+      const r = repo(id);
+      if (!r.merge) fail("forbidden", "no hay una fusión en curso");
+      const left = remaining(id, r.merge!).find((c) => c.remaining > 0);
+      if (left) fail("forbidden", `quedan conflictos sin resolver en ${left.path}`);
+      commitMerge(id, r, message, r.merge!.remote);
+      return status(id);
+    },
+    backupAbortMerge: async (id) => {
+      const r = repo(id);
+      if (!r.merge) return [];
+      const back = head(r);
+      const changed = diffSnapshots(back, snapshot(id)).map((c) => c.path);
+      for (const path of changed) {
+        if (path in back) files(id).write(path, back[path]);
         else files(id).delete(path);
       }
-      r.commits = [...r.remoteCommits];
-      return { commits: behind, changed };
+      r.merge = null;
+      return changed;
+    },
+    backupChoose: async (id, path, side) => {
+      const r = repo(id);
+      const conflict = r.merge?.conflicts.find((c) => c.path === path);
+      if (!conflict || conflict.kind === "text") fail("forbidden", `${path} no se elige así`);
+      const kept = side === "ours" ? head(r)[path] : r.merge!.remote[0].contents[path];
+      if (kept === undefined) files(id).delete(path);
+      else files(id).write(path, kept);
+      r.merge!.chosen.push(path);
+      return status(id);
+    },
+    backupDisconnect: async (id) => {
+      const r = repo(id);
+      r.remote = null;
+      r.remoteCommits = null;
+      return status(id);
     },
     backupCancel: async () => {},
     onBackupProgress: (callback) => {
@@ -316,6 +422,7 @@ export function createMockBackup(
     },
     backupRestore: async (id, version, before) => {
       const r = repo(id);
+      refuseDuringMerge(r);
       const target = find(r, version).contents;
       commit(id, r, before);
       const changed = diffSnapshots(snapshot(id), target).map((c) => c.path);

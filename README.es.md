@@ -61,8 +61,9 @@ de LibreTeX, mira [Pasar de LibreTeX a JuTeX](#pasar-de-libretex-a-jutex).
 - Historial local automático (cada pocos minutos y tras compilar) y versiones con nombre;
   diferencias por archivo y restaurar un archivo o el proyecto entero.
 - Respaldo opcional con el Git del proyecto y, si quieres, en un repositorio privado de
-  GitHub: subir, traer cambios y continuar en otra máquina. JuTeX no guarda contraseñas
-  ni tokens.
+  GitHub: subir, traer cambios y continuar en otra máquina. Si cambiaron los dos lados,
+  JuTeX los une; los conflictos se ven en el editor con botones para quedarte con lo tuyo,
+  con lo de GitHub o con ambos. JuTeX no guarda contraseñas ni tokens.
 
 ![Historial con las diferencias de una versión](docs/screenshots/historial.png)
 

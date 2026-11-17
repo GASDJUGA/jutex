@@ -166,10 +166,17 @@ mod tests {
     fn en_su_proceso() {
         let settings = new_settings();
         let before = enabled(&settings);
-        // Arch with WebKitGTK 2.54: both there and on by default. Elsewhere (an older WebKit,
-        // as in the CI) there may be nothing to turn off, which is fine.
-        if std::env::var_os("CI").is_none() {
-            assert_eq!(before, [true, true]);
+        // WebKitGTK 2.54 and later: both there and on by default. An older WebKit (the CI's,
+        // or 2.52 kept back on purpose) may have them, or one of them, with other defaults.
+        // SAFETY: these only read the library's version.
+        let version = unsafe {
+            (
+                webkit2gtk::ffi::webkit_get_major_version(),
+                webkit2gtk::ffi::webkit_get_minor_version(),
+            )
+        };
+        if version >= (2, 54) {
+            assert_eq!(before, [true, true], "{version:?}");
         }
         let changed = disable_damage_tracking(&settings);
         assert_eq!(changed, before.iter().any(|&on| on));

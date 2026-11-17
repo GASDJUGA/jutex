@@ -220,7 +220,8 @@ describe("GitHub", () => {
     expect((await backend.backupList("tesis"))[0].message).toBe("desde otro clon");
   });
 
-  it("si ambos lados cambiaron lo explica y no mezcla nada", async () => {
+  /** Connected and pushed; then GitHub and this project change `main.tex` differently. */
+  async function inConflict() {
     const panel = await connectedPanel();
     fireEvent.click(within(panel).getByRole("button", { name: "Subir" }));
     await within(panel).findByText(/Al día con el remoto/);
@@ -231,10 +232,137 @@ describe("GitHub", () => {
       await backend.backupCreate("tesis", "local");
     });
     fireEvent.click(within(panel).getByRole("button", { name: "Traer cambios" }));
-    expect(await within(panel).findByRole("alert")).toHaveTextContent(
-      "Hay respaldos nuevos aquí y también en el remoto",
+    await within(panel).findByText("Fusión con GitHub en curso");
+    return panel;
+  }
+
+  it("traer con conflicto muestra la fusión y la lista", async () => {
+    const panel = await inConflict();
+    const list = within(panel).getByRole("list", { name: "Fusión con GitHub en curso" });
+    expect(within(list).getByText("main.tex")).toBeInTheDocument();
+    expect(within(list).getByText("1 por resolver")).toBeInTheDocument();
+    expect(within(panel).getByRole("button", { name: "Terminar fusión" })).toBeDisabled();
+    for (const name of ["Respaldar", "Subir", "Traer cambios"]) {
+      expect(within(panel).getByRole("button", { name })).toBeDisabled();
+    }
+    // The open file shows the conflict as a box with its buttons.
+    await waitFor(() => expect(document.querySelector(".jt-conflict")).not.toBeNull());
+    expect(editorView().state.doc.toString()).toContain("<<<<<<< ");
+  });
+
+  it("resolver en el editor habilita terminar", async () => {
+    const panel = await inConflict();
+    const keep = await screen.findByRole("button", { name: "Quedarme con lo de GitHub" });
+    fireEvent.click(keep);
+    expect(editorView().state.doc.toString()).toBe("remoto\n");
+    await act(() => useBuffers.getState().saveAll());
+    await act(() => useBackup.getState().refresh());
+    const finish = within(panel).getByRole("button", { name: "Terminar fusión" });
+    await waitFor(() => expect(finish).toBeEnabled());
+    fireEvent.click(finish);
+    await waitFor(() =>
+      expect(within(panel).queryByText("Fusión con GitHub en curso")).not.toBeInTheDocument(),
     );
-    expect(editorView().state.doc.toString()).toMatch(/^% local/);
+    expect((await backend.backupList("tesis"))[0].message).toBe("Fusión con GitHub");
+    expect(useToasts.getState().toasts.at(-1)?.title).toBe("Fusión terminada. Súbela con Subir.");
+  });
+
+  it("cancelar recarga los archivos y el editor deja de mostrar marcas", async () => {
+    const panel = await inConflict();
+    await waitFor(() => expect(document.querySelector(".jt-conflict")).not.toBeNull());
+    // A hand edit inside the conflict, not saved yet.
+    act(() => editorView().dispatch({ changes: { from: 0, insert: "% a mano\n" } }));
+    fireEvent.click(within(panel).getByRole("button", { name: "Cancelar fusión" }));
+    const dialog = await screen.findByRole("dialog", { name: "¿Cancelar la fusión?" });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Cancelar fusión" }));
+    await waitFor(() =>
+      expect(within(panel).queryByText("Fusión con GitHub en curso")).not.toBeInTheDocument(),
+    );
+    await waitFor(() => expect(editorView().state.doc.toString()).toMatch(/^% local\n/));
+    expect(editorView().state.doc.toString()).not.toContain("<<<<<<<");
+    expect(document.querySelector(".jt-conflict")).toBeNull();
+  });
+
+  it("si ambos lados cambiaron archivos distintos, los une solo", async () => {
+    const panel = await connectedPanel();
+    fireEvent.click(within(panel).getByRole("button", { name: "Subir" }));
+    await within(panel).findByText(/Al día con el remoto/);
+    backend.remoteBackup("tesis", "remoto", { "otro.tex": "de GitHub\n" });
+    act(() => editorView().dispatch({ changes: { from: 0, insert: "% local\n" } }));
+    // Not backed up: pulling backs it up first.
+    fireEvent.click(within(panel).getByRole("button", { name: "Traer cambios" }));
+    await waitFor(() =>
+      expect(useToasts.getState().toasts.at(-1)?.title).toBe("Unido 1 cambio de GitHub."),
+    );
+    const messages = (await backend.backupList("tesis")).map((b) => b.message);
+    expect(messages.slice(0, 2)).toEqual(["Fusión con GitHub", "Antes de traer cambios"]);
+    expect(editorView().state.doc.toString()).toMatch(/^% local\n/);
+  });
+
+  it("con «Subir después de cada respaldo», la fusión sin conflictos se sube", async () => {
+    const panel = await connectedPanel();
+    fireEvent.click(within(panel).getByRole("button", { name: "Subir" }));
+    await within(panel).findByText(/Al día con el remoto/);
+    fireEvent.click(
+      within(panel).getByRole("checkbox", { name: "Subir después de cada respaldo" }),
+    );
+    await waitFor(() => expect(useBackup.getState().status?.pushAfterBackup).toBe(true));
+    backend.remoteBackup("tesis", "remoto", { "otro.tex": "de GitHub\n" });
+    act(() => editorView().dispatch({ changes: { from: 0, insert: "% local\n" } }));
+    fireEvent.click(within(panel).getByRole("button", { name: "Traer cambios" }));
+    await waitFor(async () => {
+      const list = await backend.backupList("tesis");
+      expect(list[0].message).toBe("Fusión con GitHub");
+      expect(list.every((b) => b.pushed)).toBe(true);
+    });
+  });
+
+  it("el editor solo sigue la fusión de su propio proyecto", async () => {
+    await inConflict();
+    await waitFor(() => expect(document.querySelector(".jt-conflict")).not.toBeNull());
+    // Another project's status in the store (another tab loaded it).
+    act(() =>
+      useBackup.setState((s) => ({
+        projectId: "otro",
+        status: s.status && { ...s.status, merge: null },
+      })),
+    );
+    await waitFor(() => expect(document.querySelector(".jt-conflict")).toBeNull());
+    // Back to this project: its merge again.
+    await act(() => useBackup.getState().load("tesis"));
+    await waitFor(() => expect(document.querySelector(".jt-conflict")).not.toBeNull());
+    // A status of another project with this file in conflict does not turn the boxes on.
+    act(() => useBackup.setState((s) => ({ projectId: "otro", status: s.status })));
+    await waitFor(() => expect(document.querySelector(".jt-conflict")).toBeNull());
+  });
+
+  it("cambiar repositorio", async () => {
+    const panel = await connectedPanel();
+    fireEvent.click(within(panel).getByRole("button", { name: "Cambiar repositorio" }));
+    fireEvent.click(await screen.findByRole("menuitem", { name: "Desconectar" }));
+    const dialog = await screen.findByRole("dialog", {
+      name: "¿Desconectar este proyecto de su repositorio?",
+    });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Desconectar" }));
+    await within(panel).findByRole("button", { name: "Conectar con GitHub…" });
+    expect((await backend.backupStatus("tesis")).remote).toBeNull();
+
+    // Connected again, then another repository by its address.
+    await act(async () => {
+      await backend.backupConnectUrl("tesis", "https://github.com/ana/viejo.git");
+      await useBackup.getState().refresh();
+    });
+    fireEvent.click(await within(panel).findByRole("button", { name: "Cambiar repositorio" }));
+    fireEvent.click(await screen.findByRole("menuitem", { name: "Conectar otro…" }));
+    const connect = await screen.findByRole("dialog", { name: "Conectar con GitHub" });
+    fireEvent.click(
+      within(connect).getByRole("radio", { name: /Usar un repositorio que ya existe/ }),
+    );
+    fireEvent.change(within(connect).getByRole("textbox", { name: "Dirección del repositorio" }), {
+      target: { value: "https://github.com/ana/nuevo.git" },
+    });
+    fireEvent.click(within(connect).getByRole("button", { name: "Conectar" }));
+    await within(panel).findByText("github.com/ana/nuevo");
   });
 
   it("sube después de cada respaldo si se pide", async () => {

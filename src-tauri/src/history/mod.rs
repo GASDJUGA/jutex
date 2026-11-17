@@ -129,6 +129,11 @@ pub fn snapshot(root: &Path, kind: VersionKind, name: Option<&str>) -> AppResult
         }
         _ => String::new(),
     };
+    // While a merge with GitHub is in progress the files may have conflict marks: no
+    // automatic versions of them.
+    if kind != VersionKind::Manual && root.join(".git").join("MERGE_HEAD").exists() {
+        return Ok(None);
+    }
     let repo = open(root)?;
     let tree_id = gitops::stage_all(&repo, root)?;
 
@@ -258,6 +263,31 @@ mod tests {
             fs::write(path, content).unwrap();
         }
         dir
+    }
+
+    #[test]
+    fn sin_versiones_automaticas_durante_la_fusion() {
+        let dir = tempfile::TempDir::new().unwrap();
+        let root = dir.path();
+        fs::write(root.join("main.tex"), "uno").unwrap();
+        // The project's own repository with a merge in progress.
+        git2::Repository::init(root).unwrap();
+        fs::write(
+            root.join(".git/MERGE_HEAD"),
+            "0000000000000000000000000000000000000000\n",
+        )
+        .unwrap();
+        assert!(snapshot(root, VersionKind::Auto, None).unwrap().is_none());
+        assert!(
+            snapshot(root, VersionKind::Compile, None)
+                .unwrap()
+                .is_none()
+        );
+        assert!(
+            snapshot(root, VersionKind::Manual, Some("a mano"))
+                .unwrap()
+                .is_some()
+        );
     }
 
     #[test]
