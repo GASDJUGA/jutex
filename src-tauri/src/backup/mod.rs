@@ -3,6 +3,7 @@
 //! by itself: the user turns it on per project and backs up with a message. Local work goes
 //! through `git2`; talking to a remote (GitHub) is in [`remote`].
 
+pub mod merge;
 pub mod remote;
 
 use crate::error::{AppError, AppResult};
@@ -511,6 +512,53 @@ pub fn backup(
         .find(|b| b.id == id.to_string()))
 }
 
+/// Before «Traer cambios»: backs up what is not backed up yet (`before` is its message), so
+/// the merge never touches unsaved work. Refused while a merge is in progress.
+pub fn prepare_pull(root: &Path, before: &str, fallback: Option<&Identity>) -> AppResult<()> {
+    let repo = require(root)?;
+    merge::refuse_during(&repo)?;
+    if !pending_in(&repo, root)?.changes.is_empty() {
+        backup(root, before, fallback)?;
+    }
+    Ok(())
+}
+
+/// Commits the merge in progress (the project as it is on disk, with `HEAD` and
+/// `MERGE_HEAD` as parents) and ends it.
+fn commit_merge(
+    repo: &Repository,
+    root: &Path,
+    message: &str,
+    fallback: Option<&Identity>,
+) -> AppResult<Oid> {
+    let message = clean_message(message)?;
+    let author = author_of(repo, fallback)?;
+    let theirs = repo
+        .refname_to_id("MERGE_HEAD")
+        .map_err(|_| AppError::Forbidden("no hay una fusión en curso".into()))?;
+    let ours = repo
+        .head()
+        .and_then(|h| h.peel_to_commit())
+        .map_err(git_error)?;
+    let theirs = repo.find_commit(theirs).map_err(git_error)?;
+    let tree_id = gitops::stage_all(repo, root)?;
+    let tree = repo.find_tree(tree_id).map_err(git_error)?;
+    let signature = Signature::now(&author.name, &author.email).map_err(git_error)?;
+    let id = repo
+        .commit(
+            Some("HEAD"),
+            &signature,
+            &signature,
+            &format!("{message}\n"),
+            &tree,
+            &[&ours, &theirs],
+        )
+        .map_err(git_error)?;
+    repo.cleanup_state().map_err(git_error)?;
+    let _ = fs::remove_file(repo.path().join("JUTEX_MERGE"));
+    Ok(id)
+}
+
 /// What backup `id` changed, compared with the one before it.
 pub fn changes(root: &Path, id: &str) -> AppResult<Vec<FileChange>> {
     gitops::changes_of(&require(root)?, id)
@@ -967,8 +1015,9 @@ pub(crate) mod tests {
 
         remote::fetch(root, |_| {}, |_| {}).unwrap();
         assert_eq!(status(root, None, false).unwrap().behind, 1);
-        let pulled = remote::fast_forward(root).unwrap();
+        let pulled = remote::bring_in(root, "Fusión con GitHub", None).unwrap();
         assert_eq!(pulled.commits, 1);
+        assert!(!pulled.merged);
         assert_eq!(pulled.changed, ["main.tex", "nuevo.tex"]);
         // Git for Windows writes CRLF (`core.autocrlf` of its system config).
         assert_eq!(
@@ -980,46 +1029,134 @@ pub(crate) mod tests {
         assert_eq!(list(root).unwrap()[0].message, "desde otro clon");
         assert!(pending(root).unwrap().changes.is_empty());
         // Nothing more to bring.
-        assert_eq!(remote::fast_forward(root).unwrap().commits, 0);
+        assert_eq!(
+            remote::bring_in(root, "Fusión con GitHub", None)
+                .unwrap()
+                .commits,
+            0
+        );
     }
 
-    #[test]
-    fn si_ambos_lados_cambiaron_no_mezcla_nada() {
-        if remote::tool("git").is_none() {
-            return;
-        }
-        let (dir, origin) = with_origin();
-        let root = dir.path();
-        remote::push(root, |_| {}, |_| {}).unwrap();
+    /// The other clone of `origin`, ready to commit and push as «Otra».
+    fn other_clone(origin: &TempDir) -> (TempDir, std::path::PathBuf) {
         let other = TempDir::new().unwrap();
         git_in(
             other.path(),
             &["clone", "-q", origin.path().to_str().unwrap(), "c"],
         );
         let clone = other.path().join("c");
-        fs::write(clone.join("main.tex"), "remoto\n").unwrap();
-        git_in(&clone, &["commit", "-qam", "remoto"]);
-        git_in(&clone, &["push", "-q", "origin", "main"]);
+        (other, clone)
+    }
 
+    /// `main.tex` as the other clone leaves it and pushes.
+    fn push_from_other(origin: &TempDir, file: &str, text: &str) {
+        let (_other, clone) = other_clone(origin);
+        fs::write(clone.join(file), text).unwrap();
+        git_in(&clone, &["add", "-A"]);
+        git_in(&clone, &["commit", "-qm", "remoto"]);
+        git_in(&clone, &["push", "-q", "origin", "main"]);
+    }
+
+    fn read(root: &Path, file: &str) -> String {
+        fs::read_to_string(root.join(file))
+            .unwrap()
+            .replace("\r\n", "\n")
+    }
+
+    #[test]
+    fn traer_une_cambios_en_partes_distintas() {
+        if remote::tool("git").is_none() {
+            return;
+        }
+        let (dir, origin) = with_origin();
+        let root = dir.path();
+        fs::write(root.join("main.tex"), "a\nb\nc\n").unwrap();
+        backup(root, "base", None).unwrap();
+        remote::push(root, |_| {}, |_| {}).unwrap();
+        push_from_other(&origin, "main.tex", "A\nb\nc\n");
+        fs::write(root.join("main.tex"), "a\nb\nC\n").unwrap();
+        backup(root, "local", None).unwrap();
+
+        remote::fetch(root, |_| {}, |_| {}).unwrap();
+        let pulled = remote::bring_in(root, "Fusión con GitHub", None).unwrap();
+        assert!(pulled.merged);
+        assert!(pulled.conflicts.is_empty());
+        assert_eq!(read(root, "main.tex"), "A\nb\nC\n");
+        assert_eq!(list(root).unwrap()[0].message, "Fusión con GitHub");
+        let repo = open(root).unwrap().unwrap();
+        assert_eq!(
+            repo.head()
+                .unwrap()
+                .peel_to_commit()
+                .unwrap()
+                .parent_count(),
+            2
+        );
+        assert!(!root.join(".git/MERGE_HEAD").exists());
+        assert_eq!(status(root, None, false).unwrap().ahead, 2);
+        assert!(pending(root).unwrap().changes.is_empty());
+    }
+
+    #[test]
+    fn traer_con_conflicto_deja_la_fusion_en_curso() {
+        if remote::tool("git").is_none() {
+            return;
+        }
+        let (dir, origin) = with_origin();
+        let root = dir.path();
+        remote::push(root, |_| {}, |_| {}).unwrap();
+        push_from_other(&origin, "main.tex", "remoto\n");
         fs::write(root.join("main.tex"), "local\n").unwrap();
         backup(root, "local", None).unwrap();
-        // Pushing is refused…
-        assert!(matches!(
-            remote::push(root, |_| {}, |_| {}),
-            Err(AppError::Diverged(_))
-        ));
-        // …and pulling explains it without touching anything.
+
         remote::fetch(root, |_| {}, |_| {}).unwrap();
-        let s = status(root, None, false).unwrap();
-        assert_eq!((s.ahead, s.behind), (1, 1));
-        assert!(matches!(
-            remote::fast_forward(root),
-            Err(AppError::Diverged(_))
-        ));
+        let pulled = remote::bring_in(root, "Fusión con GitHub", None).unwrap();
+        assert!(!pulled.merged);
         assert_eq!(
-            fs::read_to_string(root.join("main.tex")).unwrap(),
-            "local\n"
+            pulled.conflicts,
+            [merge::Conflict {
+                path: "main.tex".into(),
+                kind: merge::ConflictKind::Text,
+                remaining: 1
+            }]
         );
+        let text = read(root, "main.tex");
+        assert!(text.contains("<<<<<<< "), "{text}");
+        assert!(text.contains("\n=======\n"), "{text}");
+        assert!(text.contains(">>>>>>> "), "{text}");
+        assert!(root.join(".git/MERGE_HEAD").exists());
+        // Another pull now is refused: the merge must be finished or cancelled first.
+        assert!(matches!(
+            remote::bring_in(root, "Fusión con GitHub", None),
+            Err(AppError::MergeInProgress(_))
+        ));
+    }
+
+    #[test]
+    fn traer_respalda_antes_lo_sin_respaldar() {
+        if remote::tool("git").is_none() {
+            return;
+        }
+        let (dir, origin) = with_origin();
+        let root = dir.path();
+        remote::push(root, |_| {}, |_| {}).unwrap();
+        push_from_other(&origin, "otro.tex", "de GitHub\n");
+        fs::write(root.join("main.tex"), "sin respaldar\n").unwrap();
+
+        prepare_pull(root, "Antes de traer cambios", None).unwrap();
+        remote::fetch(root, |_| {}, |_| {}).unwrap();
+        let pulled = remote::bring_in(root, "Fusión con GitHub", None).unwrap();
+        assert!(pulled.merged);
+        let messages: Vec<_> = list(root).unwrap().into_iter().map(|b| b.message).collect();
+        assert_eq!(
+            messages[..2],
+            ["Fusión con GitHub", "Antes de traer cambios"]
+        );
+        assert_eq!(read(root, "main.tex"), "sin respaldar\n");
+        assert_eq!(read(root, "otro.tex"), "de GitHub\n");
+        // Nothing to back up: no empty backup.
+        prepare_pull(root, "Antes de traer cambios", None).unwrap();
+        assert_eq!(list(root).unwrap()[0].message, "Fusión con GitHub");
     }
 
     #[test]
@@ -1043,7 +1180,7 @@ pub(crate) mod tests {
         fs::write(root.join("main.tex"), "sin respaldar\n").unwrap();
         remote::fetch(root, |_| {}, |_| {}).unwrap();
         assert!(matches!(
-            remote::fast_forward(root),
+            remote::bring_in(root, "Fusión con GitHub", None),
             Err(AppError::LocalChanges(_))
         ));
         assert_eq!(

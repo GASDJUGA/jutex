@@ -335,21 +335,30 @@ pub async fn backup_push(
     .await
 }
 
-/// «Traer cambios»: fetches and fast-forwards (never merges diverged work).
+/// «Traer cambios»: backs up what is not backed up (`before`), fetches, and brings GitHub's
+/// backups in: a fast-forward, a merge committed as `merged`, or a merge left in progress
+/// when there are conflicts.
 #[tauri::command]
 pub async fn backup_pull(
     state: State<'_, AppState>,
     app: AppHandle,
     id: String,
+    before: String,
+    merged: String,
 ) -> AppResult<remote::Pulled> {
     let lock = state.backup_lock.clone();
+    let author = saved_identity(&state);
     with_network(&state, app, &id, "pull", move |root, job, emit| {
+        {
+            let _guard = lock.lock().unwrap_or_else(|p| p.into_inner());
+            backup::prepare_pull(root, &before, author.as_ref())?;
+        }
         remote::fetch(root, |pid| job.set_pid(pid), emit)?;
         if job.cancelled() {
             return Err(AppError::Cancelled);
         }
         let _guard = lock.lock().unwrap_or_else(|p| p.into_inner());
-        remote::fast_forward(root)
+        remote::bring_in(root, &merged, author.as_ref())
     })
     .await
 }

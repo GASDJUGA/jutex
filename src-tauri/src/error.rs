@@ -57,6 +57,8 @@ pub enum AppError {
     Diverged(String),
     #[error("hay cambios sin respaldar en archivos que también cambiaron en el remoto: {0}")]
     LocalChanges(String),
+    #[error("hay una fusión en curso: termínala o cancélala primero ({0})")]
+    MergeInProgress(String),
     #[error("no se encontró el repositorio remoto: {0}")]
     RemoteNotFound(String),
     #[error("falta el autor de los respaldos (nombre y correo)")]
@@ -96,6 +98,7 @@ impl AppError {
             Self::NeedsIdentity => "needsIdentity",
             Self::Diverged(_) => "diverged",
             Self::LocalChanges(_) => "localChanges",
+            Self::MergeInProgress(_) => "mergeInProgress",
             Self::RemoteNotFound(_) => "remoteNotFound",
             Self::MissingTool(_) => "missingTool",
             Self::NotSignedIn(_) => "notSignedIn",

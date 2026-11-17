@@ -461,23 +461,36 @@ pub struct Pulled {
     pub commits: usize,
     /// Paths of the project that changed.
     pub changed: Vec<String>,
+    /// Both sides had new backups and they were merged into a new backup.
+    pub merged: bool,
+    /// Files in conflict: not empty means the merge is in progress (see [`super::merge`]).
+    pub conflicts: Vec<super::merge::Conflict>,
 }
 
-/// After a fetch: brings the remote branch in if that is a fast-forward (`git merge
-/// --ff-only`, which refuses to overwrite unsaved local changes). If both sides have new
-/// backups, nothing is mixed: the error explains it.
-pub fn fast_forward(root: &Path) -> AppResult<Pulled> {
+/// After a fetch: brings the remote branch in. Only GitHub has new backups: a fast-forward
+/// (`git merge --ff-only`, which refuses to overwrite unsaved local changes). Both sides do:
+/// `git merge --no-commit`; without conflicts the merge is committed with `merged_message`,
+/// with conflicts it is left in progress with Git's marks in the files.
+pub fn bring_in(
+    root: &Path,
+    merged_message: &str,
+    author: Option<&super::Identity>,
+) -> AppResult<Pulled> {
     let git = git_tool()?;
     let repo = require(root)?;
+    super::merge::refuse_during(&repo)?;
     let branch = branch_name(&repo)
         .ok_or_else(|| AppError::Forbidden("no hay una rama actual (HEAD separado)".into()))?;
     let remote_ref = format!("refs/remotes/origin/{branch}");
+    let nothing = Pulled {
+        commits: 0,
+        changed: Vec::new(),
+        merged: false,
+        conflicts: Vec::new(),
+    };
     let Ok(remote) = repo.refname_to_id(&remote_ref) else {
         // GitHub has nothing on this branch yet.
-        return Ok(Pulled {
-            commits: 0,
-            changed: Vec::new(),
-        });
+        return Ok(nothing);
     };
     let head = repo.head().ok().and_then(|h| h.target());
     let (ahead, behind) = match head {
@@ -485,35 +498,53 @@ pub fn fast_forward(root: &Path) -> AppResult<Pulled> {
         None => (0, super::count_commits(&repo, remote)?),
     };
     if behind == 0 {
-        return Ok(Pulled {
-            commits: 0,
-            changed: Vec::new(),
-        });
+        return Ok(nothing);
     }
-    if ahead > 0 {
-        return Err(AppError::Diverged(format!(
-            "{ahead} respaldo(s) locales sin subir y {behind} en GitHub que no están aquí"
-        )));
-    }
-    let out = run(
-        &git,
+    let args: &[&str] = if ahead == 0 {
+        &["merge", "--ff-only", "--no-edit"]
+    } else {
         &[
-            OsStr::new("merge"),
-            OsStr::new("--ff-only"),
-            OsStr::new("--no-edit"),
-            OsStr::new(&remote_ref),
-        ],
-        Some(root),
-        NETWORK_TIMEOUT,
-        |_| {},
-        |_| {},
-    )?;
-    if !out.success {
+            "-c",
+            "merge.conflictStyle=merge",
+            "merge",
+            "--no-ff",
+            "--no-commit",
+            "--no-edit",
+        ]
+    };
+    let mut args: Vec<&OsStr> = args.iter().map(OsStr::new).collect();
+    args.push(OsStr::new(&remote_ref));
+    let out = run(&git, &args, Some(root), NETWORK_TIMEOUT, |_| {}, |_| {})?;
+    // Git reopened the repository: read the new state again.
+    let repo = require(root)?;
+    let in_merge = super::merge::in_progress(&repo);
+    if !out.success && !in_merge {
         return Err(git_cli_error(&out.text()));
     }
+    let changed = changed_between(&repo, head, remote)?;
+    if ahead == 0 {
+        return Ok(Pulled {
+            commits: behind,
+            changed,
+            merged: false,
+            conflicts: Vec::new(),
+        });
+    }
+    let has_conflicts = repo.index().map_err(git_error)?.has_conflicts();
+    if has_conflicts {
+        return Ok(Pulled {
+            commits: behind,
+            changed,
+            merged: false,
+            conflicts: super::merge::start(&repo, root)?,
+        });
+    }
+    super::commit_merge(&repo, root, merged_message, author)?;
     Ok(Pulled {
         commits: behind,
-        changed: changed_between(&repo, head, remote)?,
+        changed,
+        merged: true,
+        conflicts: Vec::new(),
     })
 }
 
