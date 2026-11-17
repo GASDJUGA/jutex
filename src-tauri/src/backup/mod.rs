@@ -1197,6 +1197,38 @@ pub(crate) mod tests {
     }
 
     #[test]
+    fn desconectar_quita_el_remoto_y_su_seguimiento() {
+        if remote::tool("git").is_none() {
+            return;
+        }
+        let (dir, _origin) = with_origin();
+        let root = dir.path();
+        remote::push(root, |_| {}, |_| {}).unwrap();
+        assert!(status(root, None, false).unwrap().tracking);
+        remote::disconnect(root).unwrap();
+        let s = status(root, None, false).unwrap();
+        assert_eq!((s.remote, s.tracking, s.ahead), (None, false, 1));
+        let config = fs::read_to_string(root.join(".git/config")).unwrap();
+        // libgit2 leaves the emptied section headers; the keys are what count.
+        for key in ["url =", "remote =", "merge ="] {
+            assert!(!config.contains(key), "{config}");
+        }
+        // Another repository: pushing sets the tracking again.
+        let other = TempDir::new().unwrap();
+        let mut options = RepositoryInitOptions::new();
+        options.bare(true).initial_head("main");
+        Repository::init_opts(other.path(), &options).unwrap();
+        open(root)
+            .unwrap()
+            .unwrap()
+            .remote("origin", other.path().to_str().unwrap())
+            .unwrap();
+        remote::push(root, |_| {}, |_| {}).unwrap();
+        let s = status(root, None, false).unwrap();
+        assert_eq!((s.tracking, s.ahead), (true, 0));
+    }
+
+    #[test]
     fn conectar_valida_la_direccion() {
         let dir = enabled(&[("main.tex", "x")]);
         let root = dir.path();

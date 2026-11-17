@@ -487,7 +487,15 @@ impl Ctx {
             .map(|n| n.to_string_lossy().into_owned())
             .unwrap_or_default();
         let dest = unique_child(parent, &name, Some("copia"));
-        if let Err(e) = copy_project(&entry.path, &dest) {
+        // The copy keeps its backups but not the original's repository: pushing would mix
+        // two projects in one (pedido del usuario).
+        let copied = copy_project(&entry.path, &dest).and_then(|()| {
+            if dest.join(".git").is_dir() {
+                crate::backup::remote::disconnect(&dest)?;
+            }
+            Ok(())
+        });
+        if let Err(e) = copied {
             let _ = fs::remove_dir_all(&dest);
             return Err(e);
         }
@@ -952,6 +960,37 @@ mod tests {
         ));
         assert!(!f.ctx.projects_dir.join("malo").exists());
         assert!(f.ctx.list().unwrap().is_empty());
+    }
+
+    #[test]
+    fn duplicar_deja_la_copia_sin_repositorio() {
+        let f = fixture();
+        let p = f.ctx.create("Tesis", None, None, None).unwrap();
+        let root = f.ctx.projects_dir.join("Tesis");
+        let ana = crate::backup::Identity {
+            name: "Ana".into(),
+            email: "ana@x.cl".into(),
+        };
+        crate::backup::enable(&root, Some(&ana)).unwrap();
+        crate::backup::backup(&root, "uno", Some(&ana)).unwrap();
+        crate::backup::remote::connect_url(&root, "https://github.com/ana/tesis.git").unwrap();
+
+        let copy = f.ctx.duplicate(&p.id).unwrap();
+        let copy_dir = f.ctx.projects_dir.join(&copy.name);
+        assert_eq!(crate::backup::list(&copy_dir).unwrap().len(), 1);
+        assert_eq!(
+            crate::backup::status(&copy_dir, None, false)
+                .unwrap()
+                .remote,
+            None
+        );
+        assert_eq!(
+            crate::backup::status(&root, None, false)
+                .unwrap()
+                .remote
+                .as_deref(),
+            Some("https://github.com/ana/tesis.git")
+        );
     }
 
     #[test]

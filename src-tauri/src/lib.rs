@@ -144,6 +144,7 @@ pub fn run() {
             commands::backup::backup_finish_merge,
             commands::backup::backup_abort_merge,
             commands::backup::backup_choose,
+            commands::backup::backup_disconnect,
             commands::backup::backup_cancel,
             commands::backup::github_repos,
             commands::backup::clone_project,

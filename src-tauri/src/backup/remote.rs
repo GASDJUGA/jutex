@@ -291,19 +291,50 @@ pub fn connect_url(root: &Path, url: &str) -> AppResult<String> {
     Ok(url)
 }
 
-/// Creates a private GitHub repository called `name` with `gh` and makes it `origin`. Returns
-/// its URL. Nothing is pushed yet.
+/// «Desconectar»: removes `origin` (with its remote branches) and the current branch's
+/// tracking of it. Nothing is deleted on GitHub.
+pub fn disconnect(root: &Path) -> AppResult<()> {
+    let repo = require(root)?;
+    if repo.find_remote("origin").is_ok() {
+        repo.remote_delete("origin").map_err(git_error)?;
+    }
+    if let Some(branch) = branch_name(&repo) {
+        let mut config = repo.config().map_err(git_error)?;
+        for key in ["remote", "merge"] {
+            // Missing keys are fine.
+            let _ = config.remove(&format!("branch.{branch}.{key}"));
+        }
+    }
+    Ok(())
+}
+
+/// Creates a private GitHub repository called `name` with `gh` and makes it `origin` (in
+/// place of the one connected, if any). Returns its URL. Nothing is pushed yet.
 pub fn create_github_repo(
     root: &Path,
     name: &str,
     on_start: impl FnOnce(u32),
 ) -> AppResult<String> {
     let name = clean_repo_name(name)?;
-    let repo = require(root)?;
-    if repo.find_remote("origin").is_ok() {
-        return Err(AppError::AlreadyExists(PathBuf::from("origin")));
-    }
     let gh = tool("gh").ok_or(AppError::MissingTool("gh"))?;
+    let repo = require(root)?;
+    // «Conectar otro…» with a new repository: `gh` needs `origin` free. If it fails, the old
+    // one comes back.
+    let previous = repo
+        .find_remote("origin")
+        .ok()
+        .and_then(|r| r.url().ok().map(str::to_owned));
+    if previous.is_some() {
+        disconnect(root)?;
+    }
+    let restore = || {
+        if let Some(url) = &previous
+            && let Ok(repo) = require(root)
+            && repo.find_remote("origin").is_err()
+        {
+            let _ = repo.remote("origin", url);
+        }
+    };
     let out = run(
         &gh,
         &[
@@ -320,8 +351,10 @@ pub fn create_github_repo(
         GH_TIMEOUT,
         on_start,
         |_| {},
-    )?;
+    )
+    .inspect_err(|_| restore())?;
     if !out.success {
+        restore();
         return Err(gh_error(&out.text()));
     }
     let repo = require(root)?;

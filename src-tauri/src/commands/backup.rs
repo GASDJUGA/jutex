@@ -363,6 +363,16 @@ pub async fn backup_pull(
     .await
 }
 
+/// «Desconectar»: the project stops pushing to its repository (nothing is deleted there).
+#[tauri::command]
+pub async fn backup_disconnect(state: State<'_, AppState>, id: String) -> AppResult<BackupStatus> {
+    with_backup(&state, &id, |root, author| {
+        remote::disconnect(root)?;
+        status_of(root, author)
+    })
+    .await
+}
+
 /// «Terminar fusión»: commits the merge in progress (refused while conflicts are left).
 #[tauri::command]
 pub async fn backup_finish_merge(
