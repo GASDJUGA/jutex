@@ -299,6 +299,43 @@ describe("GitHub", () => {
     expect(editorView().state.doc.toString()).toMatch(/^% local\n/);
   });
 
+  it("con «Subir después de cada respaldo», la fusión sin conflictos se sube", async () => {
+    const panel = await connectedPanel();
+    fireEvent.click(within(panel).getByRole("button", { name: "Subir" }));
+    await within(panel).findByText(/Al día con el remoto/);
+    fireEvent.click(
+      within(panel).getByRole("checkbox", { name: "Subir después de cada respaldo" }),
+    );
+    await waitFor(() => expect(useBackup.getState().status?.pushAfterBackup).toBe(true));
+    backend.remoteBackup("tesis", "remoto", { "otro.tex": "de GitHub\n" });
+    act(() => editorView().dispatch({ changes: { from: 0, insert: "% local\n" } }));
+    fireEvent.click(within(panel).getByRole("button", { name: "Traer cambios" }));
+    await waitFor(async () => {
+      const list = await backend.backupList("tesis");
+      expect(list[0].message).toBe("Fusión con GitHub");
+      expect(list.every((b) => b.pushed)).toBe(true);
+    });
+  });
+
+  it("el editor solo sigue la fusión de su propio proyecto", async () => {
+    await inConflict();
+    await waitFor(() => expect(document.querySelector(".jt-conflict")).not.toBeNull());
+    // Another project's status in the store (another tab loaded it).
+    act(() =>
+      useBackup.setState((s) => ({
+        projectId: "otro",
+        status: s.status && { ...s.status, merge: null },
+      })),
+    );
+    await waitFor(() => expect(document.querySelector(".jt-conflict")).toBeNull());
+    // Back to this project: its merge again.
+    await act(() => useBackup.getState().load("tesis"));
+    await waitFor(() => expect(document.querySelector(".jt-conflict")).not.toBeNull());
+    // A status of another project with this file in conflict does not turn the boxes on.
+    act(() => useBackup.setState((s) => ({ projectId: "otro", status: s.status })));
+    await waitFor(() => expect(document.querySelector(".jt-conflict")).toBeNull());
+  });
+
   it("cambiar repositorio", async () => {
     const panel = await connectedPanel();
     fireEvent.click(within(panel).getByRole("button", { name: "Cambiar repositorio" }));

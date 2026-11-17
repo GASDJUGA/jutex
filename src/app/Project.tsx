@@ -49,6 +49,11 @@ type ProjectProps = {
  */
 function resumeWorkspace(projectId: string) {
   useProjectFiles.getState().loadTree(projectId).catch(notifyError);
+  // The backup store is not per tab: this project's status (and its merge in progress).
+  useBackup
+    .getState()
+    .load(projectId)
+    .catch(() => {});
   useProjectIndex
     .getState()
     .load(projectId)

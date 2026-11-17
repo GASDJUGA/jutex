@@ -189,7 +189,15 @@ pub(crate) fn state_of(repo: &Repository, root: &Path) -> AppResult<Option<Merge
         return Ok(None);
     }
     let unresolved = index_conflicts(repo)?;
-    let conflicts = remembered(repo)
+    let mut files = remembered(repo);
+    // A merge started outside JuTeX (`git pull` in a terminal), or JuTeX closed before it
+    // wrote its list: the index still knows the conflicts.
+    for (path, kind) in &unresolved {
+        if !files.iter().any(|(p, _)| p == path) {
+            files.push((path.clone(), *kind));
+        }
+    }
+    let conflicts = files
         .into_iter()
         .map(|(path, kind)| Conflict {
             remaining: remaining(root, &path, kind, unresolved.contains_key(&path)),
@@ -245,10 +253,16 @@ pub fn abort(root: &Path) -> AppResult<Vec<String>> {
     changed.dedup();
     let out = super::remote::run_git(root, &["merge", "--abort"])?;
     if !out.success {
-        return Err(AppError::Other(format!(
-            "git merge --abort: {}",
-            out.text()
-        )));
+        // `--abort` refuses when a file the merge brought was edited afterwards. Everything
+        // was backed up before pulling and `HEAD` is still that backup: back to it.
+        let reset = super::remote::run_git(root, &["reset", "-q", "--hard", "HEAD"])?;
+        if !reset.success {
+            return Err(AppError::Other(format!(
+                "git merge --abort: {}\ngit reset --hard: {}",
+                out.text(),
+                reset.text()
+            )));
+        }
     }
     let _ = fs::remove_file(list_file(&repo));
     Ok(changed)
@@ -404,6 +418,69 @@ mod tests {
         assert_eq!(read(root, "main.tex"), "local\n");
         assert_eq!(state(root).unwrap(), None);
         assert!(!root.join(".git/JUTEX_MERGE").exists());
+    }
+
+    #[test]
+    fn cancelar_aunque_se_haya_editado_un_archivo_unido_solo() {
+        if remote::tool("git").is_none() {
+            return;
+        }
+        let (dir, origin) = with_origin();
+        let root = dir.path();
+        fs::write(root.join("cap.tex"), "cap\n").unwrap();
+        backup(root, "cap", None).unwrap();
+        remote::push(root, |_| {}, |_| {}).unwrap();
+        // GitHub changes both files; here only main.tex changes: cap.tex merges by itself.
+        let (_other, clone) = other_clone(&origin);
+        fs::write(clone.join("main.tex"), "remoto\n").unwrap();
+        fs::write(clone.join("cap.tex"), "cap de GitHub\n").unwrap();
+        git_in(&clone, &["commit", "-qam", "remoto"]);
+        git_in(&clone, &["push", "-q", "origin", "main"]);
+        fs::write(root.join("main.tex"), "local\n").unwrap();
+        backup(root, "local", None).unwrap();
+        remote::fetch(root, |_| {}, |_| {}).unwrap();
+        remote::bring_in(root, "Fusión con GitHub", None).unwrap();
+        // The user edits the file that merged by itself (autosave writes it).
+        fs::write(root.join("cap.tex"), "editado durante la fusión\n").unwrap();
+        abort(root).unwrap();
+        assert_eq!(state(root).unwrap(), None);
+        assert_eq!(read(root, "cap.tex"), "cap\n");
+        assert_eq!(read(root, "main.tex"), "local\n");
+    }
+
+    #[test]
+    fn una_fusion_empezada_fuera_de_jutex_no_se_termina_con_marcas() {
+        if remote::tool("git").is_none() {
+            return;
+        }
+        let (dir, origin) = with_origin();
+        let root = dir.path();
+        remote::push(root, |_| {}, |_| {}).unwrap();
+        push_from_other(&origin, "main.tex", "remoto\n");
+        fs::write(root.join("main.tex"), "local\n").unwrap();
+        backup(root, "local", None).unwrap();
+        // `git pull` in a terminal: no JUTEX_MERGE.
+        git_in(root, &["fetch", "-q", "origin"]);
+        let out = crate::platform::process::command(remote::tool("git").unwrap())
+            .args(["-c", "user.name=Ana", "-c", "user.email=ana@x.cl"])
+            .args(["merge", "--no-edit", "origin/main"])
+            .current_dir(root)
+            .output()
+            .unwrap();
+        assert!(!out.status.success());
+        let s = state(root).unwrap().unwrap();
+        assert_eq!(
+            s.conflicts,
+            [Conflict {
+                path: "main.tex".into(),
+                kind: ConflictKind::Text,
+                remaining: 1
+            }]
+        );
+        assert!(matches!(
+            finish(root, "Fusión con GitHub", None),
+            Err(AppError::Forbidden(_))
+        ));
     }
 
     #[test]

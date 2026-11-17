@@ -1,4 +1,4 @@
-import { undo, history } from "@codemirror/commands";
+import { deleteCharBackward, history, undo } from "@codemirror/commands";
 import { EditorState } from "@codemirror/state";
 import { EditorView } from "@codemirror/view";
 import { afterEach, describe, expect, it } from "vitest";
@@ -55,5 +55,24 @@ describe("conflictMarkers", () => {
   it("sin activar (un archivo que no está en conflicto) no dibuja nada", () => {
     const v = create(false);
     expect(v.dom.querySelectorAll(".jt-conflict")).toHaveLength(0);
+  });
+
+  it("Retroceso junto a un recuadro no mete texto en las marcas ocultas", () => {
+    const v = create(true);
+    // At the start of the line after the box: would join «b» to the hidden `>>>>>>>` line.
+    const after = TEXT.indexOf("b\n", TEXT.indexOf(">>>>>>>"));
+    v.dispatch({ selection: { anchor: after } });
+    deleteCharBackward(v);
+    expect(v.state.doc.toString()).toBe(TEXT);
+    // At the start of «mío»: would join it to the hidden `<<<<<<<` line.
+    v.dispatch({ selection: { anchor: TEXT.indexOf("mío") } });
+    deleteCharBackward(v);
+    expect(v.state.doc.toString()).toBe(TEXT);
+    // Typing inside a part works as always.
+    v.dispatch({
+      changes: { from: TEXT.indexOf("mío"), insert: "x" },
+      userEvent: "input.type",
+    });
+    expect(v.state.doc.toString()).toContain("xmío");
   });
 });

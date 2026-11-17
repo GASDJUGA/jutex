@@ -201,6 +201,11 @@ export const useBackup = create<BackupState>()((set, get) => {
         await read(projectId);
         await reloadShownBackups(projectId);
         return pulled;
+      }).then(async (pulled) => {
+        // A merge without conflicts is a backup like any other.
+        const { status } = get();
+        if (pulled?.merged && status?.pushAfterBackup && status.remote) await get().push();
+        return pulled;
       }),
 
     finishMerge: async () => {

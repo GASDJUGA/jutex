@@ -1229,6 +1229,21 @@ pub(crate) mod tests {
     }
 
     #[test]
+    fn conectar_otro_olvida_el_seguimiento_del_anterior() {
+        if remote::tool("git").is_none() {
+            return;
+        }
+        let (dir, _origin) = with_origin();
+        let root = dir.path();
+        remote::push(root, |_| {}, |_| {}).unwrap();
+        assert!(status(root, None, false).unwrap().tracking);
+        remote::connect_url(root, "https://github.com/ana/otro.git").unwrap();
+        let s = status(root, None, false).unwrap();
+        assert_eq!(s.remote.as_deref(), Some("https://github.com/ana/otro.git"));
+        assert_eq!((s.tracking, s.ahead, s.behind), (false, 1, 0));
+    }
+
+    #[test]
     fn conectar_valida_la_direccion() {
         let dir = enabled(&[("main.tex", "x")]);
         let root = dir.path();

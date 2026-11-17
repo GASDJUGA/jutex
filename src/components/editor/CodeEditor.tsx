@@ -402,7 +402,9 @@ export function CodeEditor({ path, content }: CodeEditorProps) {
 
   // A file with conflicts of a merge with GitHub in progress: its marks as boxes.
   const inConflict = useBackup(
-    (s) => s.status?.merge?.conflicts.some((c) => c.path === path && c.kind === "text") ?? false,
+    (s) =>
+      s.projectId === currentProject() &&
+      (s.status?.merge?.conflicts.some((c) => c.path === path && c.kind === "text") ?? false),
   );
   useEffect(() => {
     viewRef.current?.dispatch({ effects: setConflictsEnabled.of(inConflict) });

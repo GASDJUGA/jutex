@@ -283,11 +283,16 @@ pub fn clean_repo_name(name: &str) -> AppResult<String> {
 pub fn connect_url(root: &Path, url: &str) -> AppResult<String> {
     let url = clean_url(url)?;
     let repo = require(root)?;
-    if repo.find_remote("origin").is_ok() {
-        repo.remote_set_url("origin", &url).map_err(git_error)?;
-    } else {
-        repo.remote("origin", &url).map_err(git_error)?;
+    // Another repository: what was known of the old one (its branches, the tracking) goes.
+    let same = repo
+        .find_remote("origin")
+        .ok()
+        .is_some_and(|r| r.url().ok() == Some(url.as_str()));
+    if same {
+        return Ok(url);
     }
+    disconnect(root)?;
+    require(root)?.remote("origin", &url).map_err(git_error)?;
     Ok(url)
 }
 

@@ -489,11 +489,12 @@ impl Ctx {
         let dest = unique_child(parent, &name, Some("copia"));
         // The copy keeps its backups but not the original's repository: pushing would mix
         // two projects in one (pedido del usuario).
-        let copied = copy_project(&entry.path, &dest).and_then(|()| {
+        let copied = copy_project(&entry.path, &dest).map(|()| {
+            // A `.git` that git2 cannot open has nothing JuTeX would push to: the copy is made
+            // anyway, as before.
             if dest.join(".git").is_dir() {
-                crate::backup::remote::disconnect(&dest)?;
+                let _ = crate::backup::remote::disconnect(&dest);
             }
-            Ok(())
         });
         if let Err(e) = copied {
             let _ = fs::remove_dir_all(&dest);
@@ -990,6 +991,23 @@ mod tests {
                 .remote
                 .as_deref(),
             Some("https://github.com/ana/tesis.git")
+        );
+    }
+
+    #[test]
+    fn duplicar_un_proyecto_con_un_git_roto_sigue_funcionando() {
+        let f = fixture();
+        let p = f.ctx.create("Roto", None, None, None).unwrap();
+        let root = f.ctx.projects_dir.join("Roto");
+        fs::create_dir_all(root.join(".git")).unwrap();
+        fs::write(root.join(".git/HEAD"), "no es un repositorio").unwrap();
+        let copy = f.ctx.duplicate(&p.id).unwrap();
+        assert!(
+            f.ctx
+                .projects_dir
+                .join(&copy.name)
+                .join("main.tex")
+                .is_file()
         );
     }
 

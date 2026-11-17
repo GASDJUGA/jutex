@@ -6,10 +6,10 @@
  * (`setConflictsEnabled`), never for a file that happens to have such lines.
  */
 import {
+  EditorState,
   RangeSetBuilder,
   StateEffect,
   StateField,
-  type EditorState,
   type Extension,
 } from "@codemirror/state";
 import { Decoration, EditorView, WidgetType, type DecorationSet } from "@codemirror/view";
@@ -127,6 +127,39 @@ function decorations(state: EditorState, labels: ConflictLabels): DecorationSet 
   return builder.finish();
 }
 
+/**
+ * The hidden marker lines, with the line break on each side: typing or deleting there would
+ * put text under a box (Backspace after a box joins the next line to the hidden `>>>>>>>`
+ * one, and a button would then delete it).
+ */
+function markerRanges(state: EditorState): [number, number][] {
+  const { doc } = state;
+  const around = (pos: number): [number, number] => {
+    const line = doc.lineAt(pos);
+    return [Math.max(0, line.from - 1), Math.min(doc.length, line.to + 1)];
+  };
+  return findConflicts(doc.toString()).flatMap((b) => [
+    around(b.from),
+    around(b.ours.to),
+    around(b.theirs.to),
+  ]);
+}
+
+/** Refuses the user's typing and deleting that would reach a hidden marker line. */
+const guardMarkers = EditorState.transactionFilter.of((tr) => {
+  if (!tr.docChanged || !tr.startState.field(enabledField, false)) return tr;
+  if (!(tr.isUserEvent("input") || tr.isUserEvent("delete")) || tr.isUserEvent("input.resolve")) {
+    return tr;
+  }
+  const ranges = markerRanges(tr.startState);
+  let touches = false;
+  tr.changes.iterChangedRanges((fromA, toA) => {
+    if (ranges.some(([from, to]) => fromA < to && toA > from && !(fromA === toA && fromA === from)))
+      touches = true;
+  });
+  return touches ? [] : tr;
+});
+
 export function conflictMarkers(labels: ConflictLabels): Extension {
   const boxes = StateField.define<DecorationSet>({
     create: (state) => decorations(state, labels),
@@ -137,5 +170,5 @@ export function conflictMarkers(labels: ConflictLabels): Extension {
     },
     provide: (field) => EditorView.decorations.from(field),
   });
-  return [enabledField, boxes];
+  return [enabledField, boxes, guardMarkers];
 }
