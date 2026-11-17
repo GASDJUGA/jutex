@@ -71,7 +71,7 @@ pub struct Output {
 }
 
 impl Output {
-    fn text(&self) -> String {
+    pub(crate) fn text(&self) -> String {
         self.lines.join("\n")
     }
 }
@@ -358,6 +358,14 @@ pub fn parse_progress(line: &str) -> Option<Progress> {
     })
 }
 
+/// Runs the system's `git` with `args` in `root`, for local work (no network), with
+/// [`GH_TIMEOUT`] as its limit.
+pub(crate) fn run_git(root: &Path, args: &[&str]) -> AppResult<Output> {
+    let git = git_tool()?;
+    let args: Vec<&OsStr> = args.iter().map(OsStr::new).collect();
+    run(&git, &args, Some(root), GH_TIMEOUT, |_| {}, |_| {})
+}
+
 fn git_tool() -> AppResult<PathBuf> {
     tool("git").ok_or(AppError::MissingTool("git"))
 }
@@ -392,6 +400,7 @@ pub fn push(
     let git = git_tool()?;
     let branch = {
         let repo = require(root)?;
+        super::merge::refuse_during(&repo)?;
         origin_url(&repo)?;
         pushable_branch(&repo)?
     };

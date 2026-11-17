@@ -95,6 +95,8 @@ pub struct BackupStatus {
     pub pending: usize,
     /// «Subir después de cada respaldo» (`backupPush` in `project.json`).
     pub push_after_backup: bool,
+    /// A merge with GitHub in progress (see [`merge`]).
+    pub merge: Option<merge::MergeState>,
 }
 
 /// Lines JuTeX makes sure the project's `.gitignore` has.
@@ -361,6 +363,7 @@ pub fn status(
             behind: 0,
             pending: 0,
             push_after_backup,
+            merge: None,
         });
     };
     let (identity, identity_source) = identity(Some(&repo), fallback).unzip();
@@ -387,6 +390,7 @@ pub fn status(
         behind,
         pending: pending_in(&repo, root)?.changes.len(),
         push_after_backup,
+        merge: merge::state_of(&repo, root)?,
     })
 }
 
@@ -501,6 +505,7 @@ pub fn backup(
 ) -> AppResult<Option<Backup>> {
     let message = clean_message(message)?;
     let repo = require(root)?;
+    merge::refuse_during(&repo)?;
     let author = author_of(&repo, fallback)?;
     ensure_gitignore(root)?;
     let Some(id) = commit_all(&repo, root, &message, &author)? else {
@@ -586,6 +591,7 @@ pub fn restore_file(
 ) -> AppResult<()> {
     let before = gitops::version_label(before)?;
     let repo = require(root)?;
+    merge::refuse_during(&repo)?;
     let author = author_of(&repo, fallback)?;
     gitops::restore_file_in(&repo, root, id, path, trash, || {
         keep_current(&repo, root, &author, &before)
@@ -603,6 +609,7 @@ pub fn restore_project(
 ) -> AppResult<Vec<String>> {
     let before = gitops::version_label(before)?;
     let repo = require(root)?;
+    merge::refuse_during(&repo)?;
     let author = author_of(&repo, fallback)?;
     gitops::restore_tree_in(&repo, root, id, trash, || {
         keep_current(&repo, root, &author, &before)
@@ -955,7 +962,7 @@ pub(crate) mod tests {
     }
 
     /// `git` with a fixed author, in `dir` (for the «other clone» of the tests).
-    fn git_in(dir: &Path, args: &[&str]) {
+    pub(crate) fn git_in(dir: &Path, args: &[&str]) {
         let git = remote::tool("git").unwrap();
         let out = crate::platform::process::command(git)
             .args(["-c", "user.name=Otra", "-c", "user.email=otra@x.cl"])
@@ -972,7 +979,7 @@ pub(crate) mod tests {
 
     /// A project backed up once, with a local bare repository as its `origin` (GitHub's
     /// stand-in: the URL check is for what the user types, not tested here).
-    fn with_origin() -> (TempDir, TempDir) {
+    pub(crate) fn with_origin() -> (TempDir, TempDir) {
         let dir = enabled(&[("main.tex", "uno\n")]);
         let origin = TempDir::new().unwrap();
         let mut options = RepositoryInitOptions::new();
@@ -1038,7 +1045,7 @@ pub(crate) mod tests {
     }
 
     /// The other clone of `origin`, ready to commit and push as «Otra».
-    fn other_clone(origin: &TempDir) -> (TempDir, std::path::PathBuf) {
+    pub(crate) fn other_clone(origin: &TempDir) -> (TempDir, std::path::PathBuf) {
         let other = TempDir::new().unwrap();
         git_in(
             other.path(),
@@ -1049,7 +1056,7 @@ pub(crate) mod tests {
     }
 
     /// `main.tex` as the other clone leaves it and pushes.
-    fn push_from_other(origin: &TempDir, file: &str, text: &str) {
+    pub(crate) fn push_from_other(origin: &TempDir, file: &str, text: &str) {
         let (_other, clone) = other_clone(origin);
         fs::write(clone.join(file), text).unwrap();
         git_in(&clone, &["add", "-A"]);
@@ -1057,7 +1064,7 @@ pub(crate) mod tests {
         git_in(&clone, &["push", "-q", "origin", "main"]);
     }
 
-    fn read(root: &Path, file: &str) -> String {
+    pub(crate) fn read(root: &Path, file: &str) -> String {
         fs::read_to_string(root.join(file))
             .unwrap()
             .replace("\r\n", "\n")

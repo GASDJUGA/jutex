@@ -363,6 +363,42 @@ pub async fn backup_pull(
     .await
 }
 
+/// «Terminar fusión»: commits the merge in progress (refused while conflicts are left).
+#[tauri::command]
+pub async fn backup_finish_merge(
+    state: State<'_, AppState>,
+    id: String,
+    message: String,
+) -> AppResult<BackupStatus> {
+    with_backup(&state, &id, move |root, author| {
+        backup::merge::finish(root, &message, author)?;
+        status_of(root, author)
+    })
+    .await
+}
+
+/// «Cancelar fusión»: everything back as it was before pulling; returns the paths that
+/// changed on disk.
+#[tauri::command]
+pub async fn backup_abort_merge(state: State<'_, AppState>, id: String) -> AppResult<Vec<String>> {
+    with_backup(&state, &id, |root, _| backup::merge::abort(root)).await
+}
+
+/// Keeps one side of a file in conflict that cannot have marks (binary, deleted on a side).
+#[tauri::command]
+pub async fn backup_choose(
+    state: State<'_, AppState>,
+    id: String,
+    path: String,
+    side: backup::merge::Side,
+) -> AppResult<BackupStatus> {
+    with_backup(&state, &id, move |root, author| {
+        backup::merge::choose(root, &path, side)?;
+        status_of(root, author)
+    })
+    .await
+}
+
 /// Cancels the running network operation of a project (kills `git`/`gh` and what they
 /// started).
 #[tauri::command]
