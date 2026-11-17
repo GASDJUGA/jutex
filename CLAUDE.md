@@ -416,9 +416,14 @@ herramientas, y nunca se activa solo.
   desde uno de ellos (con confirmación; lo actual queda como respaldo antes de restaurar).
 - **GitHub (opcional):** conectar con un repositorio **privado** nuevo, creado con `gh repo
   create --private` si `gh` está instalado y autenticado, o con la URL de uno existente.
-  **Subir** (push) y **Traer cambios** (pull solo *fast-forward*; si hay divergencia se explica
-  y no se mezcla nada automáticamente), con progreso y errores claros. Se puede activar
-  «subir después de cada respaldo».
+  **Subir** (push) y **Traer cambios**, con progreso y errores claros. Traer cambios respalda
+  antes lo no respaldado y, si los dos lados tienen respaldos nuevos, los une con `git merge`;
+  los conflictos (mismas líneas) se resuelven en el editor (recuadros con «Quedarme con lo
+  mío / lo de GitHub / Ambos», o a mano) y se termina o cancela la fusión desde el panel
+  (diseño `docs/superpowers/specs/2026-11-17-fusion-y-repositorio-design.md`). Se puede
+  activar «subir después de cada respaldo». «Cambiar repositorio»: conectar otro (dirección o
+  uno nuevo con `gh`) o desconectar. Un proyecto duplicado conserva sus respaldos sin
+  repositorio conectado.
 - **Seguridad:** JuTeX no guarda tokens ni contraseñas: la autenticación es la del sistema
   (`gh auth setup-git` / el *credential helper* de git). Las URLs de remotos se validan (solo
   `https://` y `git@`), los comandos se ejecutan sin shell y con argumentos fijos, y la red
@@ -899,6 +904,25 @@ confírmalo con `grep -rnE 'cfg\((not\()?(target_os|unix|windows)' src-tauri/src
 
 ## 11. Estado actual
 
+- Linux: **fusión al traer cambios y cambio de repositorio** (pedido del usuario el
+  2026-11-17; rama `respaldo-fusion`, diseño
+  `docs/superpowers/specs/2026-11-17-fusion-y-repositorio-design.md`, plan
+  `docs/superpowers/plans/2026-11-17-fusion-y-repositorio.md`). Rust: `backup/merge.rs`
+  (conflictos del índice, `.git/JUTEX_MERGE` con los archivos que tuvieron conflicto,
+  `count_blocks`, `state`, `finish`, `abort`, `choose` con `:(literal)` en las rutas),
+  `remote::bring_in` (reemplaza a `fast_forward`: avance rápido o `git -c
+  merge.conflictStyle=merge merge --no-ff --no-commit`), `prepare_pull` (respaldo «Antes de
+  traer cambios»), `remote::disconnect`, `create_github_repo` que reemplaza el `origin`
+  conectado, `duplicate` sin `origin`; `BackupStatus.merge`; respaldar, subir, traer y
+  restaurar esperan a la fusión; el historial no toma versiones automáticas durante ella.
+  Interfaz: `lib/conflicts.ts`, `editor/conflictMarkers.ts` (recuadros con tres botones, un
+  paso de deshacer), `MergeSection`, menú «Cambiar repositorio», textos en seis idiomas; el
+  estado del respaldo se lee al abrir un proyecto (una fusión a medias se ve al volver).
+  Probado: tests (Rust con `git` real y un repositorio desnudo como GitHub; vitest con el
+  backend simulado) y la vista previa (traer → recuadro → «Quedarme con lo de GitHub» →
+  «Terminar fusión»). De paso: el test de WebKit solo exige los valores de la 2.54 con 2.54 o
+  más (el usuario volvió a la 2.52.6 por el parpadeo, retenida con `IgnorePkg`). Sin probar por
+  el usuario con GitHub real.
 - Linux: **retardo al escribir varias teclas a la vez** (pedido del usuario el 2026-11-16, en
   la 2.0.0 y la 2.1.0, solo Linux, en su documento más grande; rama `escritura-rapida`).
   Hallado con una versión de diagnóstico (rama local `diag-webkit-features`: `JUTEX_DIAG=1`
@@ -2949,3 +2973,5 @@ confírmalo con `grep -rnE 'cfg\((not\()?(target_os|unix|windows)' src-tauri/src
 | 2026-11-15 | El compilador se elige al crear el proyecto y las plantillas (escritas para XeLaTeX) se adaptan al elegido; con pdfLaTeX, `fontenc` + `lmodern` en vez de `fontspec` | Pedido del usuario. Una copia por compilador triplicaría las 24 plantillas; la diferencia es una línea del preámbulo. `lmodern` (paquete `lm`, ya en el TeX Live de JuTeX) da fuentes vectoriales con T1 |
 | 2026-11-16 | Lo que corre en cada tecla no recorre el documento ni lee la maquetación; `contain: strict` en el área de desplazamiento del editor principal | En WebKitGTK cada tecla costaba hasta ~14 ms en un documento largo y las teclas pulsadas juntas se encolaban; WebKit no puede maquetar solo el editor sin la contención. Solo en el editor principal: los del historial toman la altura de su contenido |
 | 2026-11-16 | En Wayland, módulo de entrada simple de GTK salvo que haya un método de entrada o el usuario elija otro | Con el text-input de KWin las teclas llegaban tarde a WebKitGTK; el simple conserva teclas muertas y Compose. Con IBus/fcitx/teclado virtual hace falta el de la sesión: se detecta y se deja; `JUTEX_SYSTEM_IM=1` lo fuerza |
+| 2026-11-17 | Traer cambios une con el `git merge` del sistema y deja los conflictos con sus marcas en los archivos; la interfaz los dibuja como recuadros con botones | Elegido por el usuario (A y C): es el estado estándar de Git (sobrevive a cerrar JuTeX y lo entiende cualquier herramienta), encaja con el editor y Git hace lo difícil |
+| 2026-11-17 | Un proyecto duplicado conserva su `.git` sin `origin` | Pedido del usuario: la copia subía al repositorio del original |

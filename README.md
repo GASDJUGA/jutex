@@ -60,7 +60,9 @@ you come from LibreTeX, see [Moving from LibreTeX to JuTeX](#moving-from-librete
 - Automatic local history (every few minutes and after compiling) and named versions;
   differences per file, and restore a file or the whole project.
 - Optional backup with the project's Git and, if you want, in a private GitHub repository:
-  push, pull changes and continue on another machine. JuTeX stores no passwords or tokens.
+  push, pull changes and continue on another machine. When both sides changed, JuTeX merges
+  them; conflicts show in the editor with buttons to keep yours, GitHub's or both. JuTeX
+  stores no passwords or tokens.
 
 ![History with the differences of a version](docs/screenshots/en/historial.png)
 
