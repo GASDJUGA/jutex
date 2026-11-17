@@ -1,6 +1,6 @@
 [package]
 name = "jutex"
-version = "2.1.0"
+version = "2.2.0"
 description = "Editor LaTeX local estilo Overleaf"
 authors = ["JuTeX contributors"]
 license = "GPL-3.0-or-later"

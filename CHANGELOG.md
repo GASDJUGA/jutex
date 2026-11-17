@@ -4,7 +4,7 @@ What's new in each version compared with the previous one, from newest to oldest
 of each release (with how to install it) are in `docs/releases/<version>.md`.
 Up to 1.2.2 it was called LibreTeX.
 
-## Unreleased
+## 2.2.0 (unreleased)
 
 ### New
 

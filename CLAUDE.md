@@ -904,6 +904,19 @@ confírmalo con `grep -rnE 'cfg\((not\()?(target_os|unix|windows)' src-tauri/src
 
 ## 11. Estado actual
 
+- Linux: **versión 2.2.0 preparada** (2026-11-17, pedido del usuario; en la rama
+  `respaldo-fusion`, mismo PR que la fusión). Versión en `package.json`, `Cargo.toml` (y
+  `Cargo.lock`), `tauri.conf.json` y el `pkgver` del PKGBUILD; notas en
+  `docs/releases/2.2.0.md` (fusión y cambio de repositorio en todas las plataformas; en Linux,
+  el retardo al escribir y el módulo de entrada de Wayland del PR #30; el parpadeo de
+  WebKitGTK 2.54 como problema conocido) y `CHANGELOG.md` («2.2.0 (unreleased)»: la fecha se
+  pone al publicar). Pasos, como en la 2.1.0: (1) fusionar el PR con el CI verde (cuando el
+  usuario lo diga) y crear desde Linux el borrador `v2.2.0` con el AppImage y el paquete de
+  Arch (`gh release create v2.2.0 --draft --notes-file docs/releases/2.2.0.md`, sin tag hasta
+  publicar; el paquete de Arch con una copia del PKGBUILD que apunta al commit); (2) macOS y
+  Windows traen `main` y suben `JuTeX_2.2.0_aarch64.dmg` / `JuTeX_2.2.0_x64-setup.exe` con
+  `gh release upload v2.2.0 … --clobber`; (3) Linux fija el commit (`gh release edit v2.2.0
+  --target <sha> --notes-file docs/releases/2.2.0.md`) y publica con confirmación del usuario.
 - Linux: **fusión al traer cambios y cambio de repositorio** (pedido del usuario el
   2026-11-17; rama `respaldo-fusion`, diseño
   `docs/superpowers/specs/2026-11-17-fusion-y-repositorio-design.md`, plan
