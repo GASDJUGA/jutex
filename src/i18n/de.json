@@ -684,9 +684,10 @@
     "needsIdentity": "Der Autor der Sicherungen (Name und E-Mail) fehlt.",
     "missingTool": "Ein benötigtes Programm (git, gh oder gpg) wurde nicht gefunden.",
     "notSignedIn": "GitHub hat den Zugriff nicht akzeptiert. Melden Sie sich mit „gh auth login“ an und führen Sie für https-Adressen auch „gh auth setup-git“ aus (oder verwenden Sie einen SSH-Schlüssel).",
-    "diverged": "Es gibt neue Sicherungen hier und auch im entfernten Repository. JuTeX führt sie nicht automatisch zusammen, damit nichts verloren geht: Führen Sie sie mit git in einem Terminal zusammen (git pull) und versuchen Sie es erneut.",
+    "diverged": "GitHub hat Sicherungen, die hier fehlen: rufe die Änderungen ab, bevor du hochlädst.",
     "localChanges": "Es gibt nicht gesicherte Änderungen in Dateien, die sich auch im entfernten Repository geändert haben, und das Abrufen würde sie überschreiben. Legen Sie diese Änderungen beiseite, stellen Sie diese Dateien auf die letzte Sicherung zurück und versuchen Sie es erneut.",
-    "remoteNotFound": "Das entfernte Repository wurde nicht gefunden. Prüfen Sie die Adresse und ob Ihr Konto Zugriff hat."
+    "remoteNotFound": "Das entfernte Repository wurde nicht gefunden. Prüfen Sie die Adresse und ob Ihr Konto Zugriff hat.",
+    "mergeInProgress": "Eine Zusammenführung mit GitHub läuft: schließe sie zuerst ab oder brich sie ab, im Sicherungsbereich."
   },
   "trash": {
     "title": "Papierkorb",
@@ -878,7 +879,39 @@
       "resolving": "Änderungen werden aufgelöst",
       "other": "In Arbeit"
     },
-    "details": "Details"
+    "details": "Details",
+    "beforePull": "Vor dem Abrufen der Änderungen",
+    "mergeMessage": "Zusammenführung mit GitHub",
+    "mergeTitle": "Zusammenführung mit GitHub läuft",
+    "mergeIntro": "Dieselben Stellen wurden hier und auf GitHub geändert. Löse jeden Konflikt im Editor (oder wähle eine Version) und schließe die Zusammenführung ab. Deine Änderungen sind bereits gesichert.",
+    "remainingCount": {
+      "one": "{count} offen",
+      "other": "{count} offen"
+    },
+    "resolved": "Gelöst",
+    "kindDeleted": "Auf einer Seite gelöscht und auf der anderen geändert: wähle eine Version.",
+    "kindBinary": "Lässt sich nicht kombinieren: wähle eine Version.",
+    "finishMerge": "Zusammenführung abschließen",
+    "abortMerge": "Zusammenführung abbrechen",
+    "abortTitle": "Zusammenführung abbrechen?",
+    "abortConfirm": "Die Dateien kehren zum Stand vor dem Abrufen zurück. Was du während der Zusammenführung bearbeitet hast, wird verworfen.",
+    "keepOurs": "Meine behalten",
+    "keepTheirs": "GitHubs behalten",
+    "keepBoth": "Beide",
+    "ours": "Meine",
+    "theirs": "GitHubs",
+    "mergedDone": {
+      "one": "{count} Änderung von GitHub zusammengeführt.",
+      "other": "{count} Änderungen von GitHub zusammengeführt."
+    },
+    "mergeConflicts": "Es gibt Konflikte: löse sie und schließe die Zusammenführung ab.",
+    "mergeFinished": "Zusammenführung abgeschlossen. Lade sie mit Hochladen hoch.",
+    "mergeBusy": "Schließe die Zusammenführung zuerst ab oder brich sie ab.",
+    "changeRepo": "Repository wechseln",
+    "connectOther": "Ein anderes verbinden…",
+    "disconnect": "Trennen",
+    "disconnectTitle": "Dieses Projekt von seinem Repository trennen?",
+    "disconnectConfirm": "Auf GitHub wird nichts gelöscht. Deine Sicherungen bleiben hier und du kannst es jederzeit wieder verbinden."
   },
   "clone": {
     "title": "Von GitHub importieren",

@@ -684,9 +684,10 @@
     "needsIdentity": "Falta o autor dos backups (nome e e-mail).",
     "missingTool": "Não foi encontrado um programa necessário (git, gh ou gpg).",
     "notSignedIn": "O GitHub não aceitou o acesso. Entre com «gh auth login» e, para endereços https, execute também «gh auth setup-git» (ou use uma chave SSH).",
-    "diverged": "Há backups novos aqui e também no remoto. O JuTeX não os junta automaticamente para não perder nada: junte-os com git em um terminal (git pull) e tente de novo.",
+    "diverged": "O GitHub tem backups que não estão aqui: traga as alterações antes de enviar.",
     "localChanges": "Há alterações sem backup em arquivos que também mudaram no remoto, e trazê-las as sobrescreveria. Guarde essas alterações à parte, restaure esses arquivos ao último backup e tente de novo.",
-    "remoteNotFound": "O repositório remoto não foi encontrado. Verifique o endereço e se a sua conta tem acesso."
+    "remoteNotFound": "O repositório remoto não foi encontrado. Verifique o endereço e se a sua conta tem acesso.",
+    "mergeInProgress": "Há uma mesclagem com o GitHub em andamento: termine ou cancele primeiro, no painel de backup."
   },
   "trash": {
     "title": "Lixeira",
@@ -878,7 +879,39 @@
       "resolving": "Resolvendo alterações",
       "other": "Trabalhando"
     },
-    "details": "Detalhes"
+    "details": "Detalhes",
+    "beforePull": "Antes de trazer alterações",
+    "mergeMessage": "Mesclagem com o GitHub",
+    "mergeTitle": "Mesclagem com o GitHub em andamento",
+    "mergeIntro": "As mesmas partes mudaram aqui e no GitHub. Resolva cada conflito no editor (ou escolha uma versão) e termine a mesclagem. Suas alterações já estão salvas em backup.",
+    "remainingCount": {
+      "one": "{count} a resolver",
+      "other": "{count} a resolver"
+    },
+    "resolved": "Resolvido",
+    "kindDeleted": "Excluído de um lado e alterado do outro: escolha uma versão.",
+    "kindBinary": "Não dá para combinar: escolha uma versão.",
+    "finishMerge": "Terminar mesclagem",
+    "abortMerge": "Cancelar mesclagem",
+    "abortTitle": "Cancelar a mesclagem?",
+    "abortConfirm": "Os arquivos voltam a como estavam antes de trazer as alterações. O que você editou durante a mesclagem é descartado.",
+    "keepOurs": "Manter o meu",
+    "keepTheirs": "Manter a do GitHub",
+    "keepBoth": "Ambos",
+    "ours": "O meu",
+    "theirs": "A do GitHub",
+    "mergedDone": {
+      "one": "Mesclada {count} alteração do GitHub.",
+      "other": "Mescladas {count} alterações do GitHub."
+    },
+    "mergeConflicts": "Há conflitos: resolva-os e termine a mesclagem.",
+    "mergeFinished": "Mesclagem terminada. Envie com Enviar.",
+    "mergeBusy": "Termine ou cancele a mesclagem primeiro.",
+    "changeRepo": "Trocar repositório",
+    "connectOther": "Conectar outro…",
+    "disconnect": "Desconectar",
+    "disconnectTitle": "Desconectar este projeto do repositório?",
+    "disconnectConfirm": "Nada é excluído no GitHub. Seus backups continuam aqui e você pode conectá-lo de novo quando quiser."
   },
   "clone": {
     "title": "Importar do GitHub",

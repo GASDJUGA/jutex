@@ -20,6 +20,7 @@ import type { FileChange } from "../../store/types";
 import { PanelHeader } from "../common/PanelHeader";
 import { EnableBackupDialog } from "./EnableBackupDialog";
 import { GitHubSection } from "./GitHubSection";
+import { MergeSection } from "./MergeSection";
 
 /** Files changed on disk: the panel reads the repository again after this pause. */
 const REFRESH_DELAY = 600;
@@ -110,6 +111,7 @@ export function BackupPanel() {
                 </p>
               )}
             </div>
+            <MergeSection />
             <PendingChanges />
             <GitHubSection />
             <RecentBackups />
@@ -144,6 +146,7 @@ function useDateFormat() {
 function PendingChanges() {
   const t = useT();
   const { pending, working } = useBackup();
+  const merging = useBackup((s) => !!s.status?.merge);
   const [message, setMessage] = useState("");
   const dateFormat = useDateFormat();
   const changes = pending?.changes ?? [];
@@ -224,7 +227,8 @@ function PendingChanges() {
         />
         <button
           type="submit"
-          disabled={working !== null || changes.length === 0}
+          disabled={working !== null || changes.length === 0 || merging}
+          title={merging ? t("backup.mergeBusy") : undefined}
           className="flex items-center justify-center gap-2 rounded-md bg-accent px-3 py-1.5 text-sm font-medium text-accent-fg hover:bg-accent-hover disabled:opacity-50"
         >
           {working === "backup" ? (

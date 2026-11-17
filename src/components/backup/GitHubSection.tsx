@@ -6,6 +6,8 @@ import { errorText, notifyError, notifyInfo } from "../../lib/errors";
 import { getBackend } from "../../lib/tauri";
 import { useBackup } from "../../store/backup";
 import { useProjects } from "../../store/projects";
+import { Dialog } from "../common/Dialog";
+import { Menu } from "../common/Menu";
 import { ConnectDialog } from "./ConnectDialog";
 
 /** git's progress steps, in words. */
@@ -35,6 +37,7 @@ export function GitHubSection() {
   const { status, tools, working, progress, remoteError, projectId } = useBackup();
   const projectName = useProjects((s) => s.projects.find((p) => p.id === projectId)?.name ?? "");
   const [connecting, setConnecting] = useState(false);
+  const [disconnecting, setDisconnecting] = useState(false);
 
   // Progress of this project's push or pull.
   useEffect(
@@ -47,6 +50,7 @@ export function GitHubSection() {
 
   if (!status?.enabled) return null;
   const remoteBusy = working === "push" || working === "pull" || working === "connect";
+  const merging = !!status.merge;
   const error = remoteError ? errorText(remoteError) : null;
 
   const push = () =>
@@ -62,9 +66,13 @@ export function GitHubSection() {
       .then((pulled) => {
         if (!pulled) return;
         notifyInfo(
-          pulled.commits > 0
-            ? t("backup.pullDone", { count: pulled.commits })
-            : t("backup.pullNothing"),
+          pulled.conflicts.length > 0
+            ? t("backup.mergeConflicts")
+            : pulled.merged
+              ? t("backup.mergedDone", { count: pulled.commits })
+              : pulled.commits > 0
+                ? t("backup.pullDone", { count: pulled.commits })
+                : t("backup.pullNothing"),
         );
       })
       .catch(() => {});
@@ -91,9 +99,30 @@ export function GitHubSection() {
         </>
       ) : (
         <>
-          <p className="truncate font-mono text-xs" title={status.remote}>
-            {shortUrl(status.remote)}
-          </p>
+          <div className="flex min-w-0 items-center gap-1">
+            <p className="min-w-0 flex-1 truncate font-mono text-xs" title={status.remote}>
+              {shortUrl(status.remote)}
+            </p>
+            <Menu
+              trigger={<span className="text-xs">{t("backup.changeRepo")}</span>}
+              label={t("backup.changeRepo")}
+              align="end"
+              triggerClassName="shrink-0 rounded px-1.5 py-0.5 text-fg-muted hover:bg-hover hover:text-fg aria-expanded:bg-hover disabled:opacity-50"
+              entries={[
+                {
+                  label: t("backup.connectOther"),
+                  disabled: !!working || merging,
+                  onSelect: () => setConnecting(true),
+                },
+                {
+                  label: t("backup.disconnect"),
+                  danger: true,
+                  disabled: !!working || merging,
+                  onSelect: () => setDisconnecting(true),
+                },
+              ]}
+            />
+          </div>
           <p className="text-xs text-fg-muted">
             {!status.tracking
               ? t("backup.neverPushed")
@@ -110,7 +139,8 @@ export function GitHubSection() {
             <button
               type="button"
               onClick={push}
-              disabled={remoteBusy || !!working}
+              disabled={remoteBusy || !!working || merging}
+              title={merging ? t("backup.mergeBusy") : undefined}
               className={button}
             >
               {working === "push" ? (
@@ -123,7 +153,8 @@ export function GitHubSection() {
             <button
               type="button"
               onClick={pull}
-              disabled={remoteBusy || !!working}
+              disabled={remoteBusy || !!working || merging}
+              title={merging ? t("backup.mergeBusy") : undefined}
               className={button}
             >
               {working === "pull" ? (
@@ -191,6 +222,20 @@ export function GitHubSection() {
             </details>
           )}
         </div>
+      )}
+      {disconnecting && (
+        <Dialog
+          title={t("backup.disconnectTitle")}
+          submitLabel={t("backup.disconnect")}
+          danger
+          onSubmit={() => {
+            setDisconnecting(false);
+            void useBackup.getState().disconnect().catch(notifyError);
+          }}
+          onClose={() => setDisconnecting(false)}
+        >
+          <p className="text-sm">{t("backup.disconnectConfirm")}</p>
+        </Dialog>
       )}
       {connecting && (
         <ConnectDialog

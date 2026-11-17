@@ -1,4 +1,6 @@
 import { Compartment, EditorState, Text } from "@codemirror/state";
+import { conflictMarkers, setConflictsEnabled } from "../../editor/conflictMarkers";
+import { useBackup } from "../../store/backup";
 import { EditorView } from "@codemirror/view";
 import { forceLinting } from "@codemirror/lint";
 import { diff } from "@codemirror/merge";
@@ -253,6 +255,13 @@ export function CodeEditor({ path, content }: CodeEditorProps) {
             checker: () => (checked ? currentChecker() : null),
             onMenu: (view, word) => setSpellMenu({ view, word }),
           }),
+          conflictMarkers({
+            ours: translate(useI18n.getState().locale, "backup.ours"),
+            theirs: translate(useI18n.getState().locale, "backup.theirs"),
+            keepOurs: translate(useI18n.getState().locale, "backup.keepOurs"),
+            keepTheirs: translate(useI18n.getState().locale, "backup.keepTheirs"),
+            keepBoth: translate(useI18n.getState().locale, "backup.keepBoth"),
+          }),
           mathPreview({
             enabled: () => checked && useSettings.getState().mathPreview,
             hover: () =>
@@ -390,6 +399,14 @@ export function CodeEditor({ path, content }: CodeEditorProps) {
   useEffect(() => {
     viewRef.current?.dispatch({ effects: recheckSpelling.of(null) });
   }, [spellVersion, spellLang]);
+
+  // A file with conflicts of a merge with GitHub in progress: its marks as boxes.
+  const inConflict = useBackup(
+    (s) => s.status?.merge?.conflicts.some((c) => c.path === path && c.kind === "text") ?? false,
+  );
+  useEffect(() => {
+    viewRef.current?.dispatch({ effects: setConflictsEnabled.of(inConflict) });
+  }, [inConflict, path]);
 
   // Turning the live check on or off (Settings / «Ver» menu) applies at once.
   const liveCheckOn = useSettings((s) => s.liveCheck);

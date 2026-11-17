@@ -137,8 +137,19 @@ export type Backend = {
   backupCreateGithub(id: string, name: string): Promise<BackupStatus>;
   /** Pushes the backups (network; progress as `backup-progress`). */
   backupPush(id: string): Promise<BackupStatus>;
-  /** Fetches and fast-forwards (network); never merges diverged work. */
-  backupPull(id: string): Promise<Pulled>;
+  /**
+   * «Traer cambios» (network): backs up what is not backed up (`before`), then brings
+   * GitHub's backups in, merging them as `merged`, or leaving a merge in progress on conflicts.
+   */
+  backupPull(id: string, before: string, merged: string): Promise<Pulled>;
+  /** «Terminar fusión» (refused while conflicts are left), committed with `message`. */
+  backupFinishMerge(id: string, message: string): Promise<BackupStatus>;
+  /** «Cancelar fusión»: returns the paths that changed on disk. */
+  backupAbortMerge(id: string): Promise<string[]>;
+  /** Keeps one side of a binary or deleted-and-changed file in conflict. */
+  backupChoose(id: string, path: string, side: "ours" | "theirs"): Promise<BackupStatus>;
+  /** «Desconectar»: the project stops pushing to its repository. */
+  backupDisconnect(id: string): Promise<BackupStatus>;
   /** Cancels a push/pull of a project, or the clone (id `clone`). */
   backupCancel(id: string): Promise<void>;
   /** The signed-in account's GitHub repositories (network, `gh`). */
@@ -343,7 +354,11 @@ export const tauriBackend: Backend = {
   backupConnectUrl: (id, url) => invoke("backup_connect_url", { id, url }),
   backupCreateGithub: (id, name) => invoke("backup_create_github", { id, name }),
   backupPush: (id) => invoke("backup_push", { id }),
-  backupPull: (id) => invoke("backup_pull", { id }),
+  backupPull: (id, before, merged) => invoke("backup_pull", { id, before, merged }),
+  backupFinishMerge: (id, message) => invoke("backup_finish_merge", { id, message }),
+  backupAbortMerge: (id) => invoke("backup_abort_merge", { id }),
+  backupChoose: (id, path, side) => invoke("backup_choose", { id, path, side }),
+  backupDisconnect: (id) => invoke("backup_disconnect", { id }),
   backupCancel: (id) => invoke("backup_cancel", { id }),
   githubRepos: () => invoke("github_repos"),
   cloneProject: (url) => invoke("clone_project", { url }),

@@ -198,7 +198,20 @@ export type BackupStatus = {
   /** Files changed since the last backup. */
   pending: number;
   pushAfterBackup: boolean;
+  /** A merge with GitHub in progress (after «Traer cambios» found conflicts). */
+  merge: MergeState | null;
 };
+
+/** A file that had a conflict in the merge in progress. */
+export type Conflict = {
+  path: string;
+  /** `text`: resolved in the editor; `binary`/`deleted`: one side or the other. */
+  kind: "text" | "binary" | "deleted";
+  /** Conflicts left (0: resolved; listed until the merge is finished). */
+  remaining: number;
+};
+
+export type MergeState = { conflicts: Conflict[] };
 
 /** `git` and `gh` installed (the backup needs `git` to push and pull; `gh` to create repos). */
 export type BackupTools = { git: boolean; gh: boolean };
@@ -217,7 +230,14 @@ export type GithubRepo = {
 };
 
 /** What «Traer cambios» brought. */
-export type Pulled = { commits: number; changed: string[] };
+export type Pulled = {
+  commits: number;
+  changed: string[];
+  /** Both sides had new backups and they were merged into a new backup. */
+  merged: boolean;
+  /** Files in conflict: not empty means the merge is in progress. */
+  conflicts: Conflict[];
+};
 
 /** Progress of a push, pull or repository creation (event `backup-progress`). */
 export type BackupProgress = {
