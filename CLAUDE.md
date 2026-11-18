@@ -904,6 +904,21 @@ confírmalo con `grep -rnE 'cfg\((not\()?(target_os|unix|windows)' src-tauri/src
 
 ## 11. Estado actual
 
+- macOS: **2.2.0 revisada en el Mac** (2026-11-18, pedido del usuario; `main` en `601511c`:
+  PR #30, #31 y #32). Pasan `pnpm lint`/`typecheck`/`test` (700) y `cargo fmt`/`clippy`/`test`
+  (302). Los 37 tests del respaldo, también los de la fusión con conflictos, corren con el
+  `git` de macOS (Apple Git 2.39.5, de las Command Line Tools): `merge --no-ff --no-commit`,
+  `checkout --ours/--theirs` y las rutas `:(literal)` funcionan con esa versión. En WKWebView
+  (`probe-1.2.2.js`, `probe-transition.js`): árbol y esquema que se pliegan, menús, PDF y
+  transiciones como en la 2.1.0, sin errores, con los cambios del editor del PR #30. Los
+  recuadros de conflicto del editor no se probaron en WKWebView: el backend simulado solo crea
+  un cambio en GitHub desde los tests (`remoteBackup`). `JuTeX_2.2.0_aarch64.dmg` (13,2 MiB,
+  versión 2.2.0, firma ad hoc válida, `hdiutil verify` correcto, SHA-256 `b6d12931…05b5cf`)
+  construido desde `601511c` (el borrador apunta a `8c3d6ef`; entre los dos solo cambian un
+  test y un comentario de `backup/merge.rs`, la app es la misma) y subido al borrador
+  `v2.2.0`, que tiene ya los cuatro archivos. La `.app` arranca con un HOME vacío (respaldado
+  y repuesto idéntico el `~/Library/WebKit/org.jutex.app` real del usuario). Sin probar por
+  el usuario: traer cambios con conflicto desde GitHub real en el Mac.
 - Linux: **versión 2.2.0 preparada** (2026-11-17, pedido del usuario; en la rama
   `respaldo-fusion`, mismo PR que la fusión). Versión en `package.json`, `Cargo.toml` (y
   `Cargo.lock`), `tauri.conf.json` y el `pkgver` del PKGBUILD; notas en
