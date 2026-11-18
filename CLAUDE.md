@@ -1040,6 +1040,15 @@ confírmalo con `grep -rnE 'cfg\((not\()?(target_os|unix|windows)' src-tauri/src
   aviso) no se compila en Linux ni en el CI de esta rama; esas líneas lo revisan antes de
   fusionar. Notas en `docs/releases/2.1.0.md`; falta la versión 2.1.0 y el release.
 
+- Windows: 2.2.0 revisada en Windows (2026-11-18, pedido del usuario; rama `win-2.2.0`). El CI
+  de `main` (`8c3d6ef`, PR #31) fallaba solo en Windows: el test
+  `el_nombre_se_lee_literal_y_no_como_patron` creaba `fig*.png`, y Windows no acepta `*` en
+  un nombre. Ahora usa `fig[1].png` (vale en los tres sistemas y, leído como patrón de git,
+  también toma `fig1.png`); sin el `:(literal)` de `merge::choose` el test sigue fallando. En
+  este PC pasan `pnpm typecheck`, `lint`, `test` (700), `cargo fmt`, `clippy` y `test` (301,
+  con `git` real: fusión, conflictos, cambiar de repositorio). El código de la app no cambia:
+  el instalador `JuTeX_2.2.0_x64-setup.exe` se construyó desde esta rama y se subió al borrador
+  `v2.2.0`. Sin probar por el usuario.
 - macOS: JuTeX revisado en el Mac (2026-11-14, pedido del usuario; rama `mac-jutex`, tarea 9
   del plan de renombrar). Pasan `pnpm lint`/`typecheck`/`test` (640) y `cargo fmt`/`clippy`/
   `test` (251). `pnpm tauri build` → `JuTeX.app` (`org.jutex.app`, binario `jutex`, firma ad

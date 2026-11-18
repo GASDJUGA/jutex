@@ -304,7 +304,7 @@ pub fn choose(root: &Path, path: &str, side: Side) -> AppResult<()> {
         Side::Ours => "--ours",
         Side::Theirs => "--theirs",
     };
-    // `:(literal)`: git reads the name as it is, never as a pattern (`fig*.png` would also
+    // `:(literal)`: git reads the name as it is, never as a pattern (`fig[1].png` would also
     // take `fig1.png`).
     let spec = format!(":(literal){rel}");
     let steps: Vec<Vec<&str>> = if kept {
@@ -523,23 +523,24 @@ mod tests {
         }
         let (dir, origin) = with_origin();
         let root = dir.path();
-        // `fig*.png` in conflict, and `fig1.png`, which a pattern would also take.
-        fs::write(root.join("fig*.png"), [0u8, 1, 0]).unwrap();
+        // `fig[1].png` in conflict, and `fig1.png`, which the name read as a pattern would also
+        // take (`*` would say the same, but Windows does not allow it in a name).
+        fs::write(root.join("fig[1].png"), [0u8, 1, 0]).unwrap();
         fs::write(root.join("fig1.png"), [0u8, 7, 0]).unwrap();
         backup(root, "figuras", None).unwrap();
         remote::push(root, |_| {}, |_| {}).unwrap();
         let (_other, clone) = other_clone(&origin);
-        git_in(&clone, &["rm", "-q", "--", ":(literal)fig*.png"]);
+        git_in(&clone, &["rm", "-q", "--", ":(literal)fig[1].png"]);
         git_in(&clone, &["commit", "-qm", "borrada"]);
         git_in(&clone, &["push", "-q", "origin", "main"]);
-        fs::write(root.join("fig*.png"), [0u8, 5, 0]).unwrap();
+        fs::write(root.join("fig[1].png"), [0u8, 5, 0]).unwrap();
         backup(root, "local", None).unwrap();
         remote::fetch(root, |_| {}, |_| {}).unwrap();
         let pulled = remote::bring_in(root, "Fusión con GitHub", None).unwrap();
         assert_eq!(pulled.conflicts[0].kind, ConflictKind::Deleted);
         // GitHub's side: deleted. Only that file goes, not what the name would match.
-        choose(root, "fig*.png", Side::Theirs).unwrap();
-        assert!(!root.join("fig*.png").exists());
+        choose(root, "fig[1].png", Side::Theirs).unwrap();
+        assert!(!root.join("fig[1].png").exists());
         assert_eq!(fs::read(root.join("fig1.png")).unwrap(), [0u8, 7, 0]);
     }
 
