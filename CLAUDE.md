@@ -904,6 +904,20 @@ confírmalo con `grep -rnE 'cfg\((not\()?(target_os|unix|windows)' src-tauri/src
 
 ## 11. Estado actual
 
+- Linux: **release 2.2.0 listo para publicar** (2026-11-18, pedido del usuario; rama
+  `release-2.2.0`, sobre la del PR #33 de macOS). Fecha en `CHANGELOG.md`. El borrador `v2.2.0`
+  tiene los cuatro archivos:
+  - `JuTeX_2.2.0_amd64.AppImage` (SHA-256 `56c1b6da…`) y `jutex-2.2.0-1-x86_64.pkg.tar.zst`
+    (`3f5577ac…`, con la copia del PKGBUILD apuntando a `8c3d6ef`), construidos desde
+    `8c3d6ef` y abiertos en Xvfb con un HOME vacío («v2.2.0», en inglés y en alemán);
+  - `JuTeX_2.2.0_aarch64.dmg` (`b6d12931…`) y `JuTeX_2.2.0_x64-setup.exe` (`ad13930f…`),
+    construidos desde `601511c`. Revisados desde Linux: versión 2.2.0 (arm64, macOS 13 o
+    más; x64), plantillas y diccionarios idénticos a los del repositorio.
+
+  Entre `8c3d6ef` y este PR solo cambian un test (`fig[1].png`, PR #32) y `CLAUDE.md`: la app
+  es la misma. Falta, con confirmación del usuario: fusionar este PR, fijar el commit del
+  borrador (`gh release edit v2.2.0 --target <sha> --notes-file docs/releases/2.2.0.md`) y
+  publicarlo.
 - macOS: **2.2.0 revisada en el Mac** (2026-11-18, pedido del usuario; `main` en `601511c`:
   PR #30, #31 y #32). Pasan `pnpm lint`/`typecheck`/`test` (700) y `cargo fmt`/`clippy`/`test`
   (302). Los 37 tests del respaldo, también los de la fusión con conflictos, corren con el
