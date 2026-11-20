@@ -135,7 +135,12 @@ export type SearchQuery = {
   caseSensitive: boolean;
   /** Not preceded or followed by a letter, digit or `_` (also `\frac`). */
   wholeWord: boolean;
+  /** Where a match may start: anywhere, in a formula or outside them. */
+  scope: SearchScope;
 };
+
+/** «Todo», «En fórmulas», «Fuera de fórmulas» in the project search. */
+export type SearchScope = "all" | "math" | "text";
 
 /** An occurrence: 1-based lines, columns in UTF-16 units (like the editor). */
 export type SearchMatch = {

@@ -4,9 +4,10 @@
 //! and files too big for the editor are not searched.
 
 use crate::error::{AppError, AppResult};
+use crate::files::math_regions::{MathRegion, in_math, math_regions};
 use crate::files::{MAX_TEXT_BYTES, read_text, write_text};
 use crate::util::paths::to_relative;
-use regex::{NoExpand, Regex, RegexBuilder};
+use regex::{Regex, RegexBuilder};
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::Path;
@@ -57,6 +58,55 @@ pub struct SearchQuery {
     /// Only where the text is not preceded or followed by a letter, digit or `_`.
     #[serde(default)]
     pub whole_word: bool,
+    /// Everywhere, only in formulas or only outside them.
+    #[serde(default)]
+    pub scope: SearchScope,
+}
+
+/// Where a match may start: anywhere, in a formula (delimiters included) or outside them.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum SearchScope {
+    #[default]
+    All,
+    Math,
+    Text,
+}
+
+/// LaTeX sources, where formulas are looked for (a `.bib` has them in its titles).
+pub fn is_latex_source(path: &str) -> bool {
+    let name = path.rsplit('/').next().unwrap_or(path);
+    name.rsplit_once('.').is_some_and(|(_, ext)| {
+        ["tex", "ltx", "sty", "cls", "bib"]
+            .iter()
+            .any(|e| ext.eq_ignore_ascii_case(e))
+    })
+}
+
+/// Which matches of one file a search keeps, by the byte where each starts.
+pub struct ScopeFilter {
+    scope: SearchScope,
+    /// The file's formulas (none outside LaTeX sources); not computed for `All`.
+    regions: Vec<MathRegion>,
+}
+
+impl ScopeFilter {
+    pub fn new(scope: SearchScope, path: &str, text: &str) -> Self {
+        let regions = if scope != SearchScope::All && is_latex_source(path) {
+            math_regions(text)
+        } else {
+            Vec::new()
+        };
+        Self { scope, regions }
+    }
+
+    pub fn keeps(&self, at: usize) -> bool {
+        match self.scope {
+            SearchScope::All => true,
+            SearchScope::Math => in_math(&self.regions, at),
+            SearchScope::Text => !in_math(&self.regions, at),
+        }
+    }
 }
 
 /// One occurrence. Lines are 1-based; columns count UTF-16 code units, like the editor.
@@ -201,8 +251,14 @@ fn head(s: &str, max: usize) -> String {
     }
 }
 
-/// Occurrences of `re` in `text`, at most `limit` (empty matches are skipped).
-pub fn find_in_text(re: &Regex, text: &str, limit: usize) -> Vec<SearchMatch> {
+/// Occurrences of `re` in `text` that `filter` keeps, at most `limit` (empty matches are
+/// skipped).
+pub fn find_in_text(
+    re: &Regex,
+    text: &str,
+    limit: usize,
+    filter: &ScopeFilter,
+) -> Vec<SearchMatch> {
     // Byte offset where each line starts.
     let starts: Vec<usize> = std::iter::once(0)
         .chain(text.match_indices('\n').map(|(i, _)| i + 1))
@@ -217,7 +273,7 @@ pub fn find_in_text(re: &Regex, text: &str, limit: usize) -> Vec<SearchMatch> {
         }
     };
     re.find_iter(text)
-        .filter(|m| !m.is_empty())
+        .filter(|m| !m.is_empty() && filter.keeps(m.start()))
         .take(limit)
         .map(|m| {
             let line = line_at(m.start());
@@ -250,7 +306,8 @@ pub fn search(root: &Path, query: &SearchQuery) -> AppResult<SearchResults> {
             continue;
         };
         // One more than allowed tells that there are more.
-        let mut matches = find_in_text(&re, &text, MAX_MATCHES + 1 - total);
+        let filter = ScopeFilter::new(query.scope, &rel, &text);
+        let mut matches = find_in_text(&re, &text, MAX_MATCHES + 1 - total, &filter);
         if total + matches.len() > MAX_MATCHES {
             matches.truncate(MAX_MATCHES - total);
             results.truncated = true;
@@ -280,18 +337,28 @@ pub fn replace(
     for rel in paths {
         // Validates the path (inside the project, not `.jutex/`) like opening it would.
         let file = read_text(root, rel)?;
-        let count = re
-            .find_iter(&file.content)
-            .filter(|m| !m.is_empty())
-            .count();
+        let filter = ScopeFilter::new(query.scope, rel, &file.content);
+        let mut changed = String::with_capacity(file.content.len());
+        let mut last = 0;
+        let mut count = 0;
+        for caps in re.captures_iter(&file.content) {
+            let m = caps.get(0).expect("group 0 is the match");
+            if m.is_empty() || !filter.keeps(m.start()) {
+                continue;
+            }
+            changed.push_str(&file.content[last..m.start()]);
+            if query.regex {
+                caps.expand(replacement, &mut changed);
+            } else {
+                changed.push_str(replacement);
+            }
+            last = m.end();
+            count += 1;
+        }
         if count == 0 {
             continue;
         }
-        let changed = if query.regex {
-            re.replace_all(&file.content, replacement)
-        } else {
-            re.replace_all(&file.content, NoExpand(replacement))
-        };
+        changed.push_str(&file.content[last..]);
         write_text(root, rel, &changed)?;
         done.push(Replaced {
             path: rel.clone(),
@@ -312,14 +379,20 @@ mod tests {
             regex: false,
             case_sensitive: false,
             whole_word: false,
+            scope: SearchScope::All,
         }
     }
 
     fn found(q: &SearchQuery, text: &str) -> Vec<(usize, usize, usize, usize)> {
-        find_in_text(&compile(q).unwrap(), text, 100)
-            .into_iter()
-            .map(|m| (m.line, m.column, m.end_line, m.end_column))
-            .collect()
+        find_in_text(
+            &compile(q).unwrap(),
+            text,
+            100,
+            &ScopeFilter::new(q.scope, "a.tex", text),
+        )
+        .into_iter()
+        .map(|m| (m.line, m.column, m.end_line, m.end_column))
+        .collect()
     }
 
     fn project(files: &[(&str, &[u8])]) -> TempDir {
@@ -356,7 +429,12 @@ mod tests {
             found(&query("tensión"), text),
             [(1, 4, 1, 11), (2, 0, 2, 7)]
         );
-        let m = &find_in_text(&compile(&query("tensión")).unwrap(), text, 10)[0];
+        let m = &find_in_text(
+            &compile(&query("tensión")).unwrap(),
+            text,
+            10,
+            &ScopeFilter::new(SearchScope::All, "a.tex", text),
+        )[0];
         assert_eq!(
             (m.before.as_str(), m.text.as_str(), m.after.as_str()),
             ("é𝐱 ", "tensión", "")
@@ -427,7 +505,12 @@ mod tests {
     #[test]
     fn contexto_recortado_en_lineas_largas() {
         let line = format!("{}campo{}", "a".repeat(100), "b".repeat(300));
-        let m = &find_in_text(&compile(&query("campo")).unwrap(), &line, 10)[0];
+        let m = &find_in_text(
+            &compile(&query("campo")).unwrap(),
+            &line,
+            10,
+            &ScopeFilter::new(SearchScope::All, "a.tex", &line),
+        )[0];
         assert_eq!(m.before.chars().count(), CONTEXT_BEFORE + 1);
         assert!(m.before.starts_with('…'));
         assert_eq!(m.text, "campo");
@@ -547,5 +630,167 @@ mod tests {
                 "{bad}"
             );
         }
+    }
+
+    const DOC: &str = "Sea $x$ y \\[ x^2 \\] con x.\n% $x$ comentado\n\\begin{align*} x \\end{align*}\nCuesta \\$x";
+
+    fn scoped(text: &str, scope: SearchScope) -> SearchQuery {
+        SearchQuery {
+            scope,
+            case_sensitive: true,
+            ..query(text)
+        }
+    }
+
+    /// (line, column) of each match of `q` in `text`, as file `path`.
+    fn cols(q: &SearchQuery, path: &str, text: &str) -> Vec<(usize, usize)> {
+        find_in_text(
+            &compile(q).unwrap(),
+            text,
+            100,
+            &ScopeFilter::new(q.scope, path, text),
+        )
+        .into_iter()
+        .map(|m| (m.line, m.column))
+        .collect()
+    }
+
+    #[test]
+    fn en_formulas_solo_lo_de_adentro() {
+        assert_eq!(
+            cols(&scoped("x", SearchScope::Math), "a.tex", DOC),
+            [(1, 5), (1, 13), (3, 15)]
+        );
+    }
+
+    #[test]
+    fn fuera_de_formulas_incluye_comentarios_y_dolar_escapado() {
+        assert_eq!(
+            cols(&scoped("x", SearchScope::Text), "a.tex", DOC),
+            [(1, 24), (2, 3), (4, 9)]
+        );
+    }
+
+    #[test]
+    fn todo_como_antes() {
+        assert_eq!(
+            cols(&scoped("x", SearchScope::All), "a.tex", DOC),
+            [(1, 5), (1, 13), (1, 24), (2, 3), (3, 15), (4, 9)]
+        );
+    }
+
+    #[test]
+    fn archivos_que_no_son_latex_no_tienen_formulas() {
+        let text = "sea $x$";
+        assert!(cols(&scoped("x", SearchScope::Math), "notas.txt", text).is_empty());
+        assert_eq!(
+            cols(&scoped("x", SearchScope::Text), "notas.txt", text),
+            [(1, 5)]
+        );
+        assert_eq!(
+            cols(&scoped("x", SearchScope::Math), "refs.BIB", text),
+            [(1, 5)]
+        );
+        assert!(is_latex_source("cap/uno.tex") && is_latex_source("estilo.STY"));
+        assert!(!is_latex_source("datos.csv") && !is_latex_source("tex"));
+    }
+
+    #[test]
+    fn letras_de_varios_bytes_antes_de_la_formula() {
+        assert_eq!(
+            cols(&scoped("x", SearchScope::Math), "a.tex", "é ñ $x$ x"),
+            [(1, 5)]
+        );
+        assert_eq!(
+            cols(&scoped("x", SearchScope::Text), "a.tex", "é ñ $x$ x"),
+            [(1, 8)]
+        );
+    }
+
+    #[test]
+    fn se_clasifica_por_donde_empieza() {
+        let q = SearchQuery {
+            regex: true,
+            ..scoped(r"x\$ y", SearchScope::Math)
+        };
+        assert_eq!(cols(&q, "a.tex", "a $x$ y"), [(1, 3)]);
+        let dir = project(&[("a.tex", b"a $x$ y")]);
+        replace(dir.path(), &q, "Z", &["a.tex".into()]).unwrap();
+        assert_eq!(
+            fs::read_to_string(dir.path().join("a.tex")).unwrap(),
+            "a $Z"
+        );
+    }
+
+    #[test]
+    fn el_limite_cuenta_solo_lo_filtrado() {
+        let content = format!("{}\n\n$x$", "x ".repeat(MAX_MATCHES + 10));
+        let dir = project(&[("a.tex", content.as_bytes())]);
+        let found = search(dir.path(), &scoped("x", SearchScope::Math)).unwrap();
+        assert_eq!(found.files.len(), 1);
+        assert_eq!(found.files[0].matches.len(), 1);
+        assert!(!found.truncated);
+    }
+
+    #[test]
+    fn reemplazo_filtrado_y_con_grupos() {
+        let dir = project(&[
+            ("a.tex", b"x $x$\r\nx $x$\r\n"),
+            ("b.tex", b"x sin formulas"),
+        ]);
+        let files = ["a.tex".to_owned(), "b.tex".to_owned()];
+        let done = replace(dir.path(), &scoped("x", SearchScope::Math), "y", &files).unwrap();
+        assert_eq!(
+            done,
+            [Replaced {
+                path: "a.tex".into(),
+                count: 2
+            }]
+        );
+        assert_eq!(
+            fs::read(dir.path().join("a.tex")).unwrap(),
+            b"x $y$\r\nx $y$\r\n"
+        );
+        let groups = SearchQuery {
+            regex: true,
+            ..scoped("(x)", SearchScope::Text)
+        };
+        let done = replace(dir.path(), &groups, "[$1]", &["a.tex".into()]).unwrap();
+        assert_eq!(done[0].count, 2);
+        assert_eq!(
+            fs::read(dir.path().join("a.tex")).unwrap(),
+            b"[x] $y$\r\n[x] $y$\r\n"
+        );
+    }
+
+    #[test]
+    fn la_consulta_llega_de_la_interfaz_con_su_alcance() {
+        // As `invoke("search_project", { id, query })` sends it (store/types.ts).
+        let q: SearchQuery = serde_json::from_str(
+            r#"{"text":"x","regex":false,"caseSensitive":true,"wholeWord":false,"scope":"math"}"#,
+        )
+        .unwrap();
+        assert_eq!(q.scope, SearchScope::Math);
+        let q: SearchQuery = serde_json::from_str(r#"{"text":"x","scope":"text"}"#).unwrap();
+        assert_eq!(q.scope, SearchScope::Text);
+        // Without it (an older frontend), everywhere.
+        let q: SearchQuery = serde_json::from_str(r#"{"text":"x"}"#).unwrap();
+        assert_eq!(q.scope, SearchScope::All);
+        assert!(serde_json::from_str::<SearchQuery>(r#"{"text":"x","scope":"otro"}"#).is_err());
+    }
+
+    #[test]
+    fn el_filtro_es_rapido_con_muchas_formulas() {
+        // 8000 formulas (~400 KB): asking about every byte must not walk every region.
+        let text = "texto $e^x$ y algo más ".repeat(8000);
+        let filter = ScopeFilter::new(SearchScope::Math, "a.tex", &text);
+        let start = std::time::Instant::now();
+        let kept = (0..text.len()).filter(|&at| filter.keeps(at)).count();
+        assert_eq!(kept, 8000 * "$e^x$".len());
+        assert!(
+            start.elapsed() < std::time::Duration::from_millis(300),
+            "{:?}",
+            start.elapsed()
+        );
     }
 }

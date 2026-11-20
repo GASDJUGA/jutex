@@ -7,6 +7,7 @@
 import { EditorSelection, EditorState, type TransactionSpec } from "@codemirror/state";
 import { keymap } from "@codemirror/view";
 import { addToPreamble } from "../lib/packages/preamble";
+import { insertTable, tableRangeAt } from "./table";
 
 const FIGURE = /^figure\*?$/;
 const GRAPHICS = "\\includegraphics[width=0.8\\linewidth]";
@@ -95,7 +96,7 @@ export function figureSpec(
 
 /**
  * Typing the `}` that closes `\begin{name`: the environment's `\end` (the whole figure for
- * `figure`). The `}` typed takes the place of the one closed automatically after `{`: the
+ * `figure`, the whole table for `table`). The `}` typed takes the place of the one closed automatically after `{`: the
  * language package's own handler added another and left `\end{itemize}}`.
  */
 export const beginOnCloseBrace = keymap.of([
@@ -107,6 +108,11 @@ export const beginOnCloseBrace = keymap.of([
       if (!range.empty || state.selection.ranges.length > 1) return false;
       const closing = state.sliceDoc(range.head, range.head + 1) === "}" ? 1 : 0;
       const to = range.head + closing;
+      const table = tableRangeAt(state, range.head, "");
+      if (table) {
+        insertTable(view, table.from, to, table.name);
+        return true;
+      }
       const spec = figureSpec(state, range.head, to, "") ?? environmentEnd(state, range.head, to);
       if (!spec) return false;
       view.dispatch(spec);

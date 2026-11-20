@@ -24,6 +24,7 @@ import type { UserEnvironment } from "../lib/macros/environments";
 import type { PackageDefinition } from "../store/types";
 import { figureSpec } from "./figure";
 import { mathRegionInState } from "./mathRegion";
+import { insertTable, TABLE, tableRangeAt } from "./table";
 
 /** Commands that take an environment name: inserted with braces, then the names are listed. */
 const ENVIRONMENT_COMMANDS = new Set(["\\begin", "\\end"]);
@@ -41,6 +42,28 @@ function withBraces(option: Completion): Completion {
       });
       // The environment names, right away (the list just closed for this completion).
       setTimeout(() => startCompletion(view));
+    },
+  };
+}
+
+/**
+ * «table» from the list of environments, or the package's `\begin{table}` shortcut: the
+ * whole table (see table.ts).
+ */
+function withTableBody(option: Completion): Completion {
+  return {
+    ...option,
+    apply: (view: EditorView, completion: Completion, from: number, to: number) => {
+      if (option.label.startsWith("\\")) {
+        insertTable(view, from, to, "table");
+        return;
+      }
+      const begin = tableRangeAt(view.state, from, option.label);
+      const closing = view.state.sliceDoc(to, to + 1) === "}" ? 1 : 0;
+      if (begin) insertTable(view, begin.from, to + closing, begin.name);
+      // Elsewhere (`\end{tab`…), the package's own completion of the name.
+      else if (typeof option.apply === "function") option.apply(view, completion, from, to);
+      else view.dispatch({ changes: { from, to, insert: option.apply ?? option.label } });
     },
   };
 }
@@ -122,7 +145,9 @@ export function environmentBraces(source: CompletionSource): CompletionSource {
           ? withBraces(o)
           : /^figure\*?$/.test(o.label)
             ? withFigureBody(o)
-            : o;
+            : TABLE.test(o.label) || o.label === "\\begin{table}"
+              ? withTableBody(o)
+              : o;
         if (!inMath) return option;
         // Inside a formula, `\begin`/`\end` alone (with the list of environments) come
         // before the `\begin{align}`… shortcuts (pedido del usuario).

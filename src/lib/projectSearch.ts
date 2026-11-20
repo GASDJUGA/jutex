@@ -2,7 +2,8 @@
  * The project search of the browser preview (mock backend), with the same results as
  * src-tauri/src/files/search.rs. Regular expressions use JavaScript syntax here.
  */
-import type { SearchMatch, SearchQuery, SearchResults } from "../store/types";
+import type { SearchMatch, SearchQuery, SearchResults, SearchScope } from "../store/types";
+import { mathRegions } from "./latexMath/regions";
 
 export const MAX_MATCHES = 5000;
 const CONTEXT_BEFORE = 16;
@@ -14,6 +15,34 @@ const AUX =
 
 /** Files of LaTeX tools: not searched. */
 export const isAuxiliary = (path: string) => AUX.test(path);
+
+/** LaTeX sources, where formulas are looked for (like `is_latex_source` in Rust). */
+export const isLatexSource = (path: string) => /\.(tex|ltx|sty|cls|bib)$/i.test(path);
+
+/**
+ * Which matches of one file the search keeps, by the offset where each starts: in a formula
+ * (delimiters included) or outside them. Files that are not LaTeX have no formulas.
+ */
+export function scopeFilter(
+  scope: SearchScope,
+  path: string,
+  text: string,
+): (offset: number) => boolean {
+  if (scope === "all") return () => true;
+  const regions = isLatexSource(path) ? mathRegions(text) : [];
+  // Regions are in order and do not overlap: a binary search for the first ending after `at`.
+  const inMath = (at: number) => {
+    let lo = 0;
+    let hi = regions.length;
+    while (lo < hi) {
+      const mid = (lo + hi) >> 1;
+      if (regions[mid].to <= at) lo = mid + 1;
+      else hi = mid;
+    }
+    return lo < regions.length && regions[lo].from <= at;
+  };
+  return scope === "math" ? inMath : (at) => !inMath(at);
+}
 
 /** The query as a global regular expression; throws a message if it is not valid. */
 export function searchRegExp(query: SearchQuery): RegExp {
@@ -37,8 +66,13 @@ function head(s: string, max: number) {
   return all.length <= max ? s : `${all.slice(0, max).join("")}…`;
 }
 
-/** Occurrences of `re` in `text` (empty matches skipped), at most `limit`. */
-export function findInText(re: RegExp, text: string, limit: number): SearchMatch[] {
+/** Occurrences of `re` in `text` that `keep` accepts (empty matches skipped), at most `limit`. */
+export function findInText(
+  re: RegExp,
+  text: string,
+  limit: number,
+  keep: (offset: number) => boolean = () => true,
+): SearchMatch[] {
   const starts = [0];
   for (let i = text.indexOf("\n"); i >= 0; i = text.indexOf("\n", i + 1)) starts.push(i + 1);
   const lineAt = (offset: number) => {
@@ -53,7 +87,7 @@ export function findInText(re: RegExp, text: string, limit: number): SearchMatch
   const matches: SearchMatch[] = [];
   for (const m of text.matchAll(re)) {
     if (matches.length >= limit) break;
-    if (m[0].length === 0) continue;
+    if (m[0].length === 0 || !keep(m.index)) continue;
     const start = m.index;
     const end = start + m[0].length;
     const line = lineAt(start);
@@ -79,7 +113,8 @@ export function searchFiles(files: [string, string][], query: SearchQuery): Sear
   let total = 0;
   for (const [path, content] of [...files].sort(([a], [b]) => (a < b ? -1 : 1))) {
     if (isAuxiliary(path) || path.split("/").some((part) => part.startsWith("."))) continue;
-    const matches = findInText(re, content, MAX_MATCHES + 1 - total);
+    const keep = scopeFilter(query.scope, path, content);
+    const matches = findInText(re, content, MAX_MATCHES + 1 - total, keep);
     if (total + matches.length > MAX_MATCHES) {
       matches.length = MAX_MATCHES - total;
       results.truncated = true;
@@ -91,13 +126,18 @@ export function searchFiles(files: [string, string][], query: SearchQuery): Sear
   return results;
 }
 
-/** `text` with the occurrences replaced (`$1` groups only for regular expressions). */
-export function replaceText(text: string, query: SearchQuery, replacement: string) {
+/**
+ * `text` (the file `path`) with the occurrences in the query's scope replaced (`$1` groups
+ * only for regular expressions).
+ */
+export function replaceText(text: string, query: SearchQuery, replacement: string, path: string) {
   const re = searchRegExp(query);
+  const keep = scopeFilter(query.scope, path, text);
   let count = 0;
   const result = text.replace(re, (...args) => {
     const match = args[0] as string;
-    if (match.length === 0) return match;
+    const at = args.find((a, i) => i > 0 && typeof a === "number") as number;
+    if (match.length === 0 || !keep(at)) return match;
     count++;
     if (!query.regex) return replacement;
     // replace() passes the match, its groups, the offset (a number), the text and, with

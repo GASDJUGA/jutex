@@ -4,6 +4,17 @@ What's new in each version compared with the previous one, from newest to oldest
 of each release (with how to install it) are in `docs/releases/<version>.md`.
 Up to 1.2.2 it was called LibreTeX.
 
+## Unreleased
+
+### New
+
+- `\begin{table}` completes the whole table: a centered 2×2 `tabular` with rules, caption and
+  label. The cursor starts in the first cell and Tab moves through the cells, the caption and
+  the label. The same when closing `\begin{table` by hand, picking «table» from the list, or
+  using the `\begin{table}` shortcut.
+- Search in project can look only in formulas or only outside them (All · In formulas ·
+  Outside); Replace all and Replace in this file follow the choice.
+
 ## 2.2.0 — 2026-11-18
 
 ### New

@@ -848,7 +848,7 @@ export function createMockBackend(
         const { content } = files(id).read(path);
         let changed;
         try {
-          changed = replaceText(content, query, replacement);
+          changed = replaceText(content, query, replacement, path);
         } catch (error) {
           return fail("invalidSearch", error instanceof Error ? error.message : String(error));
         }
