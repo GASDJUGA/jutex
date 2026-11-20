@@ -14,7 +14,7 @@ import { notifyError, notifyInfo } from "../../lib/errors";
 import { keyLabel } from "../../lib/platform";
 import { useProjectView } from "../../store/project";
 import { useSearch } from "../../store/search";
-import type { SearchMatch } from "../../store/types";
+import type { SearchMatch, SearchScope } from "../../store/types";
 import { Dialog } from "../common/Dialog";
 import { PanelHeader } from "../common/PanelHeader";
 
@@ -39,6 +39,66 @@ function Toggle(props: {
     >
       {props.children}
     </button>
+  );
+}
+
+const SCOPES: SearchScope[] = ["all", "math", "text"];
+
+/**
+ * «Todo / En fórmulas / Fuera de fórmulas»: where a match may start. A radio group (arrow
+ * keys move the choice); «Fuera» is short on the button, complete in its name.
+ */
+function ScopePicker(props: { value: SearchScope; onChange: (scope: SearchScope) => void }) {
+  const t = useT();
+  const buttons = useRef<(HTMLButtonElement | null)[]>([]);
+  const label = (scope: SearchScope) =>
+    scope === "all"
+      ? t("projectSearch.scopeAll")
+      : scope === "math"
+        ? t("projectSearch.scopeMath")
+        : t("projectSearch.scopeText");
+  const move = (from: number, step: number) => {
+    const next = (from + step + SCOPES.length) % SCOPES.length;
+    props.onChange(SCOPES[next]);
+    buttons.current[next]?.focus();
+  };
+  return (
+    <div
+      role="radiogroup"
+      aria-label={t("projectSearch.scope")}
+      className="flex overflow-hidden rounded border border-line bg-topbar text-xs"
+    >
+      {SCOPES.map((scope, i) => {
+        const checked = props.value === scope;
+        return (
+          <button
+            key={scope}
+            ref={(el) => {
+              buttons.current[i] = el;
+            }}
+            type="button"
+            role="radio"
+            aria-checked={checked}
+            aria-label={label(scope)}
+            title={label(scope)}
+            tabIndex={checked ? 0 : -1}
+            onClick={() => props.onChange(scope)}
+            onKeyDown={(e) => {
+              if (e.key === "ArrowRight" || e.key === "ArrowDown") {
+                e.preventDefault();
+                move(i, 1);
+              } else if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
+                e.preventDefault();
+                move(i, -1);
+              }
+            }}
+            className="min-w-0 flex-1 truncate border-l border-line px-1 py-1 text-fg-muted first:border-l-0 hover:bg-hover hover:text-fg aria-checked:bg-accent/30 aria-checked:text-fg"
+          >
+            {scope === "text" ? t("projectSearch.scopeTextShort") : label(scope)}
+          </button>
+        );
+      })}
+    </div>
   );
 }
 
@@ -158,6 +218,7 @@ export function SearchPanel() {
             <ReplaceAll size={15} aria-hidden />
           </button>
         </div>
+        <ScopePicker value={query.scope} onChange={(scope) => setQuery({ scope })} />
         {query.regex && <p className="text-[11px] text-fg-muted">{t("projectSearch.regexHint")}</p>}
       </div>
 

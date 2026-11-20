@@ -157,6 +157,46 @@ describe("Buscar en el proyecto", () => {
     expect((await backend.readTextFile("tesis", "main.tex")).content).toMatch(/Introducción/);
   });
 
+  it("buscar solo en fórmulas o fuera de ellas", async () => {
+    await backend.writeTextFile("tesis", "formulas.tex", "qq fuera $qq$ y \\[ qq \\]\n");
+    const panel = await openSearch();
+    await searchFor(panel, "qq");
+    expect(await within(panel).findByText("3 resultados en 1 archivo")).toBeInTheDocument();
+    const group = within(panel).getByRole("radiogroup", { name: "Dónde buscar" });
+    expect(within(group).getByRole("radio", { name: "Todo" })).toHaveAttribute(
+      "aria-checked",
+      "true",
+    );
+    fireEvent.click(within(group).getByRole("radio", { name: "En fórmulas" }));
+    expect(await within(panel).findByText("2 resultados en 1 archivo")).toBeInTheDocument();
+    const outside = within(group).getByRole("radio", { name: "Fuera de fórmulas" });
+    expect(outside).toHaveTextContent("Fuera");
+    fireEvent.click(outside);
+    expect(await within(panel).findByText("1 resultado en 1 archivo")).toBeInTheDocument();
+    expect(outside).toHaveAttribute("aria-checked", "true");
+  });
+
+  it("reemplazar en un archivo respeta el alcance", async () => {
+    await backend.writeTextFile("tesis", "formulas.tex", "qq fuera $qq$ y \\[ qq \\]\n");
+    const panel = await openSearch();
+    await searchFor(panel, "qq");
+    await within(panel).findByText("3 resultados en 1 archivo");
+    fireEvent.click(within(panel).getByRole("radio", { name: "En fórmulas" }));
+    await within(panel).findByText("2 resultados en 1 archivo");
+    fireEvent.change(within(panel).getByRole("textbox", { name: "Reemplazar por…" }), {
+      target: { value: "X" },
+    });
+    fireEvent.click(
+      within(panel).getByRole("button", { name: "Reemplazar en este archivo: formulas.tex" }),
+    );
+    const dialog = await screen.findByRole("dialog");
+    fireEvent.click(within(dialog).getByRole("button", { name: "Reemplazar todo" }));
+    await within(panel).findByText("Sin resultados.");
+    expect((await backend.readTextFile("tesis", "formulas.tex")).content).toBe(
+      "qq fuera $X$ y \\[ X \\]\n",
+    );
+  });
+
   it("con texto seleccionado en el editor, Ctrl+Shift+F lo busca", async () => {
     render(<Project projectId="tesis" />);
     await screen.findByText(/Este documento es un ejemplo/);
