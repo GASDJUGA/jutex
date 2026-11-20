@@ -237,7 +237,8 @@ Debe replicar la distribución de la imagen de referencia del usuario (estilo Ov
 - CodeMirror con: números de línea, plegado de entornos (`\begin…\end`) y secciones,
   resaltado de sintaxis, línea activa resaltada, cierre automático de `{}`, `[]`, `$` y de
   entornos, autocompletado (comandos, entornos, `\ref` desde `\label` del proyecto, `\cite`
-  desde los `.bib`, rutas en `\includegraphics`/`\input`), comentar con `Ctrl+/`, revisión
+  desde los `.bib`, rutas en `\includegraphics`/`\input`; `\begin{figure}` y `\begin{table}`
+  traen todo lo que necesitan, la tabla con Tab de celda en celda), comentar con `Ctrl+/`, revisión
   ortográfica subrayada que ignora comandos, matemáticas y argumentos de `\ref`/`\label`/
   `\cite`.
 - Diagnósticos de compilación como marcadores en el margen y subrayados en la línea.
@@ -265,7 +266,8 @@ Debe replicar la distribución de la imagen de referencia del usuario (estilo Ov
   Recompilar va en la barra superior y descargar el PDF está en Exportar.
 - Atajos: `Ctrl+S` guardar (no compila), `Ctrl+Enter` compilar (lo usa el usuario a diario), `Ctrl+Shift+S` descargar el PDF
   compilado (guardar como…), `Ctrl+B`/`Ctrl+I`, `Ctrl+F` buscar, `Ctrl+Shift+F` buscar en el
-  proyecto, `Ctrl+/` comentar, doble clic en el PDF salta al código.
+  proyecto (en todo, solo en fórmulas o solo fuera de ellas; reemplazar respeta la elección),
+  `Ctrl+/` comentar, doble clic en el PDF salta al código.
 
 ### 5.3 Compilación
 
@@ -904,8 +906,26 @@ confírmalo con `grep -rnE 'cfg\((not\()?(target_os|unix|windows)' src-tauri/src
 
 ## 11. Estado actual
 
-- Linux: **release 2.2.0 listo para publicar** (2026-11-18, pedido del usuario; rama
-  `release-2.2.0`, sobre la del PR #33 de macOS). Fecha en `CHANGELOG.md`. El borrador `v2.2.0`
+- Linux: **tabla completa y búsqueda en fórmulas** (pedido del usuario el 2026-11-20, para la
+  2.3.0; rama `tabla-y-busqueda-en-formulas`, diseño
+  `docs/superpowers/specs/2026-11-20-tabla-y-busqueda-en-formulas-design.md`, plan
+  `docs/superpowers/plans/2026-11-20-tabla-y-busqueda-en-formulas.md`). (1) `\begin{table}`
+  (escribiendo la `}`, eligiendo «table» de la lista o con el atajo `\begin{table}` del paquete,
+  que traía `header1…`) da una tabla 2 × 2 con `\centering`, `tabular` `{|c|c|}`, `\hline`,
+  `\caption` y `\label{tab:}`; el cursor queda en la primera celda y Tab recorre las celdas, el
+  caption y el label (`editor/table.ts`, snippet de CodeMirror; también `table*`). (2) «Buscar
+  en el proyecto» con un selector Todo · En fórmulas · Fuera (`scope` en `SearchQuery`): una
+  coincidencia cuenta por dónde empieza, con los delimitadores como parte de la fórmula;
+  comentarios y verbatim son «fuera»; solo `.tex`/`.ltx`/`.sty`/`.cls`/`.bib` tienen fórmulas.
+  El detector de `lib/latexMath/regions.ts` se portó a Rust (`files/math_regions.rs`) y los
+  dos leen los mismos casos (`lib/latexMath/cases.json`); reemplazar respeta el alcance (con
+  «Todo», las coincidencias vacías de una expresión regular ya no se reemplazan, como no se
+  contaban). Probado: tests (Rust 308, vitest 710), la vista previa en Chromium y en WebKitGTK
+  (Xvfb): `v` en la tesis de ejemplo da 14 = 8 en fórmulas + 6 fuera; la tabla con Tab. Sin
+  probar por el usuario.
+- Linux: **release 2.2.0 publicado** (2026-11-18, confirmado por el usuario):
+  https://github.com/GASDJUGA/jutex/releases/tag/v2.2.0, tag `v2.2.0` en `27f904a` (PR #34).
+  Rama `release-2.2.0`, sobre la del PR #33 de macOS. Fecha en `CHANGELOG.md`. El release
   tiene los cuatro archivos:
   - `JuTeX_2.2.0_amd64.AppImage` (SHA-256 `56c1b6da…`) y `jutex-2.2.0-1-x86_64.pkg.tar.zst`
     (`3f5577ac…`, con la copia del PKGBUILD apuntando a `8c3d6ef`), construidos desde
@@ -914,10 +934,8 @@ confírmalo con `grep -rnE 'cfg\((not\()?(target_os|unix|windows)' src-tauri/src
     construidos desde `601511c`. Revisados desde Linux: versión 2.2.0 (arm64, macOS 13 o
     más; x64), plantillas y diccionarios idénticos a los del repositorio.
 
-  Entre `8c3d6ef` y este PR solo cambian un test (`fig[1].png`, PR #32) y `CLAUDE.md`: la app
-  es la misma. Falta, con confirmación del usuario: fusionar este PR, fijar el commit del
-  borrador (`gh release edit v2.2.0 --target <sha> --notes-file docs/releases/2.2.0.md`) y
-  publicarlo.
+  Entre `8c3d6ef` y `27f904a` solo cambian un test (`fig[1].png`, PR #32) y documentación: la
+  app es la misma.
 - macOS: **2.2.0 revisada en el Mac** (2026-11-18, pedido del usuario; `main` en `601511c`:
   PR #30, #31 y #32). Pasan `pnpm lint`/`typecheck`/`test` (700) y `cargo fmt`/`clippy`/`test`
   (302). Los 37 tests del respaldo, también los de la fusión con conflictos, corren con el
@@ -3026,3 +3044,5 @@ confírmalo con `grep -rnE 'cfg\((not\()?(target_os|unix|windows)' src-tauri/src
 | 2026-11-16 | En Wayland, módulo de entrada simple de GTK salvo que haya un método de entrada o el usuario elija otro | Con el text-input de KWin las teclas llegaban tarde a WebKitGTK; el simple conserva teclas muertas y Compose. Con IBus/fcitx/teclado virtual hace falta el de la sesión: se detecta y se deja; `JUTEX_SYSTEM_IM=1` lo fuerza |
 | 2026-11-17 | Traer cambios une con el `git merge` del sistema y deja los conflictos con sus marcas en los archivos; la interfaz los dibuja como recuadros con botones | Elegido por el usuario (A y C): es el estado estándar de Git (sobrevive a cerrar JuTeX y lo entiende cualquier herramienta), encaja con el editor y Git hace lo difícil |
 | 2026-11-17 | Un proyecto duplicado conserva su `.git` sin `origin` | Pedido del usuario: la copia subía al repositorio del original |
+| 2026-11-20 | El detector de fórmulas también en Rust (`files/math_regions.rs`), con los casos de prueba en un JSON que leen los dos | La búsqueda y el reemplazo corren en Rust; filtrar en la interfaz obligaba a leer los archivos de nuevo y reemplazar por posiciones sueltas. Con los mismos casos, si una copia cambia y la otra no, un test falla |
+| 2026-11-20 | El atajo `\begin{table}` del paquete de LaTeX da nuestra tabla, no la suya | Pedido del usuario: las tres formas de llegar a una tabla dan lo mismo, sin textos de relleno en inglés |

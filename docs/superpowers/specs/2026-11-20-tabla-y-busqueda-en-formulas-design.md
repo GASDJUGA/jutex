@@ -139,7 +139,7 @@ de una fórmula cuenta como fórmula. Lo que está en comentarios o en verbatim 
 **Rust.**
 
 - Nuevo módulo `src-tauri/src/files/math_regions.rs` con `math_regions(text: &str) ->
-  Vec<MathRegion>` (rangos en bytes; todos los delimitadores son ASCII) y las mismas reglas
+Vec<MathRegion>` (rangos en bytes; todos los delimitadores son ASCII) y las mismas reglas
   que `regions.ts`. Solo hace falta `from`/`to` para filtrar, pero se portan también
   `body_from`/`body_to`, `display`, `env` y `unclosed` para poder comprobar los casos
   compartidos completos.

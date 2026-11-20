@@ -54,12 +54,14 @@ con tres puntos de entrada.
 ### Task 1: Detector de fórmulas en Rust con los casos compartidos
 
 **Files:**
+
 - Create: `src/lib/latexMath/cases.json`
 - Modify: `src/lib/latexMath/cases.ts`
 - Create: `src-tauri/src/files/math_regions.rs`
 - Modify: `src-tauri/src/files/mod.rs` (agregar `pub mod math_regions;`)
 
 **Interfaces:**
+
 - Produces (Rust, `crate::files::math_regions`):
   - `pub struct MathRegion { pub from: usize, pub to: usize, pub body_from: usize, pub body_to: usize, pub display: bool, pub env: Option<String>, pub unclosed: bool }` (offsets en bytes del texto).
   - `pub fn math_regions(text: &str) -> Vec<MathRegion>`: regiones de primer nivel, en orden.
@@ -68,8 +70,8 @@ con tres puntos de entrada.
   exportando `MathCase`, `MATH_CASES` y `withCursor`, con los mismos nombres.
 
 - [ ] **Step 1: Pasar los casos a JSON.** Mover el contenido de `MATH_CASES` sin cambios a
-  `cases.json`. `cases.ts` lo importa (`import cases from "./cases.json"`, tipado como
-  `MathCase[]`, como hace `lib/languages.ts` con `languages.json`).
+      `cases.json`. `cases.ts` lo importa (`import cases from "./cases.json"`, tipado como
+      `MathCase[]`, como hace `lib/languages.ts` con `languages.json`).
 
 - [ ] **Step 2: Comprobar que nada cambió en TypeScript**
 
@@ -135,11 +137,13 @@ git commit -m "feat(search): math region scanner in Rust, sharing its test cases
 ### Task 2: Alcance de la búsqueda y del reemplazo en Rust
 
 **Files:**
+
 - Modify: `src-tauri/src/files/search.rs`
 - Modify: `src-tauri/src/commands/files.rs`, solo si hace falta para compilar (`SearchQuery` ya
   se deserializa ahí).
 
 **Interfaces:**
+
 - Consumes: `math_regions`, `in_math` (tarea 1).
 - Produces:
   - `#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Deserialize)] #[serde(rename_all = "lowercase")] pub enum SearchScope { #[default] All, Math, Text }`.
@@ -232,6 +236,7 @@ git commit -m "feat(search): limit project search and replace to formulas or out
 ### Task 3: El mismo alcance en la vista previa del navegador
 
 **Files:**
+
 - Modify: `src/store/types.ts` (`SearchQuery`)
 - Modify: `src/lib/projectSearch.ts`
 - Modify: `src/lib/mockBackend.ts` (`replaceInProject` pasa `path`)
@@ -239,6 +244,7 @@ git commit -m "feat(search): limit project search and replace to formulas or out
 - Test: `src/lib/projectSearch.test.ts`
 
 **Interfaces:**
+
 - Consumes: `mathRegions` de `src/lib/latexMath/regions.ts` (ya existe).
 - Produces:
   - `export type SearchScope = "all" | "math" | "text"`; `SearchQuery` gana `scope: SearchScope`.
@@ -250,9 +256,9 @@ git commit -m "feat(search): limit project search and replace to formulas or out
     devuelve `{ text, count }` con solo las reemplazadas.
 
 - [ ] **Step 1: Escribir los tests que fallan.** Usan el mismo `DOC` y los mismos resultados
-  esperados que la tarea 2: líneas y columnas de `en_formulas_solo_lo_de_adentro`,
-  `fuera_de_formulas_incluye_comentarios_y_dolar_escapado`, «é ñ $x$ x» y `.txt`/`.BIB`. Se
-  agrega `replaceText` con `math` y `text`, incluida la expresión regular con `$1`.
+      esperados que la tarea 2: líneas y columnas de `en_formulas_solo_lo_de_adentro`,
+      `fuera_de_formulas_incluye_comentarios_y_dolar_escapado`, «é ñ $x$ x» y `.txt`/`.BIB`. Se
+      agrega `replaceText` con `math` y `text`, incluida la expresión regular con `$1`.
   - `it("en fórmulas o fuera de ellas, como en Rust", …)`
   - `it("el reemplazo respeta el alcance", …)`
 
@@ -262,7 +268,7 @@ Run: `pnpm vitest run src/lib/projectSearch.test.ts`
 Expected: FAIL (`scope` no se aplica / `scopeFilter` no existe).
 
 - [ ] **Step 3: Implementar** según las interfaces. En TypeScript los offsets son índices de
-  cadena (UTF-16), los mismos que usa `mathRegions`.
+      cadena (UTF-16), los mismos que usa `mathRegions`.
 
 - [ ] **Step 4: Ver que pasan**
 
@@ -281,27 +287,29 @@ git commit -m "feat(search): same formula scope in the browser preview's search"
 ### Task 4: Selector «Todo / En fórmulas / Fuera» en el panel
 
 **Files:**
+
 - Modify: `src/components/search/SearchPanel.tsx`
 - Modify: `src/i18n/{es,en,pt,fr,de,it}.json` (bajo `projectSearch`)
 - Test: `src/components/search/SearchPanel.test.tsx`
 
 **Interfaces:**
+
 - Consumes: `SearchScope` (tarea 3), `setQuery({ scope })` del store, que ya vuelve a buscar.
 - Produces: claves `projectSearch.scope`, `scopeAll`, `scopeMath`, `scopeText` y `scopeTextShort`.
 
 Textos exactos:
 
-| clave | es | en | pt | fr | de | it |
-|---|---|---|---|---|---|---|
-| scope | Dónde buscar | Where to search | Onde buscar | Où chercher | Wo suchen | Dove cercare |
-| scopeAll | Todo | All | Tudo | Tout | Alles | Tutto |
-| scopeMath | En fórmulas | In formulas | Em fórmulas | Dans les formules | In Formeln | Nelle formule |
-| scopeText | Fuera de fórmulas | Outside formulas | Fora das fórmulas | Hors des formules | Außerhalb von Formeln | Fuori dalle formule |
-| scopeTextShort | Fuera | Outside | Fora | Hors | Außerhalb | Fuori |
+| clave          | es                | en               | pt                | fr                | de                    | it                  |
+| -------------- | ----------------- | ---------------- | ----------------- | ----------------- | --------------------- | ------------------- |
+| scope          | Dónde buscar      | Where to search  | Onde buscar       | Où chercher       | Wo suchen             | Dove cercare        |
+| scopeAll       | Todo              | All              | Tudo              | Tout              | Alles                 | Tutto               |
+| scopeMath      | En fórmulas       | In formulas      | Em fórmulas       | Dans les formules | In Formeln            | Nelle formule       |
+| scopeText      | Fuera de fórmulas | Outside formulas | Fora das fórmulas | Hors des formules | Außerhalb von Formeln | Fuori dalle formule |
+| scopeTextShort | Fuera             | Outside          | Fora              | Hors              | Außerhalb             | Fuori               |
 
 - [ ] **Step 1: Escribir los tests que fallan** (en `SearchPanel.test.tsx`, con el proyecto
-  «tesis» del backend simulado. Si su texto no tiene una palabra que aparezca a la vez dentro
-  y fuera de una fórmula, se le agrega al proyecto del test con `backend` antes de buscar.)
+      «tesis» del backend simulado. Si su texto no tiene una palabra que aparezca a la vez dentro
+      y fuera de una fórmula, se le agrega al proyecto del test con `backend` antes de buscar.)
   - `it("buscar solo en fórmulas o fuera de ellas", …)`:
     - `getByRole("radiogroup", { name: "Dónde buscar" })` existe, con «Todo» marcado
       (`aria-checked="true"`).
@@ -319,7 +327,7 @@ Expected: FAIL (no hay `radiogroup`).
 
 - [ ] **Step 3: Implementar el selector** debajo de la fila de reemplazo:
   - Un `div role="radiogroup"` con `aria-label={t("projectSearch.scope")}` y tres `button
-    role="radio"` de igual ancho que ocupan la fila, con `aria-checked`.
+role="radio"` de igual ancho que ocupan la fila, con `aria-checked`.
   - Los botones muestran `scopeAll`, `scopeMath` y `scopeTextShort`. `title` y `aria-label`
     llevan el texto completo.
   - Estilo como los `Toggle` actuales (`aria-checked:bg-accent/30`).
@@ -343,12 +351,14 @@ git commit -m "feat(search): All / In formulas / Outside selector in the project
 ### Task 5: Tabla completa al autocompletar
 
 **Files:**
+
 - Create: `src/editor/table.ts`
 - Modify: `src/editor/latexCompletion.ts` (`environmentBraces`)
 - Modify: `src/editor/figure.ts` (`beginOnCloseBrace`)
 - Test: `src/editor/table.test.ts`, `src/editor/latexCompletion.test.ts`
 
 **Interfaces:**
+
 - Produces (`src/editor/table.ts`):
   - `export const TABLE = /^table\*?$/`.
   - `export function tableTemplate(name: string): string`: plantilla de snippet de
@@ -381,7 +391,7 @@ Antes de dar la plantilla por buena, comprobar en la fuente de `@codemirror/auto
 qué secuencias interpreta `snippet()` (`${`, `#{`, `\{`, `\}`) y escaparlas si aparecen.
 
 - [ ] **Step 1: Escribir los tests que fallan.** Usan una vista con `editorExtensions`, como
-  `latexCompletion.test.ts` (el helper `editor()` y `tab` de ese archivo).
+      `latexCompletion.test.ts` (el helper `editor()` y `tab` de ese archivo).
   - `table.test.ts`:
     - `it("cerrar \\begin{table con } trae la tabla completa", …)`: doc `"\\begin{document}\n  \\begin{table|}\n\\end{document}"`, tecla `}` con `runScopeHandlers` → `true`. El texto contiene el esqueleto con sangría de 2 espacios base (`"  \\begin{table}[htbp]\n    \\centering\n    \\begin{tabular}{|c|c|}\n      \\hline\n       & "`…`"  \\end{table}\n\\end{document}"`) y una sola `\end{table}`.
     - `it("Tab recorre las celdas, el caption y el label", …)`: tras el paso anterior se escribe `a`, Tab, `b`, Tab, `c`, Tab, `d`, Tab, `Cap`, Tab, `t1`. Resultado: `"a & b \\\\ \\hline"`, `"c & d \\\\ \\hline"`, `"\\caption{Cap}"` y `"\\label{tab:t1}"`.
@@ -422,6 +432,7 @@ git commit -m "feat(editor): \\begin{table} completes the whole table, with Tab 
 ### Task 6: Verificación en la app, documentación y PR
 
 **Files:**
+
 - Modify: `CHANGELOG.md` (sección `## Unreleased` arriba, en inglés: las dos funciones en «New»)
 - Modify: `CLAUDE.md`:
   - **Estado actual**: la entrada «Linux: release 2.2.0 listo para publicar» pasa a decir
@@ -442,14 +453,14 @@ Expected: todo verde.
   - Captura de cada una. Detener la vista previa al terminar.
 
 - [ ] **Step 3: Probar en WebKitGTK** con `pnpm tauri dev` y un proyecto de prueba (no los
-  del usuario), en Xvfb (`GDK_BACKEND=x11`, HOME temporal):
+      del usuario), en Xvfb (`GDK_BACKEND=x11`, HOME temporal):
   - La búsqueda con alcance usa el backend de Rust.
   - La tabla con Tab.
   - Detener Xvfb con `kill $(pgrep -x Xvfb)`.
 
 - [ ] **Step 4: Commit, push y PR** (título y cuerpo en inglés, con checklist; el cuerpo
-  termina con `🤖 Generated with [Claude Code](https://claude.com/claude-code)`). No se
-  fusiona sin confirmación del usuario.
+      termina con `🤖 Generated with [Claude Code](https://claude.com/claude-code)`). No se
+      fusiona sin confirmación del usuario.
 
 ```bash
 git add CHANGELOG.md CLAUDE.md

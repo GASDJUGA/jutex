@@ -762,4 +762,20 @@ mod tests {
             b"[x] $y$\r\n[x] $y$\r\n"
         );
     }
+
+    #[test]
+    fn la_consulta_llega_de_la_interfaz_con_su_alcance() {
+        // As `invoke("search_project", { id, query })` sends it (store/types.ts).
+        let q: SearchQuery = serde_json::from_str(
+            r#"{"text":"x","regex":false,"caseSensitive":true,"wholeWord":false,"scope":"math"}"#,
+        )
+        .unwrap();
+        assert_eq!(q.scope, SearchScope::Math);
+        let q: SearchQuery = serde_json::from_str(r#"{"text":"x","scope":"text"}"#).unwrap();
+        assert_eq!(q.scope, SearchScope::Text);
+        // Without it (an older frontend), everywhere.
+        let q: SearchQuery = serde_json::from_str(r#"{"text":"x"}"#).unwrap();
+        assert_eq!(q.scope, SearchScope::All);
+        assert!(serde_json::from_str::<SearchQuery>(r#"{"text":"x","scope":"otro"}"#).is_err());
+    }
 }
