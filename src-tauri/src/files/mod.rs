@@ -3,6 +3,7 @@
 
 pub mod images;
 pub mod index;
+pub mod math_regions;
 pub mod search;
 pub mod watch;
 
