@@ -111,18 +111,20 @@ fn comment_end(b: &[u8], at: usize) -> usize {
 
 /// Skips `\verb|…|`, `\lstinline` and `\mintinline` arguments; returns the new index.
 fn skip_inline_verbatim(b: &[u8], name: &str, mut i: usize) -> usize {
-    if name == "mintinline" && b.get(i) == Some(&b'{') {
-        if let Some(brace) = find_from(b, i, b'}') {
-            i = brace + 1;
-        }
+    if name == "mintinline"
+        && b.get(i) == Some(&b'{')
+        && let Some(brace) = find_from(b, i, b'}')
+    {
+        i = brace + 1;
     }
     if b.get(i) == Some(&b'*') {
         i += 1;
     }
-    if name != "verb" && b.get(i) == Some(&b'[') {
-        if let Some(close) = find_from(b, i, b']') {
-            i = close + 1;
-        }
+    if name != "verb"
+        && b.get(i) == Some(&b'[')
+        && let Some(close) = find_from(b, i, b']')
+    {
+        i = close + 1;
     }
     let Some(&delimiter) = b.get(i) else {
         return i;
@@ -187,13 +189,13 @@ fn find_closer(text: &str, from: usize, closer: &Closer) -> Option<(usize, usize
                         if env_tag(text, i, "begin").is_some_and(|(n, _)| n == *name) {
                             nested += 1;
                         }
-                        if let Some((n, end)) = env_tag(text, i, "end") {
-                            if n == *name {
-                                if nested == 0 {
-                                    return Some((i, end));
-                                }
-                                nested -= 1;
+                        if let Some((n, end)) = env_tag(text, i, "end")
+                            && n == *name
+                        {
+                            if nested == 0 {
+                                return Some((i, end));
                             }
+                            nested -= 1;
                         }
                     }
                     _ => {}
