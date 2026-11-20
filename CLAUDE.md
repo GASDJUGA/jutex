@@ -920,7 +920,7 @@ confírmalo con `grep -rnE 'cfg\((not\()?(target_os|unix|windows)' src-tauri/src
   El detector de `lib/latexMath/regions.ts` se portó a Rust (`files/math_regions.rs`) y los
   dos leen los mismos casos (`lib/latexMath/cases.json`); reemplazar respeta el alcance (con
   «Todo», las coincidencias vacías de una expresión regular ya no se reemplazan, como no se
-  contaban). Probado: tests (Rust 308, vitest 710), la vista previa en Chromium y en WebKitGTK
+  contaban). Probado: tests (Rust 309, vitest 712), la vista previa en Chromium y en WebKitGTK
   (Xvfb): `v` en la tesis de ejemplo da 14 = 8 en fórmulas + 6 fuera; la tabla con Tab. Sin
   probar por el usuario.
 - Linux: **release 2.2.0 publicado** (2026-11-18, confirmado por el usuario):

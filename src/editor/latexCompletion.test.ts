@@ -191,6 +191,22 @@ describe("autocompletado de LaTeX", () => {
     expect(text(v).match(/\\begin\{table\}/g)).toHaveLength(1);
   });
 
+  it("elegir table en \\end{ sigue cerrando como antes", async () => {
+    const v = editor("\\begin{document}\n\\end{tab|}\n\\end{document}");
+    startCompletion(v);
+    await waitFor(() => expect(completionStatus(v.state)).toBe("active"));
+    const table = currentCompletions(v.state).find((o) => o.label === "table")!;
+    const from = "\\begin{document}\n\\end{".length;
+    (table.apply as (view: EditorView, c: unknown, from: number, to: number) => void)(
+      v,
+      table,
+      from,
+      from + 3,
+    );
+    expect(text(v)).toBe("\\begin{document}\n\\end{table}\n\\end{document}");
+    expect(v.state.selection.main.head).toBe(from + "table}".length);
+  });
+
   it("el atajo \\begin{table} del paquete trae la misma tabla", async () => {
     // The shortcut is listed while typing the command (`\begin`), not its argument.
     const v = editor("\\begin{document}\n\\begin|\n\\end{document}");

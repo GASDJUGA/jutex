@@ -155,4 +155,14 @@ describe("búsqueda en el proyecto (vista previa)", () => {
     ).toEqual({ text: "a $Z", count: 1 });
     expect(replaceText("$x$", x("math"), "y", "notas.txt")).toEqual({ text: "$x$", count: 0 });
   });
+  it("el filtro es rápido con muchas fórmulas", () => {
+    // 2000 formulas (~50 KB): asking about every offset must not walk every region.
+    const text = "texto $e^x$ y algo más ".repeat(2000);
+    const keep = scopeFilter("math", "a.tex", text);
+    const start = performance.now();
+    let kept = 0;
+    for (let at = 0; at < text.length; at++) if (keep(at)) kept++;
+    expect(kept).toBe(2000 * "$e^x$".length);
+    expect(performance.now() - start).toBeLessThan(100);
+  });
 });

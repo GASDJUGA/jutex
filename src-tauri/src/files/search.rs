@@ -778,4 +778,19 @@ mod tests {
         assert_eq!(q.scope, SearchScope::All);
         assert!(serde_json::from_str::<SearchQuery>(r#"{"text":"x","scope":"otro"}"#).is_err());
     }
+
+    #[test]
+    fn el_filtro_es_rapido_con_muchas_formulas() {
+        // 8000 formulas (~400 KB): asking about every byte must not walk every region.
+        let text = "texto $e^x$ y algo más ".repeat(8000);
+        let filter = ScopeFilter::new(SearchScope::Math, "a.tex", &text);
+        let start = std::time::Instant::now();
+        let kept = (0..text.len()).filter(|&at| filter.keeps(at)).count();
+        assert_eq!(kept, 8000 * "$e^x$".len());
+        assert!(
+            start.elapsed() < std::time::Duration::from_millis(300),
+            "{:?}",
+            start.elapsed()
+        );
+    }
 }

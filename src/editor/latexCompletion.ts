@@ -53,7 +53,7 @@ function withBraces(option: Completion): Completion {
 function withTableBody(option: Completion): Completion {
   return {
     ...option,
-    apply: (view: EditorView, _completion: Completion, from: number, to: number) => {
+    apply: (view: EditorView, completion: Completion, from: number, to: number) => {
       if (option.label.startsWith("\\")) {
         insertTable(view, from, to, "table");
         return;
@@ -61,7 +61,9 @@ function withTableBody(option: Completion): Completion {
       const begin = tableRangeAt(view.state, from, option.label);
       const closing = view.state.sliceDoc(to, to + 1) === "}" ? 1 : 0;
       if (begin) insertTable(view, begin.from, to + closing, begin.name);
-      else view.dispatch({ changes: { from, to, insert: option.label } });
+      // Elsewhere (`\end{tab`…), the package's own completion of the name.
+      else if (typeof option.apply === "function") option.apply(view, completion, from, to);
+      else view.dispatch({ changes: { from, to, insert: option.apply ?? option.label } });
     },
   };
 }

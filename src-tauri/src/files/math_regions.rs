@@ -283,9 +283,11 @@ pub fn math_regions(text: &str) -> Vec<MathRegion> {
     regions
 }
 
-/// Whether `at` (a byte offset) is inside a region, delimiters included.
+/// Whether `at` (a byte offset) is inside a region, delimiters included. The regions are in
+/// order and do not overlap (as `math_regions` returns them): a binary search.
 pub fn in_math(regions: &[MathRegion], at: usize) -> bool {
-    regions.iter().any(|r| r.from <= at && at < r.to)
+    let k = regions.partition_point(|r| r.to <= at);
+    regions.get(k).is_some_and(|r| r.from <= at)
 }
 
 #[cfg(test)]

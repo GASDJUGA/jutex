@@ -30,7 +30,17 @@ export function scopeFilter(
 ): (offset: number) => boolean {
   if (scope === "all") return () => true;
   const regions = isLatexSource(path) ? mathRegions(text) : [];
-  const inMath = (at: number) => regions.some((r) => r.from <= at && at < r.to);
+  // Regions are in order and do not overlap: a binary search for the first ending after `at`.
+  const inMath = (at: number) => {
+    let lo = 0;
+    let hi = regions.length;
+    while (lo < hi) {
+      const mid = (lo + hi) >> 1;
+      if (regions[mid].to <= at) lo = mid + 1;
+      else hi = mid;
+    }
+    return lo < regions.length && regions[lo].from <= at;
+  };
   return scope === "math" ? inMath : (at) => !inMath(at);
 }
 
