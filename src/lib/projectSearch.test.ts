@@ -1,12 +1,21 @@
 import { describe, expect, it } from "vitest";
 import type { SearchQuery } from "../store/types";
-import { findInText, MAX_MATCHES, replaceText, searchFiles, searchRegExp } from "./projectSearch";
+import {
+  findInText,
+  isLatexSource,
+  MAX_MATCHES,
+  replaceText,
+  scopeFilter,
+  searchFiles,
+  searchRegExp,
+} from "./projectSearch";
 
 const query = (text: string, options: Partial<SearchQuery> = {}): SearchQuery => ({
   text,
   regex: false,
   caseSensitive: false,
   wholeWord: false,
+  scope: "all",
   ...options,
 });
 
@@ -83,7 +92,7 @@ describe("búsqueda en el proyecto (vista previa)", () => {
   });
 
   it("reemplazo literal y con grupos", () => {
-    expect(replaceText("Campo, campo y $campo$.", query("campo"), "$E$")).toEqual({
+    expect(replaceText("Campo, campo y $campo$.", query("campo"), "$E$", "a.tex")).toEqual({
       text: "$E$, $E$ y $$E$$.",
       count: 3,
     });
@@ -92,7 +101,58 @@ describe("búsqueda en el proyecto (vista previa)", () => {
         "\\textbf{a} y \\textbf{b c}",
         query("\\\\textbf\\{([^}]*)\\}", { regex: true, caseSensitive: true }),
         "\\emph{$1}",
+        "a.tex",
       ).text,
     ).toBe("\\emph{a} y \\emph{b c}");
+  });
+  // The same document and positions as the scope tests in search.rs.
+  const DOC =
+    "Sea $x$ y \\[ x^2 \\] con x.\n% $x$ comentado\n\\begin{align*} x \\end{align*}\nCuesta \\$x";
+  const cols = (q: SearchQuery, path: string, text: string) =>
+    findInText(searchRegExp(q), text, 100, scopeFilter(q.scope, path, text)).map((m) => [
+      m.line,
+      m.column,
+    ]);
+
+  it("en fórmulas o fuera de ellas, como en Rust", () => {
+    const x = (scope: SearchQuery["scope"]) => query("x", { caseSensitive: true, scope });
+    expect(cols(x("math"), "a.tex", DOC)).toEqual([
+      [1, 5],
+      [1, 13],
+      [3, 15],
+    ]);
+    expect(cols(x("text"), "a.tex", DOC)).toEqual([
+      [1, 24],
+      [2, 3],
+      [4, 9],
+    ]);
+    expect(cols(x("all"), "a.tex", DOC)).toHaveLength(6);
+    expect(cols(x("math"), "a.tex", "é ñ $x$ x")).toEqual([[1, 5]]);
+    expect(cols(x("text"), "a.tex", "é ñ $x$ x")).toEqual([[1, 8]]);
+    expect(cols(x("math"), "notas.txt", "sea $x$")).toEqual([]);
+    expect(cols(x("text"), "notas.txt", "sea $x$")).toEqual([[1, 5]]);
+    expect(cols(x("math"), "refs.BIB", "sea $x$")).toEqual([[1, 5]]);
+    expect(isLatexSource("cap/uno.tex") && isLatexSource("estilo.STY")).toBe(true);
+    expect(isLatexSource("datos.csv") || isLatexSource("tex")).toBe(false);
+    // searchFiles applies it too.
+    const results = searchFiles([["a.tex", DOC]], x("math"));
+    expect(results.files[0].matches).toHaveLength(3);
+  });
+
+  it("el reemplazo respeta el alcance", () => {
+    const x = (scope: SearchQuery["scope"], options: Partial<SearchQuery> = {}) =>
+      query("x", { caseSensitive: true, scope, ...options });
+    expect(replaceText("x $x$\nx $x$", x("math"), "y", "a.tex")).toEqual({
+      text: "x $y$\nx $y$",
+      count: 2,
+    });
+    expect(replaceText("x $x$", x("text", { text: "(x)", regex: true }), "[$1]", "a.tex")).toEqual({
+      text: "[x] $x$",
+      count: 1,
+    });
+    expect(
+      replaceText("a $x$ y", x("math", { text: "x\\$ y", regex: true }), "Z", "a.tex"),
+    ).toEqual({ text: "a $Z", count: 1 });
+    expect(replaceText("$x$", x("math"), "y", "notas.txt")).toEqual({ text: "$x$", count: 0 });
   });
 });

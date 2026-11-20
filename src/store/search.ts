@@ -46,7 +46,13 @@ let seq = 0;
 
 export const initialSearchState = {
   // Distinguishing upper and lower case by default (pedido del usuario); «Aa» turns it off.
-  query: { text: "", regex: false, caseSensitive: true, wholeWord: false },
+  query: {
+    text: "",
+    regex: false,
+    caseSensitive: true,
+    wholeWord: false,
+    scope: "all" as const,
+  },
   replacement: "",
   results: null,
   status: "idle" as const,
