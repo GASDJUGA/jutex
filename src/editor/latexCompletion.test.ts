@@ -173,6 +173,43 @@ describe("autocompletado de LaTeX", () => {
     expect(text(v).match(/\\end\{figure\}/g)).toHaveLength(1);
   });
 
+  it("elegir table en la lista de entornos trae la tabla", async () => {
+    const v = editor("\\begin{document}\n\\begin{tab|}\n\\end{document}");
+    startCompletion(v);
+    await waitFor(() => expect(completionStatus(v.state)).toBe("active"));
+    const table = currentCompletions(v.state).find((o) => o.label === "table")!;
+    const from = "\\begin{document}\n\\begin{".length;
+    (table.apply as (view: EditorView, c: unknown, from: number, to: number) => void)(
+      v,
+      table,
+      from,
+      from + 3,
+    );
+    expect(text(v)).toContain("\\begin{table}[htbp]\n  \\centering\n  \\begin{tabular}{|c|c|}");
+    expect(text(v)).toContain("\\end{table}\n\\end{document}");
+    expect(text(v).match(/\\end\{table\}/g)).toHaveLength(1);
+    expect(text(v).match(/\\begin\{table\}/g)).toHaveLength(1);
+  });
+
+  it("el atajo \\begin{table} del paquete trae la misma tabla", async () => {
+    // The shortcut is listed while typing the command (`\begin`), not its argument.
+    const v = editor("\\begin{document}\n\\begin|\n\\end{document}");
+    startCompletion(v);
+    await waitFor(() => expect(completionStatus(v.state)).toBe("active"));
+    const shortcut = currentCompletions(v.state).find((o) => o.label === "\\begin{table}");
+    expect(shortcut).toBeDefined();
+    const from = "\\begin{document}\n".length;
+    (shortcut!.apply as (view: EditorView, c: unknown, from: number, to: number) => void)(
+      v,
+      shortcut,
+      from,
+      from + "\\begin".length,
+    );
+    expect(text(v)).not.toContain("header1");
+    expect(text(v)).toContain("\\begin{table}[htbp]\n  \\centering\n  \\begin{tabular}{|c|c|}");
+    expect(text(v).match(/\\end\{table\}/g)).toHaveLength(1);
+  });
+
   it("qué comandos son de matemáticas", () => {
     for (const math of ["\\partial", "\\frac", "\\alpha", "\\vec", "\\left", "\\sum", "\\mathbb"]) {
       expect(isMathCommand(math), math).toBe(true);
