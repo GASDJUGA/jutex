@@ -58,6 +58,7 @@ import {
   tabInMath,
 } from "./mathTab";
 import { editorTheme } from "./theme";
+import { editorTooltips } from "./tooltips";
 
 export type EditorCallbacks = {
   /** The find/replace bar (Ctrl+F); CodeMirror's default panel if not given. */
@@ -88,6 +89,7 @@ export function editorExtensions(
   let lastLine = -1;
   return [
     lineNumbers(),
+    editorTooltips,
     // Compilation problems (set from the log with setDiagnostics).
     lintGutter(),
     highlightActiveLineGutter(),
